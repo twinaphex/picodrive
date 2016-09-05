@@ -6,6 +6,9 @@
  * See COPYING file in the top-level directory.
  */
 
+#ifndef COMMON_EMU_H
+#define COMMON_EMU_H
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -65,7 +68,9 @@ typedef struct _currentConfig_t {
 	int vscaling;
 	int rotation; // for UIQ
 	float scale; // psp: screen scale
+	int scale_int;
 	float hscale32, hscale40; // psp: horizontal scale
+	int hscale32_int, hscale40_int;
 	int gamma2;  // psp: black level
 	int turbo_rate;
 	int renderer;
@@ -74,10 +79,17 @@ typedef struct _currentConfig_t {
 	int analog_deadzone;
 	int msh2_khz;
 	int ssh2_khz;
+#ifdef PSP
+	char lastRomFile[512];
+	int KeyBinds[32];
+#endif
 } currentConfig_t;
 
 extern currentConfig_t currentConfig, defaultConfig;
 extern const char *PicoConfigFile;
+#ifdef PSP
+extern int rom_loaded;
+#endif
 extern int state_slot;
 extern int config_slot, config_slot_current;
 extern unsigned char *movie_data;
@@ -154,6 +166,7 @@ void pemu_validate_config(void);
 void pemu_loop_prep(void);
 void pemu_loop_end(void);
 void pemu_forced_frame(int no_scale, int do_emu); // ..to g_menubg_src_ptr
+void pemu_scan_prepare(void);
 void pemu_finalize_frame(const char *fps, const char *notice_msg);
 
 void pemu_sound_start(void);
@@ -176,3 +189,4 @@ void plat_update_volume(int has_changed, int is_up);
 } // extern "C"
 #endif
 
+#endif

@@ -10,14 +10,21 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#ifdef PSP
+#include <sys/stat.h>
+#endif
 #ifdef __GP2X__
 #include <unistd.h>
 #endif
 
+#ifndef PSP
 #include "../libpicofe/posix.h"
+#endif
 #include "../libpicofe/input.h"
 #include "../libpicofe/fonts.h"
+#ifndef PSP
 #include "../libpicofe/sndout.h"
+#endif
 #include "../libpicofe/lprintf.h"
 #include "../libpicofe/plat.h"
 #include "emu.h"
@@ -40,8 +47,13 @@
 
 void *g_screen_ptr;
 
+#ifndef PSP
 int g_screen_width  = 320;
 int g_screen_height = 240;
+#else
+int g_screen_width  = 512;
+int g_screen_height = 272;
+#endif
 
 const char *PicoConfigFile = "config2.cfg";
 currentConfig_t currentConfig, defaultConfig;
@@ -587,8 +599,8 @@ void emu_prep_defconfig(void)
 	defaultConfig.s_PicoCDBuffers = 0;
 	defaultConfig.confirm_save = EOPT_CONFIRM_SAVE;
 	defaultConfig.Frameskip = -1; // auto
-	defaultConfig.input_dev0 = PICO_INPUT_PAD_3BTN;
-	defaultConfig.input_dev1 = PICO_INPUT_PAD_3BTN;
+	defaultConfig.input_dev0 = PICO_INPUT_PAD_6BTN;
+	defaultConfig.input_dev1 = PICO_INPUT_PAD_6BTN;
 	defaultConfig.volume = 50;
 	defaultConfig.gamma = 100;
 	defaultConfig.scaling = 0;
@@ -1463,6 +1475,9 @@ void emu_loop(void)
 		}
 
 		emu_update_input();
+
+		pemu_scan_prepare();
+
 		if (skip) {
 			int do_audio = diff > -target_frametime_x3 * 2;
 			PicoSkipFrame = do_audio ? 1 : 2;

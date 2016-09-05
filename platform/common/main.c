@@ -9,7 +9,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef PSP
 #include <strings.h>
+#endif
 
 #include "../libpicofe/input.h"
 #include "../libpicofe/plat.h"
@@ -71,6 +73,11 @@ void parse_cmd_line(int argc, char *argv[])
 	}
 }
 
+#ifdef PSP
+PSP_MODULE_INFO("PicoDrive", 0, 1, 91);
+PSP_MAIN_THREAD_ATTR(THREAD_ATTR_USER);
+PSP_HEAP_SIZE_MAX();
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -111,7 +118,13 @@ int main(int argc, char *argv[])
 		switch (engineState)
 		{
 			case PGS_Menu:
+#ifndef GPROF
 				menu_loop();
+#else
+				//strcpy(rom_fname_reload, rom_fname_loaded);
+				rom_fname_reload = rom_fname_loaded;
+				engineState = PGS_ReloadRom;
+#endif
 				break;
 
 			case PGS_TrayMenu:
@@ -133,6 +146,9 @@ int main(int argc, char *argv[])
 
 			case PGS_Running:
 				emu_loop();
+#ifdef GPROF
+				goto endloop;
+#endif
 				break;
 
 			case PGS_Quit:

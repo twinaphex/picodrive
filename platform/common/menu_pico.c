@@ -23,6 +23,10 @@
 #define MENU_X2 0
 #endif
 
+#ifdef PSP
+#define	PATH_MAX		 1024	/* max bytes in pathname */
+#endif
+
 // FIXME
 #define REVISION "0"
 
@@ -515,11 +519,62 @@ static int menu_loop_adv_options(int id, int keys)
 
 // ------------ gfx options menu ------------
 
+static int mh_set_scale_unscaled_centered(int id, int keys)
+{
+	plat_set_scale_unscaled_centered();
+	return 1;
+}
+
+static int mh_set_scale_4_3(int id, int keys)
+{
+	plat_set_scale_4_3();
+	return 1;
+}
+
+static int mh_set_scale_fullscreen(int id, int keys)
+{
+	plat_set_scale_fullscreen();
+	return 1;
+}
+
+static int mh_set_scale_fullscreen_zoomed(int id, int keys)
+{
+	plat_set_scale_fullscreen_zoomed();
+	return 1;
+}
+
+static int mh_set_scale_cut_borders(int id, int keys)
+{
+	plat_set_scale_cut_borders();
+	return 1;
+}
+
 static const char h_gamma[] = "Gamma/brightness adjustment (default 1.00)";
 
 static const char *mgn_aopt_gamma(int id, int *offs)
 {
 	sprintf(static_buff, "%i.%02i", currentConfig.gamma / 100, currentConfig.gamma % 100);
+	return static_buff;
+}
+
+static const char *mgn_aopt_scale(int id, int *offs)
+{
+	sprintf(static_buff, "%i.%02i", ((int)currentConfig.scale_int) / 100, ((int)currentConfig.scale_int) % 100);
+	currentConfig.scale = (float)currentConfig.scale_int / 100.0f;
+	return static_buff;
+}
+
+static const char *mgn_aopt_hscale32(int id, int *offs)
+{
+	sprintf(static_buff, "%i.%02i", ((int)currentConfig.hscale32_int) / 100, ((int)currentConfig.hscale32_int) % 100);
+	currentConfig.hscale32 = (float)currentConfig.hscale32_int / 100.0f;
+	return static_buff;
+}
+
+static const char *mgn_aopt_hscale40(int id, int *offs)
+{
+	sprintf(static_buff, "%i.%02i", ((int)currentConfig.hscale40_int) / 100, ((int)currentConfig.hscale40_int) % 100);
+	currentConfig.hscale40 = (float)currentConfig.hscale40_int / 100.0f;
 	return static_buff;
 }
 
@@ -529,6 +584,14 @@ static menu_entry e_menu_gfx_options[] =
 	mee_enum   ("Renderer",          MA_OPT_RENDERER, currentConfig.renderer, renderer_names),
 	mee_enum   ("Filter",            MA_OPT3_FILTERING, currentConfig.filter, men_dummy),
 	mee_range_cust_h("Gamma correction", MA_OPT2_GAMMA, currentConfig.gamma, 1, 300, mgn_aopt_gamma, h_gamma),
+	mee_range_cust_h("Scale factor", MA_OPT3_SCALE, currentConfig.scale_int, 100, 200, mgn_aopt_scale, ""),
+	mee_range_cust_h("Hor. scale (for low res. games)", MA_OPT3_HSCALE32, currentConfig.hscale32_int, 100, 200, mgn_aopt_hscale32, ""),
+	mee_range_cust_h("Hor. scale (for hi res. games)", MA_OPT3_HSCALE40, currentConfig.hscale40_int, 100, 200, mgn_aopt_hscale40, ""),
+	mee_handler   ("Set to unscaled centered",         mh_set_scale_unscaled_centered),
+	mee_handler   ("Set to 4:3 scaled",         mh_set_scale_4_3),
+	mee_handler   ("Set to fullscreen",         mh_set_scale_fullscreen),
+	mee_handler   ("Set to cut horizontal borders",         mh_set_scale_cut_borders),
+	mee_handler   ("Set to fullscreen (zoomed)",         mh_set_scale_fullscreen_zoomed),
 	MENU_OPTIONS_GFX
 	mee_end,
 };
@@ -924,6 +987,9 @@ static const char credits[] =
 	"MAME devs: SH2, YM2612 and SN76496 cores\n"
 	"Eke, Stef: some Sega CD code\n"
 	"Inder, ketchupgun: graphics\n"
+#ifdef PSP
+	"Robson Alcantara: PSP port reborn\n"
+#endif
 #ifdef __GP2X__
 	"Squidge: mmuhack\n"
 	"Dzz: ARM940 sample\n"
@@ -988,6 +1054,9 @@ static void menu_main_draw_status(void)
 static int main_menu_handler(int id, int keys)
 {
 	const char *ret_name;
+#ifdef PSP
+	FILE *tstf;
+#endif
 
 	switch (id)
 	{
@@ -1011,11 +1080,20 @@ static int main_menu_handler(int id, int keys)
 		break;
 	case MA_MAIN_LOAD_ROM:
 		rom_fname_reload = NULL;
+#ifdef PSP
+		if ( tstf = fopen(rom_fname_loaded, "rb") )
+			fclose(tstf);
+		else
+			getcwd(rom_fname_loaded, PATH_MAX);
+#endif
 		ret_name = menu_loop_romsel(rom_fname_loaded,
 			sizeof(rom_fname_loaded), rom_exts, NULL);
 		if (ret_name != NULL) {
 			lprintf("selected file: %s\n", ret_name);
 			rom_fname_reload = ret_name;
+#ifdef PSP
+			strcpy(rom_fname_loaded,rom_fname_reload);
+#endif
 			engineState = PGS_ReloadRom;
 			return 1;
 		}
