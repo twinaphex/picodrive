@@ -168,10 +168,11 @@ AS := psp-as
 ../../pico/misc.o : ../../pico/misc.c
 	@echo ">>>" $<
 	$(CC) $(CFLAGS) -c $< -o $@ -D_ASM_MISC_C_AMIPS
-	
-../../pico/draw2.o : ../../pico/draw2.c
-	@echo ">>>" $<
-	$(CC) $(CFLAGS) -O2 -c $< -o $@ -D_ASM_DRAW_C_	
+
+#  WIP	
+#../../pico/draw2.o : ../../pico/draw2.c
+#	@echo ">>>" $<
+#	$(CC) $(CFLAGS) -O2 -c $< -o $@ -D_ASM_DRAW_C_	
 
 ../../pico/memory.o : ../../pico/memory.c
 	@echo ">>>" $<
