@@ -16,7 +16,9 @@
 
 #include "../../pico/pico_int.h"
 #include "../../pico/sound/mix.h"
+#if 0
 #include "../common/lprintf.h"
+#endif
 
 int mp3_last_error = 0;
 
@@ -460,7 +462,8 @@ void mp3_update(int *buffer, int length, int stereo)
 	}
 }
 
-
+#if 0
+// Robson :código desabilitado (obsoleto)
 int mp3_get_offset(void) // 0-1023
 {
 	unsigned int offs1024 = 0;
@@ -477,6 +480,7 @@ int mp3_get_offset(void) // 0-1023
 
 	return offs1024;
 }
+#endif
 
 
 void mp3_reopen_file(void)

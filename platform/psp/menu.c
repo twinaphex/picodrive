@@ -24,12 +24,15 @@
 #include "emu.h"
 #include "menu.h"
 #include "mp3.h"
-#include "../common/menu.h"
+#include "../common/menu_pico.h"
 #include "../common/emu.h"
+#if 0
 #include "../common/readpng.h"
-#include "../common/lprintf.h"
 #include "../common/input.h"
 #include "version.h"
+#endif
+#include "../common/lprintf.h"
+
 
 #include <pico/pico_int.h>
 #include <pico/patch.h>
