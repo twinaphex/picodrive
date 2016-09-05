@@ -7,6 +7,18 @@
 #define REGPARM(x)
 #endif
 
+#ifdef PSP
+#include <psptypes.h>
+
+#ifndef INLINE
+#define INLINE inline
+#endif
+#else
+#ifndef INLINE
+#define INLINE static
+#endif
+#endif
+
 // registers - matches structure order
 typedef enum {
   SHR_R0 = 0, SHR_SP = 15,

@@ -192,7 +192,11 @@ void PicoPower32x(void)
 void PicoUnload32x(void)
 {
   if (Pico32xMem != NULL)
-    plat_munmap(Pico32xMem, sizeof(*Pico32xMem));
+#ifndef PSP
+	  plat_munmap(Pico32xMem, sizeof(*Pico32xMem));
+#else
+	  free(Pico32xMem);
+#endif
   Pico32xMem = NULL;
   sh2_finish(&msh2);
   sh2_finish(&ssh2);
