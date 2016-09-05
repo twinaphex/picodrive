@@ -39,14 +39,17 @@ int sceAudioOutput2GetRestSample();
 #endif
 
 char romFileName[PATH_MAX];
-//unsigned char *PicoDraw2FB = (unsigned char *)VRAM_CACHED_STUFF + 8; // +8 to be able to skip border with 1 quadword..
 int engineStateSuspend;
+
+#if 0
+unsigned char *PicoDraw2FB = (unsigned char *)VRAM_CACHED_STUFF + 8; // +8 to be able to skip border with 1 quadword..
+#endif
 
 static unsigned char reg_12 = 0;
 
 #define PICO_PEN_ADJUST_X 4
 #define PICO_PEN_ADJUST_Y 2
-#ifdef PICO_PSP_OLD_CODE
+#if 0
 static int pico_pen_x = 320/2, pico_pen_y = 240/2;
 #endif
 static unsigned int noticeMsgTime = 0;
@@ -288,8 +291,10 @@ static void do_slowmode_lines(int line_to)
 
 static void EmuScanPrepare(void)
 {
-//	HighCol = (unsigned char *)VRAM_CACHED_STUFF + 8;
-//	if (!(Pico.video.reg[1]&8)) HighCol += 8*512;
+#if 0
+	HighCol = (unsigned char *)VRAM_CACHED_STUFF + 8;
+	if (!(Pico.video.reg[1]&8)) HighCol += 8*512;
+#endif
 
 	if (dynamic_palette > 0)
 		dynamic_palette--;
@@ -311,8 +316,10 @@ static int EmuScanSlowBegin8(unsigned int num)
 		DrawLineDest = (unsigned char *) VRAM_CACHED_STUFF + num * 512 - 16;
 	}
 
-	//if (!dynamic_palette)
-		//HighCol = (unsigned char *)VRAM_CACHED_STUFF + num * 512 + 8;
+#if 0
+	if (!dynamic_palette)
+		HighCol = (unsigned char *)VRAM_CACHED_STUFF + num * 512 + 8;
+#endif
 
 	return 0;
 }
@@ -358,19 +365,21 @@ static int EmuScanSlowEnd16(unsigned int num)
 	if( PicoAHW & PAHW_SMS ) {
 		Pico.m.dirtyPal = 1;
 	}
-//	if (Pico.m.dirtyPal) {
-//		if (!dynamic_palette) {
-//			do_slowmode_lines(num);
-//			dynamic_palette = 3; // last for 2 more frames
-//		}
-//		do_pal_update(1, 1);
-//	}
-//
-//	if (dynamic_palette) {
-//		int line_len = (Pico.video.reg[12]&1) ? 320 : 256;
-//		void *dst = (char *)VRAM_STUFF + 512*240 + 512*2*num;
-//		amips_clut_f(dst, HighCol + 8, localPal, line_len);
-//	}
+#if 0
+	if (Pico.m.dirtyPal) {
+		if (!dynamic_palette) {
+			do_slowmode_lines(num);
+			dynamic_palette = 3; // last for 2 more frames
+		}
+		do_pal_update(1, 1);
+	}
+
+	if (dynamic_palette) {
+		int line_len = (Pico.video.reg[12]&1) ? 320 : 256;
+		void *dst = (char *)VRAM_STUFF + 512*240 + 512*2*num;
+		amips_clut_f(dst, HighCol + 8, localPal, line_len);
+	}
+#endif
 
 	return 0;
 }
@@ -1132,7 +1141,7 @@ void pemu_loop(void)
 			pframes_shown = pframes_done = 0;
 		}
 
-#ifdef PICO_PSP_OLD_CODE
+#if 0
 		// show notice message?
 		if (noticeMsgTime) {
 			static int noticeMsgSum;
@@ -1279,7 +1288,7 @@ void emu_HandleResume(void)
 {
 	if (!(PicoAHW & PAHW_MCD)) return;
 
-#ifdef PICO_PSP_OLD_CODE
+#if 0
 	// reopen first CD track
 	if (Pico_mcd->TOC.Tracks[0].F != NULL)
 	{
@@ -1444,7 +1453,6 @@ void plat_video_loop_prepare(void)
 {
 	vidResetMode();
 	clearArea(1);
-	//EmuScanPrepare();
 }
 
 void plat_status_msg_clear(void)
