@@ -1,9 +1,6 @@
 #*
 #* memory handlers with banking support
-#* (C) notaz, 2007-2008
-#*
-#* This work is licensed under the terms of MAME license.
-#* See COPYING file in the top-level directory.
+#* Robson Santana, 2016
 #*
 
 .eqv SRR_MAPPED,     1       #(1 <<  0)
