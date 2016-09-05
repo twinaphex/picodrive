@@ -13,11 +13,13 @@ int line_base_cycles;
 extern const unsigned char  hcounts_32[];
 extern const unsigned char  hcounts_40[];
 
+#ifndef PSP
 #ifndef UTYPES_DEFINED
 typedef unsigned char  u8;
 typedef unsigned short u16;
 typedef unsigned int   u32;
 #define UTYPES_DEFINED
+#endif
 #endif
 
 int (*PicoDmaHook)(unsigned int source, int len, unsigned short **srcp, unsigned short **limitp) = NULL;

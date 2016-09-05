@@ -298,6 +298,11 @@ void PicoFrameMS(void)
     cycles_aim += cycles_line;
     cycles_done += z80_run((cycles_aim - cycles_done) >> 8) << 8;
   }
+#ifdef PSP
+#ifdef DRAW_FINISH_FUNC
+    DRAW_FINISH_FUNC();
+#endif
+#endif
 
   if (PsndOut)
     PsndGetSamplesMS();

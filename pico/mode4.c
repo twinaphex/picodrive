@@ -213,11 +213,13 @@ void PicoFrameStartMode4(void)
     }
   }
 
+#ifndef PSP  // emu_video_mode_change() is for libretro
   if (rendstatus != rendstatus_old || lines != rendlines) {
     emu_video_mode_change(screen_offset, lines, 1);
     rendstatus_old = rendstatus;
     rendlines = lines;
   }
+#endif
 
   DrawLineDest = (char *)DrawLineDestBase + screen_offset * DrawLineDestIncrement;
 }

@@ -16,6 +16,10 @@
 #include "pico.h"
 #include "carthw/carthw.h"
 
+#ifdef PSP
+#include "platform/psp/port_config.h"
+#endif
+
 //
 #define USE_POLL_DETECT
 

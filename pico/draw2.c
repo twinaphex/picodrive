@@ -22,6 +22,25 @@
 
 static unsigned char PicoDraw2FB_[(8+320) * (8+240+8)];
 unsigned char *PicoDraw2FB = PicoDraw2FB_;
+static int line_widht = LINE_WIDTH;
+#ifdef PSP
+static unsigned char *PicoDraw2FBBase = PicoDraw2FB_;
+
+void PicoDraw2SetOutBuf(void *dest, int increment)
+{
+  if (dest != NULL) {
+	PicoDraw2FBBase = dest;
+	line_widht = increment;
+	PicoDraw2FB = PicoDraw2FBBase;
+  }
+  else {
+	PicoDraw2FBBase = PicoDraw2FB_;
+	PicoDraw2FB = PicoDraw2FB_;
+	line_widht = LINE_WIDTH;
+  }
+}
+#endif
+
 
 static int HighCache2A[41*(TILE_ROWS+1)+1+1]; // caches for high layers
 static int HighCache2B[41*(TILE_ROWS+1)+1+1];
@@ -45,7 +64,7 @@ static int TileXnormYnorm(unsigned char *pd,int addr,unsigned char pal)
 	unsigned int pack=0; unsigned int t=0, blank = 1;
 	int i;
 
-	for(i=8; i; i--, addr+=2, pd += LINE_WIDTH) {
+	for(i=8; i; i--, addr+=2, pd += line_widht) {
 		pack=*(unsigned int *)(Pico.vram+addr); // Get 8 pixels
 		if(!pack) continue;
 
@@ -68,7 +87,7 @@ static int TileXflipYnorm(unsigned char *pd,int addr,unsigned char pal)
 	unsigned int pack=0; unsigned int t=0, blank = 1;
 	int i;
 
-	for(i=8; i; i--, addr+=2, pd += LINE_WIDTH) {
+	for(i=8; i; i--, addr+=2, pd += line_widht) {
 		pack=*(unsigned int *)(Pico.vram+addr); // Get 8 pixels
 		if(!pack) continue;
 
@@ -91,7 +110,7 @@ static int TileXnormYflip(unsigned char *pd,int addr,unsigned char pal)
 	int i;
 
 	addr+=14;
-	for(i=8; i; i--, addr-=2, pd += LINE_WIDTH) {
+	for(i=8; i; i--, addr-=2, pd += line_widht) {
 		pack=*(unsigned int *)(Pico.vram+addr); // Get 8 pixels
 		if(!pack) continue;
 
@@ -115,7 +134,7 @@ static int TileXflipYflip(unsigned char *pd,int addr,unsigned char pal)
 	int i;
 
 	addr+=14;
-	for(i=8; i; i--, addr-=2, pd += LINE_WIDTH) {
+	for(i=8; i; i--, addr-=2, pd += line_widht) {
 		pack=*(unsigned int *)(Pico.vram+addr); // Get 8 pixels
 		if(!pack) continue;
 
@@ -164,8 +183,8 @@ static void DrawWindowFull(int start, int end, int prio)
 	code=Pico.vram[nametab+tile_start];
 	if ((code>>15) != prio) return; // hack: just assume that whole window uses same priority
 
-	scrpos+=8*LINE_WIDTH+8;
-	scrpos+=8*LINE_WIDTH*(start-START_ROW);
+	scrpos+=8*line_widht+8;
+	scrpos+=8*line_widht*(start-START_ROW);
 
 	// do a window until we reach planestart row
 	for(trow = start; trow < end; trow++, nametab+=nametab_step) { // current tile row
@@ -193,7 +212,7 @@ static void DrawWindowFull(int start, int end, int prio)
 			if(zero) blank=code; // We know this tile is blank now
 		}
 
-		scrpos += LINE_WIDTH*8;
+		scrpos += line_widht*8;
 	}
 }
 
@@ -239,11 +258,11 @@ static void DrawLayerFull(int plane, int *hcache, int planestart, int planeend)
 	else          nametab=(pvid->reg[4]&0x07)<<12; // B
 
 	scrpos = PicoDraw2FB;
-	scrpos+=8*LINE_WIDTH*(planestart-START_ROW);
+	scrpos+=8*line_widht*(planestart-START_ROW);
 
 	// Get vertical scroll value:
 	vscroll=Pico.vsram[plane]&0x1ff;
-	scrpos+=(8-(vscroll&7))*LINE_WIDTH;
+	scrpos+=(8-(vscroll&7))*line_widht;
 	if(vscroll&7) planeend++; // we have vertically clipped tiles due to vscroll, so we need 1 more row
 
 	*hcache++ = 8-(vscroll&7); // push y-offset to tilecache
@@ -298,7 +317,7 @@ static void DrawLayerFull(int plane, int *hcache, int planestart, int planeend)
 			if(zero) blank=code; // We know this tile is blank now
 		}
 
-		scrpos += LINE_WIDTH*8;
+		scrpos += line_widht*8;
 	}
 
 	*hcache = 0; // terminate cache
@@ -315,7 +334,7 @@ static void DrawTilesFromCacheF(int *hc)
 	unsigned char *scrpos = PicoDraw2FB, *pd = 0;
 
 	// *hcache++ = code|(dx<<16)|(trow<<27); // cache it
-	scrpos+=(*hc++)*LINE_WIDTH - START_ROW*LINE_WIDTH*8;
+	scrpos+=(*hc++)*line_widht - START_ROW*line_widht*8;
 
 	while((code=*hc++)) {
 		if((short)code == blank) continue;
@@ -323,7 +342,7 @@ static void DrawTilesFromCacheF(int *hc)
 		// y pos
 		if(((unsigned)code>>27) != prevy) {
 			prevy = (unsigned)code>>27;
-			pd = scrpos + prevy*LINE_WIDTH*8;
+			pd = scrpos + prevy*line_widht*8;
 		}
 
 		// Get tile address/2:
@@ -376,7 +395,7 @@ static void DrawSpriteFull(unsigned int *sprite)
 	while(sy <= START_ROW*8) { sy+=8; tile+=tdeltay; height--; }
 
 	scrpos = PicoDraw2FB;
-	scrpos+=(sy-START_ROW*8)*LINE_WIDTH;
+	scrpos+=(sy-START_ROW*8)*line_widht;
 
 	for (; height > 0; height--, sy+=8, tile+=tdeltay)
 	{
@@ -398,7 +417,7 @@ static void DrawSpriteFull(unsigned int *sprite)
 			}
 		}
 
-		scrpos+=8*LINE_WIDTH;
+		scrpos+=8*line_widht;
 	}
 }
 #endif
@@ -483,7 +502,7 @@ static void BackFillFull(int reg7)
 	back|=back<<8;
 	back|=back<<16;
 
-	memset32((int *)PicoDraw2FB, back, LINE_WIDTH*(8+(END_ROW-START_ROW)*8)/4);
+	memset32((int *)PicoDraw2FB, back, line_widht*(8+(END_ROW-START_ROW)*8)/4);
 }
 #endif
 
