@@ -1424,6 +1424,7 @@ PICO_INTERNAL void PicoFrameStart(void)
     lines = 240;
   }
 
+#ifndef PSP
   if (rendstatus != rendstatus_old || lines != rendlines) {
     rendlines = lines;
     // mode_change() might reset rendstatus_old by calling SetColorFormat
@@ -1431,6 +1432,7 @@ PICO_INTERNAL void PicoFrameStart(void)
       lines, (Pico.video.reg[12] & 1) ? 0 : 1);
     rendstatus_old = rendstatus;
   }
+#endif
 
   HighCol = HighColBase + offs * HighColIncrement;
   DrawLineDest = (char *)DrawLineDestBase + offs * DrawLineDestIncrement;

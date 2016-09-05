@@ -458,9 +458,19 @@ static unsigned char *PicoCartAlloc(int filesize, int is_sms)
   if (rom_alloc_size - filesize < 4)
     rom_alloc_size += 4; // padding for out-of-bound exec protection
 
+#ifndef PSP
   // Allocate space for the rom plus padding
   // use special address for 32x dynarec
   rom = plat_mmap(0x02000000, rom_alloc_size, 0, 0);
+#else
+
+  if( rom_alloc_size < 0x7ffff ) rom_alloc_size = 0x7ffff;
+
+  // Allocate space for the rom plus padding
+  rom=(unsigned char *)malloc(rom_alloc_size);
+  if(rom) memset(rom+rom_alloc_size-0x80000,0,0x80000);
+#endif
+
   return rom;
 }
 
@@ -600,7 +610,12 @@ int PicoCartInsert(unsigned char *rom, unsigned int romsize, const char *carthw_
 
 int PicoCartResize(int newsize)
 {
-  void *tmp = plat_mremap(Pico.rom, rom_alloc_size, newsize);
+#ifndef PSP
+	void *tmp = plat_mremap(Pico.rom, rom_alloc_size, newsize);
+#else
+	void *tmp = realloc(Pico.rom, newsize);
+#endif
+
   if (tmp == NULL)
     return -1;
 
@@ -621,7 +636,11 @@ void PicoCartUnload(void)
 
   if (Pico.rom != NULL) {
     SekFinishIdleDet();
+#ifndef PSP
     plat_munmap(Pico.rom, rom_alloc_size);
+#else
+    free(Pico.rom);
+#endif
     Pico.rom = NULL;
   }
   PicoGameLoaded = 0;
