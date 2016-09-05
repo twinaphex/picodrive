@@ -33,6 +33,18 @@ static void convert_pal555(int invert_prio)
   Pico32x.dirty_pal = 0;
 }
 
+#ifndef PSP
+#define ADJUST_COLOR(t) t
+#else
+
+static inline unsigned short RGB5551toBGR5650(unsigned short src)
+{
+	return ( ( src & 0xfc00 ) >> 11 ) | ( src & 0x07c0 ) | ( ( src & 0x001f ) << 11 );
+}
+
+#define ADJUST_COLOR(t) RGB5551toBGR5650(t)
+#endif
+
 // direct color mode
 #define do_line_dc(pd, p32x, pmd, inv, pmd_draw_code)             \
 {                                                                 \
@@ -48,7 +60,7 @@ static void convert_pal555(int invert_prio)
       continue;                                                   \
     }                                                             \
                                                                   \
-    *pd = ((t & m1) << 11) | ((t & m2) << 1) | ((t & m3) >> 10);  \
+    *pd = ADJUST_COLOR(((t & m1) << 11) | ((t & m2) << 1) | ((t & m3) >> 10));  \
   }                                                               \
 }
 
@@ -60,11 +72,11 @@ static void convert_pal555(int invert_prio)
   for (i = 320; i > 0; i--, pd++, p32x++, pmd++) {                \
     t = pal[*(unsigned char *)((long)p32x ^ 1)];                  \
     if ((t & 0x20) || (*pmd & 0x3f) == mdbg)                      \
-      *pd = t;                                                    \
+      *pd = ADJUST_COLOR(t);                                      \
     else                                                          \
       pmd_draw_code;                                              \
   }                                                               \
-} 
+}
 
 // run length mode
 #define do_line_rl(pd, p32x, pmd, pmd_draw_code)                  \
@@ -75,7 +87,7 @@ static void convert_pal555(int invert_prio)
     t = pal[*p32x & 0xff];                                        \
     for (len = (*p32x >> 8) + 1; len > 0 && i > 0; len--, i--, pd++, pmd++) { \
       if ((*pmd & 0x3f) == mdbg || (t & 0x20))                    \
-        *pd = t;                                                  \
+        *pd = ADJUST_COLOR(t);                                    \
       else                                                        \
         pmd_draw_code;                                            \
     }                                                             \
@@ -292,7 +304,7 @@ void PicoDraw32xLayerMdOnly(int offs, int lines)
   for (l = 0; l < lines; l++) {
     if (have_scan) {
       PicoScan32xBegin(l + offs);
-      dst = DrawLineDest + poffs;
+      dst = (unsigned short*)DrawLineDest + poffs;
     }
     for (p = 0; p < plen; p += 4) {
       dst[p + 0] = pal[*pmd++];
