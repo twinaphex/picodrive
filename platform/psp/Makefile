@@ -7,7 +7,7 @@ PSPSDK = $(shell psp-config --pspsdk-path)
 #use_mz80 = 1
 amalgamate = 0
 for_15fw = 0
-release = 0
+release = 1
 profile = 0
 # :!touch platform/psp/psp.c
 
@@ -168,11 +168,10 @@ AS := psp-as
 ../../pico/misc.o : ../../pico/misc.c
 	@echo ">>>" $<
 	$(CC) $(CFLAGS) -c $< -o $@ -D_ASM_MISC_C_AMIPS
-
-#  WIP	
-#../../pico/draw2.o : ../../pico/draw2.c
-#	@echo ">>>" $<
-#	$(CC) $(CFLAGS) -O2 -c $< -o $@ -D_ASM_DRAW_C_	
+	
+../../pico/draw2.o : ../../pico/draw2.c
+	@echo ">>>" $<
+	$(CC) $(CFLAGS) -O2 -c $< -o $@ -D_ASM_DRAW_C	
 
 ../../pico/memory.o : ../../pico/memory.c
 	@echo ">>>" $<
