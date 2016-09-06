@@ -214,55 +214,47 @@ BackFillFull:
 	srl		$s5, $a2, 12		   # #0x0000f000
     and     $t4, $a0, $s5
     beqz	$t4, 21f
-    nop
     or      $t4, $a3, $t4
     sb      $t4, ($a1)
 21:
 	srl		$s5, $a2, 8			   # #0x00000f00
     and     $t4, $a0, $s5
     beqz	$t4, 22f
-    nop
     or      $t4, $a3, $t4
     sb      $t4, 1($a1)
 22:
 	srl		$s5, $a2, 4			   # #0x000000f0
     and     $t4, $a0, $s5
     beqz	$t4, 23f
-    nop
     or      $t4, $a3, $t4
     sb      $t4, 2($a1)
 23:
     and     $t4, $a0, $a2		   # #0x0000000f
     beqz	$t4, 24f
-    nop
     or      $t4, $a3, $t4
     sb      $t4, 3($a1)
 24:
 	srl		$s5, $a2, 28		   # #0xf0000000
     and     $t4, $a0, $s5
     beqz	$t4, 25f
-    nop
     or      $t4, $a3, $t4
     sb      $t4, 4($a1)
 25:
 	srl		$s5, $a2, 24		   # #0x0f000000
     and     $t4, $a0, $s5
     beqz	$t4, 26f
-    nop
     or      $t4, $a3, $t4
     sb      $t4, 5($a1)
 26:
 	srl		$s5, $a2, 20		   # #0x00f00000
     and     $t4, $a0, $s5
     beqz	$t4, 27f
-    nop
     or      $t4, $a3, $t4
     sb      $t4, 6($a1)
 27:
 	srl		$s5, $a2, 16		   # #0x000f0000
     and     $t4, $a0, $s5
     beqz	$t4, 28f
-    nop
     or      $t4, $a3, $t4
     sb      $t4, 7($a1)
 28:
@@ -273,55 +265,47 @@ BackFillFull:
 	srl		$s5, $a2, 16		   # #0x000f0000
     and     $t4, $a0, $s5
     beqz	$t4, 31f
-    nop
     or      $t4, $a3, $t4
     sb      $t4, ($a1)
 31:
 	srl		$s5, $a2, 20		   # #0x00f00000
     and     $t4, $a0, $s5
     beqz	$t4, 32f
-    nop
     or      $t4, $a3, $t4
     sb      $t4, 1($a1)
 32:
 	srl		$s5, $a2, 24		   # #0x0f000000
     and     $t4, $a0, $s5
     beqz	$t4, 33f
-    nop
     or      $t4, $a3, $t4
     sb      $t4, 2($a1)
 33:
     srl		$s5, $a2, 28		   # #0xf0000000
     and     $t4, $a0, $s5
     beqz	$t4, 34f
-    nop
     or      $t4, $a3, $t4
     sb      $t4, 3($a1)
 34:
     and     $t4, $a0, $a2		   # #0x0000000f
     beqz	$t4, 35f
-    nop
     or      $t4, $a3, $t4
     sb      $t4, 4($a1)
 35:
 	srl		$s5, $a2, 4			   # #0x000000f0
     and     $t4, $a0, $s5
     beqz	$t4, 36f
-    nop
     or      $t4, $a3, $t4
     sb      $t4, 5($a1)
 36:
 	srl		$s5, $a2, 8			   # #0x00000f00
     and     $t4, $a0, $s5
     beqz	$t4, 37f
-    nop
     or      $t4, $a3, $t4
     sb      $t4, 6($a1)
 37:
 	srl		$s5, $a2, 12		   # #0x0000f000
     and     $t4, $a0, $s5
     beqz	$t4, 38f
-    nop
     or      $t4, $a3, $t4
     sb      $t4, 7($a1)
 38:
@@ -333,10 +317,10 @@ BackFillFull:
     sll     $t7, $t9, 13           # $t9=code<<8; addr=(code&0x7ff)<<4;
     srl		$s5, $t7, 16
     add     $t7, $s1, $s5
-    or      $t9, $t9, 3            # emptytile=singlecolor=1, $t9 must be <code_16> 00000xxx
+    ori     $t9, $t9, 3            # emptytile=singlecolor=1, $t9 must be <code_16> 00000xxx
 .if \vflip
     # we read tilecodes in reverse order if we have vflip
-    add     $t7, $t7, 8*4
+    addi    $t7, $t7, 8*4
 .endif
     # loop through 8 lines
     li		$s5, (7<<24)
@@ -347,16 +331,16 @@ BackFillFull:
 0:  # singlecol_loop
 	#li		$s5, (1<<24)
     sub     $t9, $t9, $s6
-    add     $a1, $a1, 512         # set pointer to next line
+    add     $a1, $a1, $t2         # set pointer to next line
     bltz    $t9, 8f               # loop_exit with $a0 restore
     nop
 1:
 .if \vflip
-	addi	$t7, $t7, -4
+	add 	$t7, $t7, $t0
     lw      $a2, ($t7)            # pack=*(unsigned int *)(Pico.vram+addr); // Get 8 pixels
 .else
     lw	    $a2, ($t7)
-    addi	$t7, $t7, 4
+    add 	$t7, $t7, $t1
 .endif
     beqz    $a2, 2f                    # empty line
     nop
@@ -379,15 +363,15 @@ BackFillFull:
 2:  # empty_loop
 	#li		$s5, (1<<24)
     sub     $t9, $t9, $s6
-    add     $a1, $a1, 512          # set pointer to next line
+    add     $a1, $a1, $t2          # set pointer to next line
     bltz	$t9, 8f # loop_exit with $a0 restore
     nop
 .if \vflip
-	add		$t7, $t7, -4
+	add		$t7, $t7, $t0
     lw      $a2, ($t7)  			# next pack
 .else
     lw      $a2, ($t7)
-    add		$t7, $t7, 4
+    add		$t7, $t7, $t1
 .endif
     li      $a0, 0xf               # singlecol_loop might have messed $a0
     beqz    $a2, 2b
@@ -395,8 +379,8 @@ BackFillFull:
 
 	#li		$s5, 3
 	#not	$s5, $s5
-	li		$s5, -4					# optimized
-	and		$t9, $t9, $s5           # if we are here, it means we have empty and not empty line
+	#li		$s5, -4					# optimized
+	and		$t9, $t9, $t0           # if we are here, it means we have empty and not empty line
     b       5f
     nop
 
@@ -404,23 +388,23 @@ BackFillFull:
     li      $a0, 0xf
 	#li		$s5, 3
 	#not	$s5, $s5
-	li		$s5, -4					#optimized
-	and		$t9, $t9, $s5
+	#li		$s5, -4					#optimized
+	and		$t9, $t9, $t0
     b       6f
     nop
 
 4:  # not empty, not singlecol loop
 	#li		$s5, (1<<24)
     sub     $t9, $t9, $s6
-    add     $a1, $a1, 512          # set pointer to next line
+    add     $a1, $a1, $t2          # set pointer to next line
     bltz    $t9, 9f # loop_exit
     nop
 .if \vflip
-	add		$t7, $t7, -4
+	add		$t7, $t7, $t0
     lw      $a2, ($t7)  			# next pack
 .else
     lw      $a2, ($t7)
-    add		$t7, $t7, 4
+    add		$t7, $t7, $t1
 .endif
     beqz    $a2, 4b                 # empty line
     nop
@@ -455,7 +439,7 @@ BackFillFull:
     sh		$t5, 2($a1)
     sh		$t6, 4($a1)
     sh		$t7, 6($a1)
-    add     $a1, $a1, (8+512)
+    addi    $a1, $a1, (8+512)
 .endm
 
 .macro TileLineSinglecolAl1
@@ -463,14 +447,14 @@ BackFillFull:
     sh      $a0, 1($a1)
     sw      $a0, 3($a1)
     sb      $a0, 7($a1)
-    add     $a1, $a1, (8+512)
+    addi    $a1, $a1, (8+512)
 .endm
 
 .macro TileLineSinglecolAl2
     sh      $a0, ($a1)
     sw      $a0, 2($a1)
     sh      $a0, 6($a1)
-    add     $a1, $a1, (8+512)
+    addi    $a1, $a1, (8+512)
 .endm
 
 .macro TileLineSinglecolAl3
@@ -478,7 +462,7 @@ BackFillFull:
     sw      $a0, 1($a1)
     sh      $a0, 5($a1)
     sb      $a0, 7($a1)
-    add     $a1, $a1, (8+512)
+    addi    $a1, $a1, (8+512)
 .endm
 
 # TileSinglecol ($a1=pdest, $a2=pixels8, $a3=pal) $t4,$t7: scratch, $a0=0xf
@@ -563,7 +547,6 @@ BackFillFull:
 .global DrawLayerFull
 
 DrawLayerFull:
-    #stmfd   sp!, {$t4-$s2,$s3}
 	addiu   $sp, $sp, -24
 	sw      $s6, 20($sp)
 	sw      $s5, 16($sp)
@@ -572,18 +555,16 @@ DrawLayerFull:
 	sw      $s2, 4($sp)   #r11
 	sw      $s1, ($sp)    #r10
 
-    move    $t6, $a1        # hcache
-    #move	$a1, $s1
-	#move	$a0, $a0
-	#move	$a1, $s1
-	#move	$a2, $s2
-	#move	$a3, $s3
+	li		$t0, -4
+	li		$t1, 4
+	li		$t2, 512
+	li		$t3, 1
 
-    #lw     $s2, (Pico+0x22228)  # Pico.video
+    move    $t6, $a1        # hcache
+
     lui     $s2, %hi(Pico+0x22228)
     li		$s5, %lo(Pico+0x22228)
     add     $s2, $s2, $s5         # $s2=Pico.video
-    #lw     $s1, (Pico+0x10000)   # $s1=Pico.vram
     lui     $s1, %hi(Pico+0x10000)
     li		$s5, %lo(Pico+0x10000)
     add     $s1, $s1, $s5         # $s1=Pico.vram
@@ -601,7 +582,6 @@ DrawLayerFull:
     not		$s5, $s5
     and     $t5, $t5, $s5         # just in case
 
-    #tst    $t7, 3                # full screen scroll? (if 0)
     and		$s5, $t7, 3           # full screen scroll? (if 0)
     lb      $t7, 16($s2)          # ??hh??ww
     bnez	$s5, .rtrloop_skip_1
@@ -625,7 +605,7 @@ DrawLayerFull:
     or      $t5, $t5, $s5
     li		$s5, 0x1f000000
     or      $t5, $t5, $s5
-    sub		$s5, $t8, 1
+    sub		$s5, $t8, $t3
     bltz	$s5, .rtrloop_skip_3
     nop
     beqz	$s5, .rtrloop_skip_4
@@ -658,7 +638,7 @@ DrawLayerFull:
     sub		$s5, $t4, 7
     bltz	$s5, .rtrloop_skip_7
     nop
-    sub     $t4, $t4, 1            # $t4=shift(width) (5,6,6,7)
+    sub     $t4, $t4, $t3            # $t4=shift(width) (5,6,6,7)
 
 .rtrloop_skip_7:
     or      $s4, $s4, $t4
@@ -671,7 +651,6 @@ DrawLayerFull:
     or      $t8, $t8, $s5
 
     # Find name table:
-    #tst     $a0, $a0
     bnez	$a0, .rtrloop_skip_8
     nop
     lb  	$t4, 2($s2)
@@ -689,12 +668,10 @@ DrawLayerFull:
 
     lw      $s2, PicoDraw2FB     # $s2=PicoDraw2FB
     sub     $t4, $t9, (START_ROW<<24)
-    #lw     $s2, ($s2)
     sra     $t4, $t4, 24
     li      $t7, 512*8
     mul		$s5, $t4, $t7
     add		$s2, $s5, $s2		   # scrpos+=8*512*(planestart-START_ROW);
-    #mla     $s2, $t4, $t7, $s2      # scrpos+=8*328*(planestart-START_ROW);
 
     # Get vertical scroll value:
     li		$s5, 0x012000
@@ -720,13 +697,13 @@ DrawLayerFull:
     and     $t7, $t7, 7
     beqz	$t7, .rtrloop_skip_12
     nop
-    add		$s4, $s4, 1            # we have vertically clipped tiles due to vscroll, so we need 1 more row
+    add		$s4, $s4, $t3            # we have vertically clipped tiles due to vscroll, so we need 1 more row
 
 .rtrloop_skip_12:
 	li		$s5, 8
     sub     $t7, $s5, $t7
     sw      $t7, ($t6)             # push y-offset to tilecache
-    add		$t6, $t6, 4
+    add		$t6, $t6, $t1
     li	    $t4, 512
     mul		$s5, $t4, $t7
     add     $s2, $s5, $s2          # scrpos+=(8-(vscroll&7))*512;
@@ -787,9 +764,9 @@ DrawLayerFull:
     and     $t4, $t4, 0xff
     or      $t8, $t8, $t4         # $t8=(xmask<<24)|tilex
 
-    sub     $t7, $t7, 1
+    sub     $t7, $t7, $t3
     and     $t7, $t7, 7
-    add     $t7, $t7, 1           # $t7=dx((ts->hscroll-1)&7)+1
+    add     $t7, $t7, $t3           # $t7=dx((ts->hscroll-1)&7)+1
 
 	li		$s5, 8
     bne		$t7, $s5, .rtrloop_skip_15
@@ -808,7 +785,7 @@ DrawLayerFull:
     add     $a1, $a1, 8
     li		$s5, 0x01000000
     sub     $s3, $s3, $s5
-    add     $t8, $t8, 1
+    add     $t8, $t8, $t3
     bltz	$s3, .rtrloop_exit
     nop
 
@@ -832,7 +809,7 @@ DrawLayerFull:
     bne     $t7, $s5, .rtr_notsamecode
     nop
     # we know stuff about this tile already
-    and     $s5, $t9, 1
+    and     $s5, $t9, $t3
     bnez    $s5, .rtrloop         # empty tile
     nop
     and     $s5, $t9, 2
@@ -903,7 +880,7 @@ DrawLayerFull:
     sll		$s5, $t4, 11
     or      $t7, $t7, $s5 # (trow<<27)
     sw      $t7, ($t6)    # cache hi priority tile
-    add		$t6, $t6, 4
+    add		$t6, $t6, $t1
     b       .rtrloop
     nop
 
@@ -932,11 +909,8 @@ DrawLayerFull:
 	lw      $s5, 16($sp)
 	lw      $s6, 20($sp)
 	addiu   $sp, $sp, 24
-    #ldmfd   sp!, {$t4-$s2,$s3}
     jr      $ra
     nop
-
-#.pool
 
 .global DrawTilesFromCacheF # int *hc
 
@@ -948,12 +922,10 @@ DrawTilesFromCacheF:
 	sw      $s3, 8($sp)
 	sw      $s2, 4($sp)
 	sw      $s1, ($sp)
-    #stmfd   sp!, {$t4-$a10,lr}
 
-    #move	$a0, $a0
-    #move	$a1, $s1
-    #move	$a2, $s2
-    #move	$a3, $s3
+	li		$t0, -4
+	li		$t1, 4
+	li		$t2, 512
 
     li      $t9, 0xff000000 # $t9=prevcode=-1
     li      $t6, -1          # $t6=prevy=-1
@@ -981,7 +953,6 @@ DrawTilesFromCacheF:
     srl		$a1, $t7, 16   # $a1=dx;
     beqz    $a1, .dtfcf_exit   # dx is never zero, this must be a terminator, return
     nop
-    #ldmeqfd sp!, {$t4-$a10,pc} # dx is never zero, this must be a terminator, return
 
     # row changed?
     srl		$s5, $t7, 27
@@ -1069,16 +1040,12 @@ DrawTilesFromCacheF:
 	jr		$ra
 	nop
 
-#.pool
-
-
 # ###############
 
 # (tile_start<<16)|row_start
 .global DrawWindowFull # int tstart, int tend, int prio
 
 DrawWindowFull:
-    #stmfd   sp!, {$t4-$s2,lr}
 	addiu   $sp, $sp, -24
 	sw      $s6, 20($sp)
 	sw      $s5, 16($sp)
@@ -1087,10 +1054,9 @@ DrawWindowFull:
 	sw      $s2, 4($sp)
 	sw      $s1, ($sp)
 
-	#move	$a0, $a0
-	#move	$a1, $s1
-	#move	$a2, $s2
-	#move	$a3, $s3
+	li		$t0, -4
+	li		$t1, 4
+	li		$t2, 512
 
     lui     $s2, %hi(Pico+0x22228)
     li		$s5, %lo(Pico+0x22228)
@@ -1122,7 +1088,6 @@ DrawWindowFull:
     add     $t7, $s3, $s5
 
     # fetch the first code now
-    #ldr     $s1, =(Pico+0x10000)  # lr=Pico.vram
     lui     $s1, %hi(Pico+0x10000)
     li		$s5, %lo(Pico+0x10000)
     add     $s1, $s1, $s5         # $s1=Pico.vram
@@ -1269,13 +1234,8 @@ DrawWindowFull:
 	lw      $s5, 16($sp)
 	lw      $s6, 20($sp)
 	addiu   $sp, $sp, 24
-    #ldmfd   sp!, {$t4-$s2,$s3}
     jr      $ra
     nop
-	#ldmnefd sp!, {$t4-$s2,pc}      # hack: simply assume that whole window uses same priority
-
-#.pool
-
 
 # ---------------- sprites ---------------
 
@@ -1332,20 +1292,16 @@ DrawWindowFull:
     sll		$a1, $t5, 24
     bltz	$a1, 54f			 # end of tile
     nop
-    #ldmmifd sp!, {$a0-$t9,pc}    # end of tile
 .if \hflip
 	move	$s5, $t8
     sub     $t8, $t8, 8          # sx-=8
     sub		$s5, $s5, $t8
     blez	$s5, 54f       # tile offscreen
     nop
-    #ldmlefd sp!, {$a0-$t9,pc}    # tile offscreen
 .else
-    #cmp     $t4, 512
     sub		$s5, $t8, 328
     bgez	$s5, 54f              # tile offscreen
     nop
-    #ldmgefd sp!, {$a0-$t9,pc}    # tile offscreen
 .endif
     move    $t6, $s3            # $a2=sy
     add     $a1, $s2, $t8         # pdest=scrpos+sx
@@ -1371,11 +1327,9 @@ DrawWindowFull:
 .endif
 
     # offscreen?
-    #cmp     $a2, (START_ROW*8)
     ble     $t6, (START_ROW*8), 52b
     nop
 
-    #cmp     $a2, (END_ROW*8+8)
     sub		$s5, $t6, (END_ROW*8+8)
     bgez     $s5, 52b
     nop
@@ -1404,8 +1358,6 @@ DrawWindowFull:
 .global DrawSpriteFull # unsigned int *sprite
 
 DrawSpriteFull:
-    #stmfd   sp!, {$a0-$t9,lr}
-
 	addiu   $sp, $sp, -24
 	sw      $s6, 20($sp)
 	sw      $s5, 16($sp)
@@ -1413,6 +1365,10 @@ DrawSpriteFull:
 	sw      $s3, 8($sp)
 	sw      $s2, 4($sp)
 	sw      $s1, ($sp)
+
+	li		$t0, -4
+	li		$t1, 4
+	li		$t2, 512
 
     lw      $a3, ($a0)        # sprite[0]
     sll		$t5, $a3, 4
@@ -1438,13 +1394,9 @@ DrawSpriteFull:
     srl     $a3, $a3, 9       # $a3=pal=((code>>9)&0x30);
 
 	lw		$s2, (PicoDraw2FB)     # $s2=scrpos
-    #lui     $s2, %hi(PicoDraw2FB)
-    #li		$s5, %lo(PicoDraw2FB)
-    #add     $s2, $s2, $s5         # $s2=scrpos
     lui     $s1, %hi(Pico+0x10000)
     li		$s5, %lo(Pico+0x10000)
     add     $s1, $s1, $s5         # $s1=Pico.vram
-    #lw      $s2, ($s2)
     sub     $a1, $s3, (START_ROW*8)
     li      $a0, 512
     mul     $s5, $a1, $a0
@@ -1455,16 +1407,10 @@ DrawSpriteFull:
     sll     $s5, $t5, 8
     or      $t5, $t6, $s5        # $t5=width|(height<<8)|(height<<24)
 
-    #tst    $ra, #0x1000
-    #li		$s5, 0x1000
-    #bne    $s3, $s5,  .dsf_vflip   # vflip?
     and		$s5, $s4, 0x1000
     bnez    $s5, .dsf_vflip   # vflip?
     nop
 
-    #tst     $ra, #0x0800         # hflip?
-    #li		$s5, 0x0800
-    #bne     $s3, $s5,  .dsf_hflip   # hflip?
     and		$s5, $s4, 0x0800
     bnez    $s5, .dsf_hflip   # hflip?
     nop
@@ -1477,9 +1423,6 @@ DrawSpriteFull:
     nop
 
 .dsf_vflip:
-    #tst     $ra, #0x0800
-    #li		$s5, 0x0800
-    #bne     $t8, $s5,  .dsf_vflip_hflip   # hflip?
     and		$s5, $s4, 0x0800
     bnez    $s5, .dsf_vflip_hflip   # hflip?
     nop
@@ -1490,8 +1433,6 @@ DrawSpriteFull:
 .dsf_vflip_hflip:
     SpriteLoop 1, 1
     nop
-
-#.pool
 
 # vim:filetype=mipsasm
 
