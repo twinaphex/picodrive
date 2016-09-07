@@ -9,7 +9,7 @@
 .eqv POPT_EN_32X,    1048576 #(1 << 20)
 
 .set noreorder
-.set at
+.set noat
 
 .text
 .align 4
@@ -29,30 +29,35 @@ PicoRead8_sram: # u32 a, u32 d
     li		$t0, %lo(Pico+0x22200)
     add     $a3, $a3, $t0
     lw	    $a1, 8($a2)     # SRam.end
-    bgt     $a0, $a1, m_read8_nosram
+    sub		$t0, $a0, $a1
+    bgtz    $t0, m_read8_nosram
     nop
     lw	    $a1, 4($a2)     # SRam.start
-    blt     $a0, $a1, m_read8_nosram
+    sub		$t0, $a0, $a1
+    bltz    $t0, m_read8_nosram
     nop
     lbu	    $a1, 0x11($a3)  # Pico.m.sram_reg
     li		$t0, SRR_MAPPED
-    bne     $a1, $t0, m_read8_nosram
+    and		$t0, $a1, $t0
+    beqz    $t0, m_read8_nosram
     nop
     lw	    $a1, 0x0c($a2)
     li		$t0, SRF_EEPROM
-    bne     $a1, $t0, m_read8_eeprom
+    and		$t0, $a1, $t0
+    bnez    $t0, m_read8_eeprom
     nop
     lw	    $a1, 4($a2)		# SRam.start
     lw      $a2, ($a2)      # SRam.data
     sub     $a0, $a0, $a1
     add     $a0, $a0, $a2
-    lw	    $v0, ($a0)
+    lbu	    $v0, ($a0)
     jr      $ra
     nop
 
 m_read8_nosram:
     lw      $a1, 4($a3)     # romsize
-    bgt     $a0, $a1, m_read8_nosram_gt
+    sub		$t0, $a0, $a1
+    bgtz    $t0, m_read8_nosram_gt
     nop
     # XXX: banking unfriendly
     lw      $a1, ($a3)
@@ -76,11 +81,12 @@ m_read8_eeprom:
 	lw      $ra, ($sp)
 	lw      $a1, 4($sp)      # reload $r0 so we can return to caller
 	addiu   $sp, $sp, 8      # restore $sp, freeing the allocated space
-	li		$t0, 1
-	bne     $a1, $t0, m_read8_eeprom_ne
+	and		$t0, $a1, 1
+	bnez    $t0, m_read8_eeprom_ne
 	nop
-	srl		$v0, $a0, 8
+	srl		$v0, $v0, 8
 m_read8_eeprom_ne:
+	move	$v0, $a0
 	jr $ra                    # return
     nop
 
@@ -162,25 +168,30 @@ PicoRead16_sram: # u32 a, u32 d
     li		$t0, %lo(Pico+0x22200)
     add     $a3, $a3, $t0
     lw	    $a1, 8($a2)     # SRam.end
-    bgt     $a0, $a1, m_read16_nosram
+    sub		$t0, $a0, $a1
+    bgtz    $t0, m_read16_nosram
     nop
     lw	    $a1, 4($a2)     # SRam.start
-    blt     $a0, $a1, m_read16_nosram
+    sub		$t0, $a0, $a1
+    bltz    $a0, m_read16_nosram
     nop
     lbu	    $a1, 0x11($a3)  # Pico.m.sram_reg
     li		$t0, SRR_MAPPED
-    bne     $a1, $t0, m_read16_nosram
+    and		$t0, $a1, $t0
+    beqz    $t0, m_read16_nosram
     nop
     lw	    $a1, 0x0c($a2)
     li		$t0, SRF_EEPROM
-    bne     $a1, $t0, EEPROM_read_
+    and		$t0, $a1, $t0
+    bnez    $t0, EEPROM_read_
     nop
     lw	    $a1, 4($a2)		# SRam.start
     lw      $a2, ($a2)      # SRam.data
     sub     $a0, $a0, $a1
     add     $a0, $a0, $a2
-    lbu     $a1, 1($a0)
-    lw	    $t0, ($a0)
+    lbu     $a1, ($a0)
+    addi	$a0, $a0, 1
+    lbu	    $t0, ($a0)
     sll		$t0, $a1, 8
     or      $a0, $a0, $t0
     jr      $ra
@@ -193,13 +204,14 @@ EEPROM_read_:
 
 m_read16_nosram:
     lw      $a1, 4($a3)     # romsize
-    bgt     $a0, $a1, m_read16_nosram_gt
+    sub		$t0, $a0, $a1
+    bgtz    $t0, m_read16_nosram_gt
     nop
     # XXX: banking unfriendly
     lw      $a1, ($a3)
     add		$t0, $a1, $a0
-    lw      $v0, ($t0)
-    andi	$v0, $v0, 0xffff
+    lh      $v0, ($t0)
+    #andi	$v0, $v0, 0xffff
     jr      $ra
     nop
 
@@ -286,14 +298,15 @@ PicoRead16_32x_:
 PicoWrite8_io: # u32 a, u32 d
 	li		$t0, 0xffffe1
 	and		$a2, $a0, $t0       # most commonly we get i/o port write,
-    xor     $a2, $a2, 0xa10000  # so check for it first
+	li		$t0, 0xa10000
+    xor     $a2, $a2, $t0   # so check for it first
     xor     $a2, $a2, 1
     beqz    $a2, io_ports_write_
     nop
 
 m_write8_not_io:
-    li      $t0, 1
-    bne     $a0, $t0, m_write8_not_z80ctl # even addrs only
+    and     $t0, $a0, 1
+    bnez    $t0, m_write8_not_z80ctl # even addrs only
     nop
     and     $a2, $a0, 0xff00
     li      $t0, 0x1100
@@ -312,7 +325,8 @@ m_write8_not_io_1:
 
 m_write8_not_z80ctl:
     # unlikely
-    xor     $a2, $a0, 0xa10000
+    li		$t0, 0xa10000
+    xor     $a2, $a0, $t0
     xor     $a2, $a2, 0x003000
     move	$t0, $a2
     xor     $a2, $a2, 0x0000f1
@@ -333,12 +347,13 @@ m_write8_not_z80ctl:
     nop
 
 m_write8_not_sreg:
-    lui     $t2, %hi(PicoOpt)
-    li		$t0, %lo(PicoOpt)
-    add     $t2, $t2, $t0
-    lw      $t2, ($t2)
+	lw		$t2, (PicoOpt)
+    #lui     $t2, %hi(PicoOpt)
+    #li		$t0, %lo(PicoOpt)
+    #add     $t2, $t2, $t0
+    #lw      $t2, ($t2)
     li		$t0, POPT_EN_32X
-    and		$t0, $t0, $t2
+    and		$t0, $t2, $t0
     bnez	$t0, PicoWrite8_32x_
     nop
 	jr      $ra
@@ -383,7 +398,8 @@ m_write16_not_io_1:
 m_write16_not_z80ctl:
     # unlikely
 
-    xor     $a2, $a0, 0xa10000
+	li		$t0, 0xa10000
+    xor     $a2, $a0, $t0
     xor     $a2, $a2, 0x003000
     xor     $a2, $a2, 0x0000f0
     beqz    $a2, m_write8_not_sreg
