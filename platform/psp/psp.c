@@ -206,6 +206,8 @@ void psp_init(void)
 	sceCtrlSetSamplingCycle(0);
 	sceCtrlSetSamplingMode(PSP_CTRL_MODE_ANALOG);
 
+	psp_set_cpu_clock(333);     //TODO: trick, adequar em plat
+
 	g_menuscreen_w = 512;
 	g_menuscreen_h = 272;
 
