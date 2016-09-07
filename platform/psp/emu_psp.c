@@ -872,6 +872,7 @@ void pemu_forced_frame(int no_scale, int do_emu)
 	int eo_old = currentConfig.EmuOpt;
 
 	PicoOpt &= ~POPT_ALT_RENDERER;
+	currentConfig.renderer = RT_8BIT_ACC;
 	PicoOpt |= POPT_ACC_SPRITES;
 	if (!no_scale)
 		PicoOpt |= POPT_EN_SOFTSCALE;
@@ -893,21 +894,22 @@ void pemu_forced_frame(int no_scale, int do_emu)
 		PicoDrawSetCallbacks(EmuScanSlowBegin16, EmuScanSlowEnd16);
 		break;
 	case RT_8BIT_ACC:
-
 		PicoDraw2SetOutBuf(NULL, 328 );
 
-		if(!is_16bit_mode()) {
-			PicoDrawSetOutFormat(PDF_8BIT, 0);
-			PicoDrawSetOutBuf((unsigned char *)VRAM_CACHED_STUFF + 8, 512 );
-			PicoDrawSetCallbacks(EmuScanSlowBegin8, EmuScanSlowEnd8);
-		}
-
-		else {
-			PicoDrawSetOutFormat(PDF_NONE, 0);
+		if(is_16bit_mode()) {
+			if (PicoAHW & PAHW_SMS)
+				PicoDrawSetOutFormat(PDF_RGB555, 0);
+			else
+				PicoDrawSetOutFormat(PDF_NONE, 0);
 			PicoDrawSetOutBuf((unsigned short *)VRAM_CACHED_STUFF + 8, 512 );
 			PicoDrawSetCallbacks(EmuScanSlowBegin16, EmuScanSlowEnd16);
 		}
 
+		else {
+			PicoDrawSetOutFormat(PDF_8BIT, 0);
+			PicoDrawSetOutBuf((unsigned char *)VRAM_CACHED_STUFF + 8, 512 );
+			PicoDrawSetCallbacks(EmuScanSlowBegin8, EmuScanSlowEnd8);
+		}
 		break;
 	case RT_8BIT_FAST:
 		PicoOpt |= POPT_ALT_RENDERER;
