@@ -25,9 +25,9 @@
 .text
 .align 2
 
-.global BackFillFull # int reg7
+.global BackFillFull_asm # int reg7
 
-BackFillFull:
+BackFillFull_asm:
 	#addiu  $sp, $sp, -4     # allocate 1 word on the stack
     #sw     $sp, ($ra)
 
@@ -544,9 +544,9 @@ BackFillFull:
 
 #static void DrawLayerFull(int plane, int *hcache, int planestart, int planeend)
 
-.global DrawLayerFull
+.global DrawLayerFull_asm
 
-DrawLayerFull:
+DrawLayerFull_asm:
 	addiu   $sp, $sp, -24
 	sw      $s6, 20($sp)
 	sw      $s5, 16($sp)
@@ -886,6 +886,7 @@ DrawLayerFull:
 
 .rtrloop_exit:
 	li		$s5, 0x00010000
+	sll     $t4, $t5, 8
     add     $t5, $t5, $s5
     sll     $t4, $t5, 8
     sll		$s5, $s4, 24
@@ -912,9 +913,9 @@ DrawLayerFull:
     jr      $ra
     nop
 
-.global DrawTilesFromCacheF # int *hc
+.global DrawTilesFromCacheF_asm # int *hc
 
-DrawTilesFromCacheF:
+DrawTilesFromCacheF_asm:
 	addiu   $sp, $sp, -24
 	sw      $s6, 20($sp)
 	sw      $s5, 16($sp)
@@ -1043,9 +1044,9 @@ DrawTilesFromCacheF:
 # ###############
 
 # (tile_start<<16)|row_start
-.global DrawWindowFull # int tstart, int tend, int prio
+.global DrawWindowFull_asm # int tstart, int tend, int prio
 
-DrawWindowFull:
+DrawWindowFull_asm:
 	addiu   $sp, $sp, -24
 	sw      $s6, 20($sp)
 	sw      $s5, 16($sp)
@@ -1355,9 +1356,9 @@ DrawWindowFull:
 
 
 
-.global DrawSpriteFull # unsigned int *sprite
+.global DrawSpriteFull_asm # unsigned int *sprite
 
-DrawSpriteFull:
+DrawSpriteFull_asm:
 	addiu   $sp, $sp, -24
 	sw      $s6, 20($sp)
 	sw      $s5, 16($sp)
