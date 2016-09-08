@@ -53,7 +53,7 @@ void plat_video_menu_begin(void)
 
 void plat_video_menu_end(void)
 {
-	plat_video_flip();
+	plat_video_flip(0);
 }
 
 static struct in_default_bind in_psp_defbinds[] =
