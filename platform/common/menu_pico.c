@@ -563,34 +563,22 @@ static const char *mgn_opt_vsync(int id, int *offs)
 static int mh_opt_vsync(int id, int keys) {
 
 	if(keys & PBTN_RIGHT) {
-		if( !( currentConfig.EmuOpt & 0x2000 ) && !( currentConfig.EmuOpt & 0x10000 ) ) {  // never
-#if 0   // no option 'sometimes'
-			currentConfig.EmuOpt |= 0x12000;          // sometimes
-#else
-			currentConfig.EmuOpt |= 0x2000;           // always
-#endif
+		if( !( currentConfig.EmuOpt & EOPT_VSYNC ) && !( currentConfig.EmuOpt & EOPT_VSYNC_MODE ) ) {  // never
+			currentConfig.EmuOpt |= (EOPT_VSYNC|EOPT_VSYNC_MODE);          // sometimes
 		}
-#if 0
-		else if( ( currentConfig.EmuOpt & 0x2000 ) && ( ( currentConfig.EmuOpt & 0x10000 ) ) ) {  // sometimes
-			currentConfig.EmuOpt &= ~0x10000;         // always
+
+		else if( ( currentConfig.EmuOpt & EOPT_VSYNC ) && ( ( currentConfig.EmuOpt & EOPT_VSYNC_MODE ) ) ) {  // sometimes
+			currentConfig.EmuOpt &= ~EOPT_VSYNC_MODE;         // always
 		}
-#endif
 	}
 
 	else {
-#if 0
-		if( ( currentConfig.EmuOpt & 0x2000 ) && ( ( currentConfig.EmuOpt & 0x10000 ) ) ) {  // sometimes
-			currentConfig.EmuOpt &= ~0x12000;    // never
+		if( ( currentConfig.EmuOpt & EOPT_VSYNC ) && ( ( currentConfig.EmuOpt & EOPT_VSYNC_MODE ) ) ) {  // sometimes
+			currentConfig.EmuOpt &= ~(EOPT_VSYNC|EOPT_VSYNC_MODE);    // never
 		}
 
-		else
-#endif
-			if( ( currentConfig.EmuOpt & 0x2000 ) && ( !( currentConfig.EmuOpt & 0x10000 ) ) ) {  // always
-#if 0
-				currentConfig.EmuOpt |= 0x12000;          // sometimes
-#else
-				currentConfig.EmuOpt &= ~0x12000;    // never
-#endif
+		else if( ( currentConfig.EmuOpt & EOPT_VSYNC ) && ( !( currentConfig.EmuOpt & EOPT_VSYNC_MODE ) ) ) {  // always
+			currentConfig.EmuOpt |= (EOPT_VSYNC|EOPT_VSYNC_MODE);          // sometimes
 		}
 	}
 	return 0;

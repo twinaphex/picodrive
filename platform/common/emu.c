@@ -1386,6 +1386,7 @@ void emu_loop(void)
 		int skip = 0;
 		int diff;
 
+
 		pprof_start(main);
 
 		if (reset_timing) {
@@ -1505,11 +1506,19 @@ void emu_loop(void)
 
 			vsync = 0;
 			// sleep or vsync if we are still too fast
-			if (diff > target_frametime_x3 && (currentConfig.EmuOpt & EOPT_VSYNC)) {
-				// we are too fast
-				vsync = 1;
-				timestamp = get_ticks();
-				diff = timestamp * 3 - timestamp_aim_x3;
+			if (currentConfig.EmuOpt & EOPT_VSYNC) {
+				if( currentConfig.EmuOpt & EOPT_VSYNC_MODE ) {  //sometimes
+					if (diff > target_frametime_x3) {
+						// we are too fast
+						vsync = 1;
+						timestamp = get_ticks();
+						diff = timestamp * 3 - timestamp_aim_x3;
+					}
+				}
+
+				else {     // always
+					vsync = 1;
+				}
 			}
 			if (diff > target_frametime_x3) {
 				// still too fast
