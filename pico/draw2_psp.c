@@ -754,17 +754,17 @@ static void DrawDisplayFull_asm(void)
 
 	HighCache2A[1] = HighCache2B[1] = 0;
 	if (PicoDrawMask & PDRAW_LAYERB_ON)
-		DrawLayerFull_asm(1, HighCache2B, START_ROW, (maxcolc<<16)|END_ROW);
+		DrawLayerFull_c(1, HighCache2B, START_ROW, (maxcolc<<16)|END_ROW);
 	if (PicoDrawMask & PDRAW_LAYERA_ON) switch (hvwin)
 	{
 		case 4:
 		// fullscreen window
-		DrawWindowFull_c(START_ROW, (maxcolc<<16)|END_ROW, 0);
+			DrawWindowFull_c(START_ROW, (maxcolc<<16)|END_ROW, 0);
 		break;
 
 		case 3:
 		// we have plane A and both v and h windows
-		DrawLayerFull_asm(0, HighCache2A, planestart, planeend);
+		DrawLayerFull_c(0, HighCache2A, planestart, planeend);
 		DrawWindowFull_c( winstart&~0xff0000, (winend&~0xff0000)|(maxcolc<<16), 0); // h
 		DrawWindowFull_c((winstart&~0xff)|START_ROW, (winend&~0xff)|END_ROW, 0);    // v
 		break;
@@ -772,20 +772,22 @@ static void DrawDisplayFull_asm(void)
 		case 2:
 		case 1:
 		// both window and plane A visible, window is vertical XOR horizontal
-		DrawLayerFull_asm(0, HighCache2A, planestart, planeend);
+		DrawLayerFull_c(0, HighCache2A, planestart, planeend);
 		DrawWindowFull_c(winstart, winend, 0);
 		break;
 
 		default:
 		// fullscreen plane A
-		DrawLayerFull_asm(0, HighCache2A, START_ROW, (maxcolc<<16)|END_ROW);
+		DrawLayerFull_c(0, HighCache2A, START_ROW, (maxcolc<<16)|END_ROW);
 		break;
 	}
 	if (PicoDrawMask & PDRAW_SPRITES_LOW_ON)
 		DrawAllSpritesFull_asm(0, maxw);
 
-	if (HighCache2B[1]) DrawTilesFromCacheF_asm(HighCache2B);
-	if (HighCache2A[1]) DrawTilesFromCacheF_asm(HighCache2A);
+	if (HighCache2B[1])
+		DrawTilesFromCacheF_asm(HighCache2B);
+	if (HighCache2A[1])
+		DrawTilesFromCacheF_asm(HighCache2A);
 	if (PicoDrawMask & PDRAW_LAYERA_ON) switch (hvwin)
 	{
 		case 4:
