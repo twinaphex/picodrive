@@ -1462,9 +1462,9 @@ void plat_status_msg_clear(void)
 	clearArea(0);
 }
 
-void plat_video_flip(void)
+void plat_video_flip(int vsync)
 {
-	psp_video_flip(0);
+	psp_video_flip(vsync);
 }
 
 void pemu_scan_prepare(void){

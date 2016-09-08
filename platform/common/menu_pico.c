@@ -519,6 +519,8 @@ static int menu_loop_adv_options(int id, int keys)
 
 // ------------ gfx options menu ------------
 
+int vsync_opt;
+
 static int mh_set_scale_unscaled_centered(int id, int keys)
 {
 	plat_set_scale_unscaled_centered();
@@ -547,6 +549,51 @@ static int mh_set_scale_cut_borders(int id, int keys)
 {
 	plat_set_scale_cut_borders();
 	return 1;
+}
+
+static const char *mgn_opt_vsync(int id, int *offs)
+{
+	const char *val = "never";
+	if (currentConfig.EmuOpt & 0x2000)
+		val = (currentConfig.EmuOpt & 0x10000) ? "sometimes" : "always";
+	sprintf(static_buff, "%s", val);
+	return static_buff;
+}
+
+static int mh_opt_vsync(int id, int keys) {
+
+	if(keys & PBTN_RIGHT) {
+		if( !( currentConfig.EmuOpt & 0x2000 ) && !( currentConfig.EmuOpt & 0x10000 ) ) {  // never
+#if 0   // no option 'sometimes'
+			currentConfig.EmuOpt |= 0x12000;          // sometimes
+#else
+			currentConfig.EmuOpt |= 0x2000;           // always
+#endif
+		}
+#if 0
+		else if( ( currentConfig.EmuOpt & 0x2000 ) && ( ( currentConfig.EmuOpt & 0x10000 ) ) ) {  // sometimes
+			currentConfig.EmuOpt &= ~0x10000;         // always
+		}
+#endif
+	}
+
+	else {
+#if 0
+		if( ( currentConfig.EmuOpt & 0x2000 ) && ( ( currentConfig.EmuOpt & 0x10000 ) ) ) {  // sometimes
+			currentConfig.EmuOpt &= ~0x12000;    // never
+		}
+
+		else
+#endif
+			if( ( currentConfig.EmuOpt & 0x2000 ) && ( !( currentConfig.EmuOpt & 0x10000 ) ) ) {  // always
+#if 0
+				currentConfig.EmuOpt |= 0x12000;          // sometimes
+#else
+				currentConfig.EmuOpt &= ~0x12000;    // never
+#endif
+		}
+	}
+	return 0;
 }
 
 static const char h_gamma[] = "Gamma/brightness adjustment (default 1.00)";
@@ -583,6 +630,7 @@ static menu_entry e_menu_gfx_options[] =
 	mee_enum   ("Video output mode", MA_OPT_VOUT_MODE, plat_target.vout_method, men_dummy),
 	mee_enum   ("Renderer",          MA_OPT_RENDERER, currentConfig.renderer, renderer_names),
 	mee_enum   ("Filter",            MA_OPT3_FILTERING, currentConfig.filter, men_dummy),
+	mee_cust ("Wait for vsync (slow)",          MA_OPT3_VSYNC, mh_opt_vsync, mgn_opt_vsync),
 	mee_range_cust_h("Gamma correction", MA_OPT2_GAMMA, currentConfig.gamma, 1, 300, mgn_aopt_gamma, h_gamma),
 	mee_range_cust_h("Scale factor", MA_OPT3_SCALE, currentConfig.scale_int, 100, 200, mgn_aopt_scale, ""),
 	mee_range_cust_h("Hor. scale (for low res. games)", MA_OPT3_HSCALE32, currentConfig.hscale32_int, 100, 200, mgn_aopt_hscale32, ""),
@@ -988,7 +1036,7 @@ static const char credits[] =
 	"Eke, Stef: some Sega CD code\n"
 	"Inder, ketchupgun: graphics\n"
 #ifdef PSP
-	"Robson Alcantara: PSP port reborn\n"
+	"Robson Santana: PSP port reborn\n"
 #endif
 #ifdef __GP2X__
 	"Squidge: mmuhack\n"

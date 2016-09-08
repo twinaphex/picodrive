@@ -206,6 +206,8 @@ void psp_init(void)
 	sceCtrlSetSamplingCycle(0);
 	sceCtrlSetSamplingMode(PSP_CTRL_MODE_ANALOG);
 
+	flip_after_sync = 1;
+
 	g_menuscreen_w = 512;
 	g_menuscreen_h = 272;
 

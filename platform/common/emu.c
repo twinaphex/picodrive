@@ -1361,6 +1361,7 @@ void emu_loop(void)
 	char *notice_msg = NULL;
 	char fpsbuff[24];
 	int fskip_cnt = 0;
+	int vsync = 0;
 
 	fpsbuff[0] = 0;
 
@@ -1409,7 +1410,7 @@ void emu_loop(void)
 			{
 				notice_msg_time = 0;
 				plat_status_msg_clear();
-				plat_video_flip();
+				plat_video_flip(vsync);
 				plat_status_msg_clear(); /* Do it again in case of double buffering */
 				notice_msg = NULL;
 			}
@@ -1493,7 +1494,7 @@ void emu_loop(void)
 		timestamp_aim_x3 += target_frametime_x3;
 
 		if (!skip && !flip_after_sync)
-			plat_video_flip();
+			plat_video_flip(0);
 
 		/* frame limiter */
 		if (!skip && !reset_timing
@@ -1502,10 +1503,11 @@ void emu_loop(void)
 			unsigned int timestamp = get_ticks();
 			diff = timestamp_aim_x3 - timestamp * 3;
 
+			vsync = 0;
 			// sleep or vsync if we are still too fast
 			if (diff > target_frametime_x3 && (currentConfig.EmuOpt & EOPT_VSYNC)) {
 				// we are too fast
-				plat_video_wait_vsync();
+				vsync = 1;
 				timestamp = get_ticks();
 				diff = timestamp * 3 - timestamp_aim_x3;
 			}
@@ -1516,7 +1518,7 @@ void emu_loop(void)
 		}
 
 		if (!skip && flip_after_sync)
-			plat_video_flip();
+			plat_video_flip(vsync);
 
 		pprof_end(main);
 	}

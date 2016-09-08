@@ -98,7 +98,7 @@ void plat_video_menu_begin(void);
 void plat_video_menu_end(void);
 void plat_video_menu_leave(void);
 
-void plat_video_flip(void);
+void plat_video_flip(int vsync);
 void plat_video_wait_vsync(void);
 
 /* return the dir/ where configs, saves, bios, etc. are found */
