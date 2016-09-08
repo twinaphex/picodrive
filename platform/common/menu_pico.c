@@ -618,7 +618,7 @@ static menu_entry e_menu_gfx_options[] =
 	mee_enum   ("Video output mode", MA_OPT_VOUT_MODE, plat_target.vout_method, men_dummy),
 	mee_enum   ("Renderer",          MA_OPT_RENDERER, currentConfig.renderer, renderer_names),
 	mee_enum   ("Filter",            MA_OPT3_FILTERING, currentConfig.filter, men_dummy),
-	mee_cust ("Wait for vsync (slow)",          MA_OPT3_VSYNC, mh_opt_vsync, mgn_opt_vsync),
+	mee_cust   ("Wait for vsync",    MA_OPT3_VSYNC, mh_opt_vsync, mgn_opt_vsync),
 	mee_range_cust_h("Gamma correction", MA_OPT2_GAMMA, currentConfig.gamma, 1, 300, mgn_aopt_gamma, h_gamma),
 	mee_range_cust_h("Scale factor", MA_OPT3_SCALE, currentConfig.scale_int, 100, 200, mgn_aopt_scale, ""),
 	mee_range_cust_h("Hor. scale (for low res. games)", MA_OPT3_HSCALE32, currentConfig.hscale32_int, 100, 200, mgn_aopt_hscale32, ""),
