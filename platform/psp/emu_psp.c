@@ -540,6 +540,10 @@ void blit1(void)
 			memset32((int *)pd, 0, 320/2);
 	}
 
+    // clean the screen last line for Virtua Racing (MD)
+	if (PicoAHW & PAHW_SVP)
+		memset32((int *)(VRAM_CACHED_STUFF+512*231), 0xe0e0e0e0, 320/4);
+
 	if (PicoAHW & PAHW_PICO)
 		draw_pico_ptr();
 
