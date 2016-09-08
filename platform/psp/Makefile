@@ -164,6 +164,10 @@ AS := psp-as
 ../../cpu/fame/famec.o : ../../cpu/fame/famec.c
 	@echo ">>>" $<
 	$(CC) $(CFLAGS) -Wno-unused -c $< -o $@
+	
+../../pico/carthw/svp/ssp16.o : ../../pico/carthw/svp/ssp16.c
+	@echo ">>>" $<
+	$(CC) $(CFLAGS) -O3 -c $< -o $@
 
 ../../pico/misc.o : ../../pico/misc.c
 	@echo ">>>" $<
