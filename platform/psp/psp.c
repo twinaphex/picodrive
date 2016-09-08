@@ -206,8 +206,6 @@ void psp_init(void)
 	sceCtrlSetSamplingCycle(0);
 	sceCtrlSetSamplingMode(PSP_CTRL_MODE_ANALOG);
 
-	psp_set_cpu_clock(333);     //TODO: trick, adequar em plat
-
 	g_menuscreen_w = 512;
 	g_menuscreen_h = 272;
 
@@ -271,19 +269,6 @@ unsigned int psp_pad_read(int blocking)
 	if (pad.Ly > 128 + ANALOG_DEADZONE) buttons |= PBTN_NUB_DOWN;
 
 	return buttons;
-}
-
-int psp_get_cpu_clock(void)
-{
-	return scePowerGetCpuClockFrequencyInt();
-}
-
-int psp_set_cpu_clock(int clock)
-{
-	int ret = scePowerSetClockFrequency(clock, clock, clock/2);
-	if (ret != 0) lprintf("failed to set clock: %i\n", ret);
-
-	return ret;
 }
 
 char *psp_get_status_line(void)
@@ -409,11 +394,6 @@ void lprintf(const char *fmt, ...)
 #endif
 }
 
-static int bat_capacity_get(void)
-{
-	return scePowerGetBatteryLifePercent();
-}
-
 int plat_target_init(void)
 {
 	return 0;
@@ -506,7 +486,40 @@ int plat_wait_event(int *fds_hnds, int count, int timeout_ms)
 	return ret;
 }
 
+int cpu_clock_get(void)
+{
+	return scePowerGetCpuClockFrequencyInt();
+}
+
+int cpu_clock_set(int clock)
+{
+	int ret = scePowerSetClockFrequency(clock, clock, clock/2);
+	if (ret != 0) lprintf("failed to set clock: %i\n", ret);
+
+	return ret;
+}
+
+int psp_get_cpu_clock(void)
+{
+	return scePowerGetCpuClockFrequencyInt();
+}
+
+int psp_set_cpu_clock(int clock)
+{
+	int ret = scePowerSetClockFrequency(clock, clock, clock/2);
+	if (ret != 0) lprintf("failed to set clock: %i\n", ret);
+
+	return ret;
+}
+
+static int bat_capacity_get(void)
+{
+	return scePowerGetBatteryLifePercent();
+}
+
 struct plat_target plat_target = {
+	cpu_clock_get,
+	cpu_clock_set,
 	bat_capacity_get,
 };
 
