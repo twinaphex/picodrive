@@ -319,7 +319,7 @@ skip_7:
 
 .macro hle_flushflags
     and     $t6, $t6, -16
-    mrs     $a1, cpsr
+    #mrs     $a1, cpsr
     srl		$s5, $a1, 28
     or     $t6, $t6, $s5
 .endm
@@ -636,7 +636,7 @@ FUNCTION(ssp_hle_07_036):
     # copy part
     lw     $a1, (SSP_OFFS_GR+SSP_PMC*4)($t7)
     lw     $a2, SSP_OFFS_DRAM($t7)
-    sll     $a1, $a1,  16
+    sll     $a1, $a1, 16
     srl		$s5, $a1, 15
     add     $a1, $a2, $s5	# addr (based)
     lhu    $a2, ($t7)	# pattern
