@@ -52,7 +52,7 @@ ifeq "$(amalgamate)" "1"
 OBJS += ../../picoAll.o
 else
 OBJS += ../../pico/cart.o ../../pico/memory.o ../../pico/misc.o ../../pico/pico.o ../../pico/sek.o ../../pico/videoport.o \
-	    ../../pico/draw2_psp.o ../../pico/draw.o ../../pico/z80if.o ../../pico/patch.o ../../pico/draw_amips.o \
+	    ../../pico/draw2.o ../../pico/draw.o ../../pico/z80if.o ../../pico/patch.o ../../pico/draw_amips.o \
 	    ../../pico/misc_amips.o ../../pico/debug.o ../../pico/state.o ../../pico/media.o ../../pico/sms.o ../../pico/eeprom.o \
 	    ../../pico/mode4.o ../../pico/draw2_amips.o ../../pico/memory_amips.o 
 # Pico - CD
@@ -173,7 +173,7 @@ AS := psp-as
 	@echo ">>>" $<
 	$(CC) $(CFLAGS) -c $< -o $@ -D_ASM_MISC_C_AMIPS
 	
-../../pico/draw2_psp.o : ../../pico/draw2_psp.c
+../../pico/draw2.o : ../../pico/draw2.c
 	@echo ">>>" $<
 	$(CC) $(CFLAGS) -O2 -c $< -o $@ -D_ASM_DRAW_C	
 

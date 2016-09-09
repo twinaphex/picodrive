@@ -568,8 +568,8 @@ DrawLayerFull_asm:
     lui     $s1, %hi(Pico+0x10000)
     li		$s5, %lo(Pico+0x10000)
     add     $s1, $s1, $s5         # $s1=Pico.vram
-    lb      $t5, 13($s2)          # pvid->reg(13)
-    lb      $t7, 11($s2)
+    lbu      $t5, 13($s2)          # pvid->reg(13)
+    lbu      $t7, 11($s2)
 
     sub     $s4, $a3, $a2
     li		$s5, 0x00ff0000
@@ -583,11 +583,11 @@ DrawLayerFull_asm:
     and     $t5, $t5, $s5         # just in case
 
     and		$s5, $t7, 3           # full screen scroll? (if 0)
-    lb      $t7, 16($s2)          # ??hh??ww
+    lbu      $t7, 16($s2)          # ??hh??ww
     bnez	$s5, .rtrloop_skip_1
     nop
     add		$s5, $s1, $t5
-    lh      $t5, ($s5)
+    lhu      $t5, ($s5)
     li		$s5, 0x0000fc00
     not		$s5, $s5
     and     $t5, $t5, $s5         # $t5=hscroll (0-0x3ff)
@@ -653,13 +653,13 @@ DrawLayerFull_asm:
     # Find name table:
     bnez	$a0, .rtrloop_skip_8
     nop
-    lb  	$t4, 2($s2)
+    lbu  	$t4, 2($s2)
     srl     $t4, $t4, 3
     b		.rtrloop_skip_9
     nop
 
 .rtrloop_skip_8:
-    lb  	$t4, 4($s2)
+    lbu  	$t4, 4($s2)
 
 .rtrloop_skip_9:
     and     $t4, $t4, 7
@@ -704,8 +704,8 @@ DrawLayerFull_asm:
     sub     $t7, $s5, $t7
     sw      $t7, ($t6)             # push y-offset to tilecache
     add		$t6, $t6, $t1
-    li	    $t4, 512
-    mul		$s5, $t4, $t7
+    #move    $t4, $t2
+    mul		$s5, $t2, $t7
     add     $s2, $s5, $s2          # scrpos+=(8-(vscroll&7))*512;
 
     li      $t9, 0xff000000        # $t9=(prevcode<<8)|flags: 1~tile empty, 2~tile singlecolor
@@ -753,7 +753,7 @@ DrawLayerFull_asm:
 .rtrloop_skip_14:
     srl     $t7, $t7, 16          # halfwords
     add		$s5, $s1, $t7
-    lh      $t7, ($s5)
+    lhu      $t7, ($s5)
 
 .rtr_hscroll_done:
 	li		$s5, 0xff000000
@@ -798,8 +798,8 @@ DrawLayerFull_asm:
     not		$s5, $s5
     and     $t4, $s3, $s5          # Pico.vram(nametab_row+(tilex&xmask));
     add		$s5, $t7, $t4
-    lh      $t7, ($s5)             # $t7=code (int, but from unsigned, no sign extend)
-    and		$t7, $t7, 0xffff       # trick: only lower bits
+    lhu      $t7, ($s5)             # $t7=code (int, but from unsigned, no sign extend)
+    #and		$t7, $t7, 0xffff       # trick: only lower bits
 
     and     $s5, $t7, 0x8000
     bnez    $s5, .rtr_hiprio
@@ -829,7 +829,7 @@ DrawLayerFull_asm:
 
 .rtr_samecode:
 
-	move	$s1, $s1
+	#move	$s1, $s1
 	li		$s5, 0x100000
     and     $s5, $t9, $s5       # vflip?
     bnez    $s5, .rtr_vflip
@@ -886,7 +886,6 @@ DrawLayerFull_asm:
 
 .rtrloop_exit:
 	li		$s5, 0x00010000
-	sll     $t4, $t5, 8
     add     $t5, $t5, $s5
     sll     $t4, $t5, 8
     sll		$s5, $s4, 24
@@ -1058,11 +1057,12 @@ DrawWindowFull_asm:
 	li		$t0, -4
 	li		$t1, 4
 	li		$t2, 512
+	li		$t3, 1
 
     lui     $s2, %hi(Pico+0x22228)
     li		$s5, %lo(Pico+0x22228)
     add     $s2, $s2, $s5         # $s2=Pico.video
-    lb 		$s3, 3($s2)        # pvid->reg(3)
+    lbu 		$s3, 3($s2)        # pvid->reg(3)
     sll     $s3, $s3, 10
 
     lw      $t4, 12($s2)
@@ -1093,7 +1093,7 @@ DrawWindowFull_asm:
     li		$s5, %lo(Pico+0x10000)
     add     $s1, $s1, $s5         # $s1=Pico.vram
     add		$s5, $s1, $t7
-    lh      $t7, ($s5)
+    lhu      $t7, ($s5)
     srl		$s5, $t7, 15
     bne		$a2, $s5, .dwfexit
     nop
@@ -1147,11 +1147,11 @@ DrawWindowFull_asm:
     nop
 
 .dwfloop_enter:
-    lh      $t7, ($t6)      # $t7=code
+    lhu      $t7, ($t6)      # $t7=code
     add		$t6, $t6, 2
 
-	srl		$t7, $t9, 8
-    bne     $t7, $t9, .dwf_notsamecode
+	srl		$s5, $t9, 8
+    bne     $t7, $s5, .dwf_notsamecode
     nop
     # we know stuff about this tile already
     and     $s5, $t9, 1
@@ -1222,7 +1222,7 @@ DrawWindowFull_asm:
     sub     $t8, $t8, $s5
     bltz	$t8, .dwfexit
     nop
-    add     $s2, $s2, 328*8
+    add     $s2, $s2, 512*8
     add     $s3, $s3, $t5         # nametab+=nametab_step
     b       .dwfloop_outer
     nop
