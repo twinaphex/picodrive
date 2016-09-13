@@ -508,6 +508,9 @@ int emu_reload_rom(const char *rom_fname_in)
 	if (currentConfig.EmuOpt & EOPT_EN_SRAM)
 		emu_save_load_game(1, 1);
 
+	PicoSetInputDevice(0, currentConfig.input_dev0);
+	PicoSetInputDevice(1, currentConfig.input_dev1);
+
 	// state autoload?
 	if (autoload) {
 		int time, newest = 0, newest_slot = -1;
