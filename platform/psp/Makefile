@@ -7,14 +7,21 @@ PSPSDK = $(shell psp-config --pspsdk-path)
 #use_mz80 = 1
 amalgamate = 0
 for_15fw = 0
-release = 1
+release = 0
 profile = 0
+dynarecs = 0
 # :!touch platform/psp/psp.c
 
 CFLAGS += -IC:/pspsdk/powermgr/src/include
 CFLAGS += -IC:/pspsdk/psp/sdk/include/libc
 CFLAGS += -I../.. -I. -DNO_SYNC 
 CFLAGS += -Wall -Winline -G0
+
+#SVP dynarec
+ifeq "$(dynarecs)" "1"
+CFLAGS += -D_SVP_DRC 
+endif
+
 #CFLAGS += -DLPRINTF_STDIO
 
 ifeq "$(profile)" "1"
@@ -68,6 +75,12 @@ OBJS += ../../pico/32x/32x.o ../../pico/32x/32x_draw.o \
 # Pico - carthw
 OBJS += ../../pico/carthw/carthw.o ../../pico/carthw/svp/svp.o ../../pico/carthw/svp/svp_memory.o \
 		../../pico/carthw/svp/ssp16.o
+		
+ifeq "$(dynarecs)" "1"		
+OBJS += ../../pico/carthw/svp/compiler_mips.o ../../pico/carthw/svp/stub_amips.o ../../cpu/drc/cmn.o cache.o 
+		
+endif		
+		
 # Pico - Pico
 OBJS += ../../pico/pico/pico_pico.o ../../pico/pico/pico_memory.o ../../pico/pico/xpcm.o
 endif
@@ -120,9 +133,12 @@ DIRS = platform platform/psp platform/common pico pico/cd pico/pico pico/sound p
 	zlib unzip cpu cpu/musashi cpu/fame cpu/mz80 cpu/cz80
 
 
-LIBS += -lpng -lm -lpspgu -lpsppower -lpspaudio -lpsprtc -lpspaudiocodec -lpspkubridge
+LIBS += -lpng -lm -lpspgu -lpsppower -lpspaudio -lpsprtc -lpspaudiocodec -lpspkubridge 
 ifeq "$(profile)" "1"
 LIBS += -lpspprof
+endif
+ifeq "$(release)" "0"
+LIBS += -lpspgdb_kernel -lpspgdb_user
 endif
 LDFLAGS += -Wl,-Map=PicoDrive.map
 
@@ -165,9 +181,15 @@ AS := psp-as
 	@echo ">>>" $<
 	$(CC) $(CFLAGS) -Wno-unused -c $< -o $@
 	
+../../cpu/sh2/sh2.o : ../../cpu/sh2/sh2.c	
+	@echo ">>>" $<
+	$(CC) $(CFLAGS) -O3 -c $< -o $@
+	
+ifeq "$(release)" "1"	
 ../../pico/carthw/svp/ssp16.o : ../../pico/carthw/svp/ssp16.c
 	@echo ">>>" $<
 	$(CC) $(CFLAGS) -O3 -c $< -o $@
+endif
 
 ../../pico/misc.o : ../../pico/misc.c
 	@echo ">>>" $<
