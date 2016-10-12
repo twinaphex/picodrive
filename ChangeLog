@@ -1,3 +1,6 @@
+1.91 (2016-09-01)
+  + Revived PSP support (Robson Santana).
+
 1.91 (2013-10-12)
   + Added OpenDingux support (Paul Cercueil).
   * Save directory changed to ~/.picodrive/ for generic platform build
