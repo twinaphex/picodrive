@@ -365,7 +365,7 @@ skip_3:
     nop
 
 skip_4:
-    lw      $a3, -8($a1)
+    #lw      $a3, -8($a1)
     addu    $s3, $s3, 4
     #srl     $a3, $a3, 26
     #li		$s6, -2
@@ -610,6 +610,23 @@ skip_8_2:
     addu    $t5, $t5, $s6
 
     srl     $t5, $t5, 13
+	move    $s5, $t5
+
+	blez	$s5, 10f
+	nop
+	lui		$s7, 0x0
+	b		12f
+	nop
+10:
+	bnez    $s5, 11f
+	nop
+	lui     $s7, 0x6000
+	b		12f
+	nop
+11:
+	lui 	$s7, 0x8000
+
+12:
     srl		$s6, $t8, 23
     addu    $a1, $t7, $s6
     sh      $t5, ($a1)
@@ -1054,7 +1071,23 @@ hle_07_036_ending1:
     lw      $a2, ($t7)
     and     $a0, $a0, $a2
     sll     $t5, $a0, 16
+	move    $s5, $t5
 
+	blez	$s5, skip21
+	nop
+	lui		$s7, 0x0
+	b		skip23
+	nop
+skip21:
+	bnez    $s5, skip22
+	nop
+	lui     $s7, 0x6000
+	b		skip23
+	nop
+skip22:
+	lui 	$s7, 0x8000
+
+skip23:	
     lw      $a1, 4($t7)	# new mode
     addu    $a2, $t7, 0x400
     sh      $a1, (0x6c+4*4+2)($a2) # SSP_OFFS_PM_WRITE+4*4 (high)
@@ -1081,7 +1114,24 @@ hle_07_036_ret:
 hle_07_036_ending2:
     subu    $s2, $s2, 3
     sll     $t5, $t5, 1
-    bltz    $t5, hle_07_036_ret
+	move    $s5, $t5
+
+	blez	$s5, skip24
+	nop
+	lui		$s7, 0x0
+	b		skip26
+	nop
+skip24:
+	bnez    $s5, skip25
+	nop
+	lui     $s7, 0x6000
+	b		skip26
+	nop
+skip25:
+	lui 	$s7, 0x8000
+
+skip26:	
+    bltz    $s5, hle_07_036_ret
     nop
     li      $a0, 0x87
     j       ssp_drc_next	# let the dispatcher finish this
