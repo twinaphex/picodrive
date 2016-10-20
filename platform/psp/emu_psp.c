@@ -798,6 +798,16 @@ void pemu_sound_start(void)
 		PicoOpt_old  = PicoOpt;
 		pal_old = Pico.m.pal;
 	}
+
+	static int mp3_init_done_ = 0;
+
+	if (PicoAHW & PAHW_MCD) {
+		// mp3...
+		if (!mp3_init_done_) {
+			mp3_init();
+			mp3_init_done_ = 1;
+		}
+	}
 }
 
 void pemu_sound_stop(void)

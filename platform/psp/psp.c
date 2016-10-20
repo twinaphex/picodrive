@@ -18,6 +18,7 @@
 #include <psprtc.h>
 #include <pspgu.h>
 #include <pspsdk.h>
+#include <psputils.h>
 
 #include "psp.h"
 #include "emu.h"
@@ -495,6 +496,12 @@ int cpu_clock_get(void)
 
 int cpu_clock_set(int clock)
 {
+	if ( clock < 19 )
+		clock = 19;
+
+	if ( clock > 333 )
+		clock = 333;
+
 	int ret = scePowerSetClockFrequency(clock, clock, clock/2);
 	if (ret != 0) lprintf("failed to set clock: %i\n", ret);
 
@@ -508,6 +515,12 @@ int psp_get_cpu_clock(void)
 
 int psp_set_cpu_clock(int clock)
 {
+	if ( clock < 19 )
+		clock = 19;
+
+	if ( clock > 333 )
+		clock = 333;
+
 	int ret = scePowerSetClockFrequency(clock, clock, clock/2);
 	if (ret != 0) lprintf("failed to set clock: %i\n", ret);
 
@@ -536,8 +549,22 @@ void plat_finish(void)
 	gprof_cleanup();
 #endif
 #ifndef GCOV
+	mp3_deinit();
 	psp_finish();
 #endif
 }
+
+#ifdef _SVP_DRC
+void cache_flush_d_inval_i(void *start_addr, void *end_addr)
+{
+	int size = end_addr - start_addr;
+
+	sceKernelDcacheWritebackInvalidateRange(start_addr, size);
+	invalidate_icache_region(start_addr, size);
+#if 0
+	sceKernelIcacheClearAll();
+#endif
+}
+#endif
 
 
