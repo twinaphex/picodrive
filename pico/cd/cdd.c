@@ -461,9 +461,11 @@ int cdd_unload(void)
       if (cdd.toc.tracks[i].fd)
       {
         /* close file */
+#ifndef PSP
         if (Pico_mcd->cdda_type == CT_MP3)
           fclose(cdd.toc.tracks[i].fd);
         else
+#endif
           pm_close(cdd.toc.tracks[0].fd);
 
         /* detect single file images */
