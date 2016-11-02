@@ -60,8 +60,20 @@ static int get_inc(int mode)
 	return inc;
 }
 
+static int ssp_pm_read_count = 0;
+
 u32 ssp_pm_read(int reg)
 {
+	ssp_pm_read_count++;
+
+	if( ssp_pm_read_count == 64 ) {
+		ssp_pm_read_count += 0;
+	}
+
+	if( ssp_pm_read_count == 65 ) {
+		ssp_pm_read_count += 0;
+	}
+
 	u32 d = 0, mode;
 
 	if (ssp->emu_status & SSP_PMC_SET)
@@ -102,10 +114,14 @@ u32 ssp_pm_read(int reg)
 	if (d & 0x000f) { dst &= ~0x000f; dst |= d & 0x000f; } \
 }
 
+static int ssp_pm_write_count = 0;
+
 void ssp_pm_write(u32 d, int reg)
 {
 	unsigned short *dram;
 	int mode, addr;
+
+	ssp_pm_write_count++;
 
 //	unsigned int x;
 //	asm volatile ("move %0, $t7" : "=r" (x));
@@ -236,9 +252,138 @@ static struct
 #define A_COND_LE 0xd
 
 static int count_ = 0;
+static int breakpoint_count = 0;
+unsigned int a0_;
+unsigned int s5_;
+int *mem_value = 0x904cfd0;
+int *mem_value2 = 0x904cef0;
+int prev_mem_value = 0;
 
 void breakpoint(void) {
-	count_ += 0;
+
+//	asm volatile ("addiu $sp, $sp, -60");
+//	asm volatile ("sw $s7, 56($sp)");
+//	asm volatile ("sw $s6, 52($sp)");
+//	asm volatile ("sw $s5, 48($sp)");
+//	asm volatile ("sw $s4, 44($sp)");
+//	asm volatile ("sw $s3, 40($sp)");
+//	asm volatile ("sw $s2, 36($sp)");
+//	asm volatile ("sw $s1, 32($sp)");
+//	asm volatile ("sw $t9, 28($sp)");
+//	asm volatile ("sw $t8, 24($sp)");
+//	asm volatile ("sw $t7, 20($sp)");
+//	asm volatile ("sw $t6, 16($sp)");
+//	asm volatile ("sw $t5, 12($sp)");
+//	asm volatile ("sw $t4, 8($sp)");
+//	asm volatile ("sw $a3, 4($sp)");
+//	asm volatile ("sw $a2, ($sp)");
+
+//	if (ssp_pm_read_count == 64) {
+//		breakpoint_count++;
+//		if (breakpoint_count == 18)  {
+//
+//			asm volatile ("move %0, $a0" : "=r" (a0_));
+//			asm volatile ("sw $a0, %0" : "=m" (a0_));
+//
+//			asm volatile ("move %0, $s5" : "=r" (s5_));
+//			asm volatile ("sw $s5, %0" : "=m" (s5_));
+//
+//			//printf("1:$t7 -> %04x\n", x);
+//
+//			count_ += 0;
+//		}
+//	}
+
+	asm volatile ("move %0, $a0" : "=r" (a0_));
+	asm volatile ("sw $a0, %0" : "=m" (a0_));
+
+	//printf("%d: $a0: %d\n", breakpoint_count, a0_);
+	//printf("$a0: %d; ", a0_);
+
+	if( ( breakpoint_count >= 663674  ) ) { // && ( breakpoint_count < 333430 ) ) {   489982
+		//printf("%d: $a0: %d\n", breakpoint_count, a0_);
+
+		if( breakpoint_count == 5109 ) {
+			count_ += 0;
+		}
+//
+//		if( breakpoint_count == 5136 ) {
+//			count_ += 0;
+//		}
+	}
+
+	if ( ( count_ >= 6000 ) ) {// && ( count < 650 ) ){
+		//printf("$a0: %d; ", a0_);
+		printf("%d: $a0: %d; ", breakpoint_count, a0_);
+		if( *mem_value != prev_mem_value ) {
+			//printf("%d: $a0: %d\n", breakpoint_count, a0_);
+			//printf("mem adr: 0x%08x d: 0x%08x mem adr2: 0x%08x d: 0x%08x count: %d\n", mem_value, *mem_value, mem_value2, *mem_value2, count_);
+
+			if ( ( *mem_value == 0x00240100 ) ) {// && ( count < 650 ) ){
+				count_ += 0;
+			}
+//
+//			else {
+//				count_ += 0;
+//			}
+		}
+		prev_mem_value = *mem_value;
+
+		if( ( a0_ == 768 ) ) { // && ( count_ >= 2000 ) ) {
+			count_ += 0;
+		}
+	}
+
+//	if( ( a0_ == 10121) && ( count_ >= 2000 ) ) {
+//		count_ += 0;
+//	}
+//
+//	if( ( a0_ == 282) && ( count_ >= 4040 ) ) {
+//		count_ += 0;
+//	}
+//
+//	if( ( a0_ == 2068) && ( count_ >= 4037 ) ) {
+//		count_ += 0;
+//	}
+
+	breakpoint_count++;
+
+//	asm volatile ("sw $a2, ($sp)");
+//	asm volatile ("sw $a3, 4($sp)");
+//	asm volatile ("sw $t4, 8($sp)");
+//	asm volatile ("sw $t5, 12($sp)");
+//	asm volatile ("sw $t6, 16($sp)");
+//	asm volatile ("sw $t7, 20($sp)");
+//	asm volatile ("sw $t8, 24($sp)");
+//	asm volatile ("sw $t9, 28($sp)");
+//	asm volatile ("sw $s1, 32($sp)");
+//	asm volatile ("sw $s2, 36($sp)");
+//	asm volatile ("sw $s3, 40($sp)");
+//	asm volatile ("sw $s4, 44($sp)");
+//	asm volatile ("sw $s5, 48($sp)");
+//	asm volatile ("sw $s6, 52($sp)");
+//	asm volatile ("sw $s7, 56($sp)");
+//	asm volatile ("addiu $sp, $sp, -60");
+}
+
+static int first_time = 1;
+unsigned int a1_;
+unsigned int a2_;
+
+void breakpoint2(void) {
+	if (ssp_pm_read_count == 64) {
+		if (breakpoint_count == 18)  {
+			if (first_time) {
+				asm volatile ("move %0, $a1" : "=r" (a1_));
+				asm volatile ("sw $a1, %0" : "=m" (a1_));
+
+				asm volatile ("move %0, $a2" : "=r" (a2_));
+				asm volatile ("sw $a2, %0" : "=m" (a2_));
+
+				first_time = 0;
+			}
+		}
+	}
 }
 
 void update_mips_flags_register(void) {
@@ -508,6 +653,11 @@ static void tr_make_dirty_ST(void)
 static void tr_mov16(int r, int val)
 {
 	if (hostreg_r[r] != val) {
+
+		if( ( r == 0 ) && ( val == 2 ) ) {
+			prev_mem_value = *mem_value;
+		}
+
 		MIPS_LUI(arm_reg_to_mips(r), val>>16);
 		MIPS_ORI(arm_reg_to_mips(r),arm_reg_to_mips(r), val);
 #if 0
@@ -2056,11 +2206,13 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 		// call cond, addr
 		case 0x24: {
 			u32 *jump_op = NULL;
+			int nop_size = 0;
 			tmpv = tr_cond_check(op);
 			if (tmpv != A_COND_AL) {
 				jump_op = tcache_ptr;
 				MIPS_MOVE(MIPS_a0,MIPS_zero);  // placeholder for branch
 				MIPS_NOP();                    // mips need one instruction slot after branch instruction
+				nop_size = 2;
 #if 0
 				EOP_MOV_IMM(0, 0, 0); // placeholder for branch
 #endif
@@ -2087,6 +2239,15 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 			if (tmpv != A_COND_AL)
 				tr_mov16_cond(tr_neg_cond(tmpv), 0, *pc);
 			tr_r0_to_PC(tmpv == A_COND_AL ? imm : -1);
+
+//			MIPS_ADDIU(MIPS_sp, MIPS_sp, -72);
+//			MIPS_SW(MIPS_a1, 4,MIPS_sp);
+//			MIPS_SW(MIPS_a0, 0,MIPS_sp);
+//			emith_call(breakpoint);
+//			MIPS_LW(MIPS_a0, 0,MIPS_sp);
+//			MIPS_LW(MIPS_a1, 4,MIPS_sp);
+//			MIPS_ADDIU(MIPS_sp, MIPS_sp, 72);
+
 			ret |= 0x10000;
 			*end_cond = tmpv;
 			*jump_pc = imm;
@@ -2121,6 +2282,15 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 			if (tmpv != A_COND_AL)
 				tr_mov16_cond(tr_neg_cond(tmpv), 0, *pc);
 			tr_r0_to_PC(tmpv == A_COND_AL ? imm : -1);
+
+//			MIPS_ADDIU(MIPS_sp, MIPS_sp, -72);
+//			MIPS_SW(MIPS_a1, 4,MIPS_sp);
+//			MIPS_SW(MIPS_a0, 0,MIPS_sp);
+//			emith_call(breakpoint);
+//			MIPS_LW(MIPS_a0, 0,MIPS_sp);
+//			MIPS_LW(MIPS_a1, 4,MIPS_sp);
+//			MIPS_ADDIU(MIPS_sp, MIPS_sp, 72);
+
 			ret |= 0x10000;
 			*end_cond = tmpv;
 			*jump_pc = imm;
@@ -2738,13 +2908,44 @@ static void *emit_block_epilogue(int cycles, int cond, int pc, int end_pc)
 	return end_ptr;
 }
 
+//int *mem_value = 0x904cfd0;
+//int prev_mem_value = 0;
+int reg_value;
+
 void *ssp_translate_block(int pc)
 {
 	unsigned int op, op1, imm, ccount = 0;
 	unsigned int *block_start, *block_end;
 	int ret, end_cond = A_COND_AL, jump_pc = -1;
 
+	int cycles;
+
+	asm volatile ("move %0, $t8" : "=r" (reg_value));
+	asm volatile ("sw $t8, %0" : "=m" (reg_value));
+
+	if ( ( count_ >= 4020 ) ) {// && ( count < 650 ) ){
+		if( *mem_value != prev_mem_value ) {
+			printf("mem adr: 0x%08x d: 0x%08x\n", mem_value, *mem_value);
+		}
+		prev_mem_value = *mem_value;
+	}
+
+//	if ( ( count_ == 569 ) ) {// && ( count < 650 ) ){
+//		if( reg_value != prev_mem_value ) {
+//			printf("reg: $t8 d: 0x%08x\n", reg_value);
+//		}
+//		prev_mem_value = reg_value;
+//	}
+
 	//printf("translate %04x -> %04x\n", pc<<1, (tcache_ptr-tcache)<<2);
+
+	if( count_ == 530 ) {
+		asm volatile ("subu $s2, $s2, 8");
+	}
+
+	if( count_ == 542 ) {
+		asm volatile ("subu $s2, $s2, 4");
+	}
 
 	block_start = tcache_ptr;
 	known_regb = 0;
@@ -2760,19 +2961,22 @@ void *ssp_translate_block(int pc)
 		op1 = op >> 9;
 		imm = (u32)-1;
 
-		if( pc == 53 ) {
+		if( ( ( n_in_ops + 1 ) % 500 ) == 0 ) {
 			count_ += 0;
 		}
 
-		if( ( n_in_ops + 1 ) >= 1127 ) {
+		if( ( n_in_ops + 1 ) >= 3303 ) {
 			count_ += 0;
 		}
 
-		if( pc == ( 915 ) ) {
+		if( pc == 769 ) {
 			count_ += 0;
 		}
 
-		printf("PC: %d, op: 0x%04x, op1: 0x%04x, count: %d, i: %d\n", pc, op, op>>9, count_, n_in_ops + 1 );
+		asm volatile ("move %0, $s2" : "=r" (cycles));
+		asm volatile ("sw $s2, %0" : "=m" (cycles));
+
+		printf("PC: %d, op: 0x%04x, op1: 0x%04x, count: %d, i: %d, cycles: %d known_regs.r[2]: %d\n", pc, op, op>>9, count_, n_in_ops + 1, cycles, known_regs.r[2] );
 
 		if ((op1 & 0xf) == 4 || (op1 & 0xf) == 6)
 			imm = PROGRAM(pc++); // immediate
@@ -2834,11 +3038,31 @@ void *ssp_translate_block(int pc)
 	cache_flush_d_inval_i(block_start, block_end);
 #endif
 
-	if( pc == ( 915 + 1 ) ) {
+	if( pc == ( 281 + 1 ) ) {
 		count_ += 0;
 	}
 
-	if( ( n_in_ops + 1 ) >= 2500 ) {
+	if( pc == 281 ) {
+		count_ += 0;
+	}
+
+	if( count_ >= 614 ) {
+		count_ += 0;
+	}
+
+	if( ( n_in_ops + 1 ) >= 1229) {
+		count_ += 0;
+	}
+
+	if( ( n_in_ops + 1 ) >= 1323) {
+		count_ += 0;
+	}
+
+	if( ( n_in_ops + 1 ) >= 767) {
+		count_ += 0;
+	}
+
+	if( ( n_in_ops + 1 ) >= 2812) {
 		count_ += 0;
 	}
 
@@ -2887,15 +3111,14 @@ int ssp1601_dyn_startup(void)
 #ifdef PSP
 	// hle'd blocks
 	ssp_block_table[0x800/2] = (void *) ssp_hle_800;
-#if 1
-	ssp_block_table[0x902/2] = (void *) ssp_hle_902; //TODO: fixme
-	ssp_block_table_iram[ 7 * SSP_BLOCKTAB_IRAM_ONE + 0x030/2] = (void *) ssp_hle_07_030;
-	ssp_block_table_iram[ 7 * SSP_BLOCKTAB_IRAM_ONE + 0x036/2] = (void *) ssp_hle_07_036;
-	ssp_block_table_iram[ 7 * SSP_BLOCKTAB_IRAM_ONE + 0x6d6/2] = (void *) ssp_hle_07_6d6;
-	ssp_block_table_iram[11 * SSP_BLOCKTAB_IRAM_ONE + 0x12c/2] = (void *) ssp_hle_11_12c;
-	ssp_block_table_iram[11 * SSP_BLOCKTAB_IRAM_ONE + 0x384/2] = (void *) ssp_hle_11_384;
-	ssp_block_table_iram[11 * SSP_BLOCKTAB_IRAM_ONE + 0x38a/2] = (void *) ssp_hle_11_38a;
-#endif
+	ssp_block_table[0x902/2] = (void *) ssp_hle_902;
+//	ssp_block_table_iram[ 7 * SSP_BLOCKTAB_IRAM_ONE + 0x030/2] = (void *) ssp_hle_07_030;
+//	ssp_block_table_iram[ 7 * SSP_BLOCKTAB_IRAM_ONE + 0x036/2] = (void *) ssp_hle_07_036;
+//	ssp_block_table_iram[ 7 * SSP_BLOCKTAB_IRAM_ONE + 0x6d6/2] = (void *) ssp_hle_07_6d6;
+//	ssp_block_table_iram[11 * SSP_BLOCKTAB_IRAM_ONE + 0x12c/2] = (void *) ssp_hle_11_12c;
+//	ssp_block_table_iram[11 * SSP_BLOCKTAB_IRAM_ONE + 0x384/2] = (void *) ssp_hle_11_384;
+//	ssp_block_table_iram[11 * SSP_BLOCKTAB_IRAM_ONE + 0x38a/2] = (void *) ssp_hle_11_38a;
+
 #endif
 
 	return 0;
@@ -2925,7 +3148,7 @@ void ssp1601_dyn_run(int cycles)
 	int val2;
 	int val = ssp->emu_status;
 
-	if(count_==529) {
+	if(count_== 569) {
 		val2 = 0;
 	}
 
@@ -2941,6 +3164,10 @@ void ssp1601_dyn_run(int cycles)
 	int ssp_x = ssp->gr[SSP_X].v;
 	int ssp_y = ssp->gr[SSP_Y].v;
 	int ssp_a = ssp->gr[SSP_A].v;
+
+	if(count_== 886) {
+		val2 = 0;
+	}
 
 //	if(count>=530) {
 //		ssp->emu_status = val;    // TODO: trick, FIXME

@@ -97,10 +97,28 @@
 .if \patch_jump
     sw      $ra, SSP_OFFS_TMP2($t7)		# jump insw. (actually call) address + 4
 .endif
+
+	#addiu   $sp, $sp, -12
+	#sw      $a1, 8($sp)
+	#sw      $a0, 4($sp)
+	#sw      $ra, ($sp)
+	#jal 	breakpoint2
+	#nop
+	#lw      $ra, ($sp)
+    #lw      $a0, 4($sp)
+    #lw      $a1, 8($sp)
+	#addiu   $sp, $sp, 12
+
     sll     $a0, $a0, 16
     srl     $a0, $a0, 16
     sw      $a0, SSP_OFFS_TMP0($t7)
-    sub		$s6, $a0, 0x400
+
+	save_registers
+    jal     breakpoint
+    nop
+    restore_registers
+
+    subu	$s6, $a0, 0x400
     bltz    $s6, 1f # ssp_de_iram
     nop
 
@@ -200,6 +218,18 @@
     sll		$s6, $a0, 2
     addu    $a1, $a2, $s6
     lw      $a2, ($a1)
+
+	#addiu   $sp, $sp, -12
+	#sw      $a1, 8($sp)
+	#sw      $a0, 4($sp)
+	#sw      $ra, ($sp)
+	#jal 	breakpoint2
+	#nop
+	#lw      $ra, ($sp)
+    #lw      $a0, 4($sp)
+    #lw      $a1, 8($sp)
+	#addiu   $sp, $sp, 12
+
 .if \patch_jump
 	bnez    $a2, ssp_drc_do_patch
     nop
@@ -350,6 +380,10 @@ skip_3:
     bnez    $s6, skip_4
     nop
     lw      $a3, ($a1)
+
+	#beqz	$a3, ssp_drc_dp_end
+	#nop
+
     #addu    $a3, $a3, 4  # need verify, maybe 4
 	#li      $a3, 0x3
     sw      $a3, -16($a1)               # move the other cond up
@@ -361,33 +395,32 @@ skip_3:
 
     sw      $zero, ($a1)                    # fill it's place with nop
 	sw      $zero, 8($a1)                    # fill it's place with nop
+
     b       ssp_drc_dp_end
     nop
 
 skip_4:
-    #lw      $a3, -8($a1)
-    addu    $s3, $s3, 4
-    #srl     $a3, $a3, 26
-    #li		$s6, -2
-    #and     $a3, $a3, $s6			# L bit
-    #sll		$s6, $s3, 6
-    #or      $a3, $a3, $s6
-    li		$a3, 4					 # BEQ opcode
+    #addu    $s3, $s3, 4
+    move    $s3, $a2
+
+    #li		$a3, 4					 # BEQ opcode
+    li		$a3, 2					 # J opcode
+
     rotr    $a3, $a3, 6              # patched branch instruction
-    #sll		$s3, $s3, 6
-    #srl		$s3, $s3, 6
-
     srl     $s3, $s3, 2
-    andi	$s3, $s3, 0xffff		 # 16 bits offset
-    or		$a3, $a3, $s3
 
-    #ori		$a3, $a3, 4
+    #andi	$s3, $s3, 0xffff		 # 16 bits offset
+    lui		$s6, 0x3ff
+    ori		$s6, $s6, 0xffff		 # 26 bits offset
+    and		$s3, $s3, $s6
+
+    or		$a3, $a3, $s3
     sw      $a3, -8($a1)             # patch the bl/b to jump directly to another handler
 
 ssp_drc_dp_end:
     sw      $a2, SSP_OFFS_TMP1($t7)
-    subu    $a0, $a1, 4
-    addu    $a1, $a1, 4
+    subu    $a0, $a1, 32
+    addu    $a1, $a1, 32
 	#addiu   $sp, $sp, -12
 	#sw      $a1, 8($sp)
 	#sw      $a0, 4($sp)
@@ -731,7 +764,7 @@ skip_8_4:
 
 ssp_hle_11_38x_loop:
     lhu     $t5, ($a0)
-    add		$a2, $a2, 2
+    add		$a0, $a0, 2
     lw      $s3, 0x224($t7)
     sll     $t5, $t5, 16
     sra		$s6, $t5, 31
@@ -739,7 +772,7 @@ ssp_hle_11_38x_loop:
     srl		$s6, $t5, 31
     addu    $t5, $t5, $s6	# abs($t5)
     sll		$s6, $s3, 16
-    sub		$s6, $t5, $s6
+    subu	$s6, $t5, $s6
     bltz    $s6, skip_9
     nop
     sll		$s6, $a1, 16
@@ -750,7 +783,7 @@ skip_9:
     lhu     $t5, ($a0)
     lw      $s3, 0x220($t7)
     srl		$s6, $s3, 16
-    sub		$s6, $t5, $s6
+    subu	$s6, $t5, $s6
     bltz    $s6, skip_10
     nop
     sll		$s6, $a1, 16
@@ -761,7 +794,7 @@ skip_10:
     addu    $a0, $a0, 2
     sll     $s3, $s3, 16
     srl		$s6, $s3, 16
-    sub		$s6, $t5, $s6
+    subu	$s6, $t5, $s6
     bgez    $s6, skip_11
     nop
     or      $a2, $a2, $a1
@@ -812,13 +845,13 @@ ssp_hle_07_6d6_loop:
     bltz	$s6, ssp_hle_07_6d6_end
     nop
     sll     $t5, $t5, 16
-    sub		$s6, $t5, $a1
+    subu	$s6, $t5, $a1
     bgez    $s6, skip_12
     nop
     move    $a1, $t5
 skip_12:
     subu    $s2,$s2,16
-    sub		$s6, $t5, $a2
+    subu	$s6, $t5, $a2
     bltz    $s6, ssp_hle_07_6d6_loop
     nop
     move    $a2, $t5
@@ -857,13 +890,13 @@ ssp_hle_07_036:
     sll     $t5, $t5, 16	# AL not needed
     subu    $s2,$s2,5
     li		$s6, (4<<16)
-    sub		$s6, $t5, $s6
+    subu	$s6, $t5, $s6
     bltz    $s6, hle_07_036_ending2
     nop
     lw      $a1, 0x1dc($t7)	# EEh
     sll		$s6, $a1, 16
     subu    $s2,$s2,5
-    sub		$s6, $t5, $s6
+    subu	$s6, $t5, $s6
     bgez    $s6, hle_07_036_ret
     nop
 
@@ -1087,7 +1120,7 @@ skip21:
 skip22:
 	lui 	$s7, 0x8000
 
-skip23:	
+skip23:
     lw      $a1, 4($t7)	# new mode
     addu    $a2, $t7, 0x400
     sh      $a1, (0x6c+4*4+2)($a2) # SSP_OFFS_PM_WRITE+4*4 (high)
@@ -1130,7 +1163,7 @@ skip24:
 skip25:
 	lui 	$s7, 0x8000
 
-skip26:	
+skip26:
     bltz    $s5, hle_07_036_ret
     nop
     li      $a0, 0x87
