@@ -97,27 +97,9 @@
 .if \patch_jump
     sw      $ra, SSP_OFFS_TMP2($t7)		# jump insw. (actually call) address + 4
 .endif
-
-	#addiu   $sp, $sp, -12
-	#sw      $a1, 8($sp)
-	#sw      $a0, 4($sp)
-	#sw      $ra, ($sp)
-	#jal 	breakpoint2
-	#nop
-	#lw      $ra, ($sp)
-    #lw      $a0, 4($sp)
-    #lw      $a1, 8($sp)
-	#addiu   $sp, $sp, 12
-
     sll     $a0, $a0, 16
     srl     $a0, $a0, 16
     sw      $a0, SSP_OFFS_TMP0($t7)
-
-	save_registers
-    jal     breakpoint
-    nop
-    restore_registers
-
     subu	$s6, $a0, 0x400
     bltz    $s6, 1f # ssp_de_iram
     nop
@@ -218,18 +200,6 @@
     sll		$s6, $a0, 2
     addu    $a1, $a2, $s6
     lw      $a2, ($a1)
-
-	#addiu   $sp, $sp, -12
-	#sw      $a1, 8($sp)
-	#sw      $a0, 4($sp)
-	#sw      $ra, ($sp)
-	#jal 	breakpoint2
-	#nop
-	#lw      $ra, ($sp)
-    #lw      $a0, 4($sp)
-    #lw      $a1, 8($sp)
-	#addiu   $sp, $sp, 12
-
 .if \patch_jump
 	bnez    $a2, ssp_drc_do_patch
     nop
@@ -380,10 +350,6 @@ skip_3:
     bnez    $s6, skip_4
     nop
     lw      $a3, ($a1)
-
-	#beqz	$a3, ssp_drc_dp_end
-	#nop
-
     #addu    $a3, $a3, 4  # need verify, maybe 4
 	#li      $a3, 0x3
     sw      $a3, -16($a1)               # move the other cond up
@@ -1120,7 +1086,7 @@ skip21:
 skip22:
 	lui 	$s7, 0x8000
 
-skip23:
+skip23:	
     lw      $a1, 4($t7)	# new mode
     addu    $a2, $t7, 0x400
     sh      $a1, (0x6c+4*4+2)($a2) # SSP_OFFS_PM_WRITE+4*4 (high)
@@ -1163,7 +1129,7 @@ skip24:
 skip25:
 	lui 	$s7, 0x8000
 
-skip26:
+skip26:	
     bltz    $s5, hle_07_036_ret
     nop
     li      $a0, 0x87
