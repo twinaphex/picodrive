@@ -107,12 +107,6 @@ void ssp_pm_write(u32 d, int reg)
 	unsigned short *dram;
 	int mode, addr;
 
-//	unsigned int x;
-//	asm volatile ("move %0, $t7" : "=r" (x));
-//	asm volatile ("sw $t7, %0" : "=m" (x));
-//
-//	printf("1:$t7 -> %04x\n", x);
-
 	if (ssp->emu_status & SSP_PMC_SET)
 	{
 		ssp->pmac_write[reg] = rPMC.v;
