@@ -38,12 +38,6 @@ void ssp_drc_next_patch(void){}
 void ssp_drc_end(void){}
 #endif
 
-#if 0
-void ssp_drc_end(void) {
-	ssp_drc_end_();
-}
-#endif
-
 #define COUNT_OP
 #include "../../../cpu/drc/emit_mips.c"
 
@@ -60,20 +54,8 @@ static int get_inc(int mode)
 	return inc;
 }
 
-static int ssp_pm_read_count = 0;
-
 u32 ssp_pm_read(int reg)
 {
-	ssp_pm_read_count++;
-
-	if( ssp_pm_read_count == 64 ) {
-		ssp_pm_read_count += 0;
-	}
-
-	if( ssp_pm_read_count == 65 ) {
-		ssp_pm_read_count += 0;
-	}
-
 	u32 d = 0, mode;
 
 	if (ssp->emu_status & SSP_PMC_SET)
@@ -114,20 +96,10 @@ u32 ssp_pm_read(int reg)
 	if (d & 0x000f) { dst &= ~0x000f; dst |= d & 0x000f; } \
 }
 
-static int ssp_pm_write_count = 0;
-
 void ssp_pm_write(u32 d, int reg)
 {
 	unsigned short *dram;
 	int mode, addr;
-
-	ssp_pm_write_count++;
-
-//	unsigned int x;
-//	asm volatile ("move %0, $t7" : "=r" (x));
-//	asm volatile ("sw $t7, %0" : "=m" (x));
-//
-//	printf("1:$t7 -> %04x\n", x);
 
 	if (ssp->emu_status & SSP_PMC_SET)
 	{
@@ -250,141 +222,6 @@ static struct
 #define A_COND_LT 0xb
 #define A_COND_GT 0xc
 #define A_COND_LE 0xd
-
-static int count_ = 0;
-static int breakpoint_count = 0;
-unsigned int a0_;
-unsigned int s5_;
-int *mem_value = 0x904cfd0;
-int *mem_value2 = 0x904cef0;
-int prev_mem_value = 0;
-
-void breakpoint(void) {
-
-//	asm volatile ("addiu $sp, $sp, -60");
-//	asm volatile ("sw $s7, 56($sp)");
-//	asm volatile ("sw $s6, 52($sp)");
-//	asm volatile ("sw $s5, 48($sp)");
-//	asm volatile ("sw $s4, 44($sp)");
-//	asm volatile ("sw $s3, 40($sp)");
-//	asm volatile ("sw $s2, 36($sp)");
-//	asm volatile ("sw $s1, 32($sp)");
-//	asm volatile ("sw $t9, 28($sp)");
-//	asm volatile ("sw $t8, 24($sp)");
-//	asm volatile ("sw $t7, 20($sp)");
-//	asm volatile ("sw $t6, 16($sp)");
-//	asm volatile ("sw $t5, 12($sp)");
-//	asm volatile ("sw $t4, 8($sp)");
-//	asm volatile ("sw $a3, 4($sp)");
-//	asm volatile ("sw $a2, ($sp)");
-
-//	if (ssp_pm_read_count == 64) {
-//		breakpoint_count++;
-//		if (breakpoint_count == 18)  {
-//
-//			asm volatile ("move %0, $a0" : "=r" (a0_));
-//			asm volatile ("sw $a0, %0" : "=m" (a0_));
-//
-//			asm volatile ("move %0, $s5" : "=r" (s5_));
-//			asm volatile ("sw $s5, %0" : "=m" (s5_));
-//
-//			//printf("1:$t7 -> %04x\n", x);
-//
-//			count_ += 0;
-//		}
-//	}
-
-	asm volatile ("move %0, $a0" : "=r" (a0_));
-	asm volatile ("sw $a0, %0" : "=m" (a0_));
-
-	//printf("%d: $a0: %d\n", breakpoint_count, a0_);
-	//printf("$a0: %d; ", a0_);
-
-	if( ( breakpoint_count >= 663674  ) ) { // && ( breakpoint_count < 333430 ) ) {   489982
-		//printf("%d: $a0: %d\n", breakpoint_count, a0_);
-
-		if( breakpoint_count == 5109 ) {
-			count_ += 0;
-		}
-//
-//		if( breakpoint_count == 5136 ) {
-//			count_ += 0;
-//		}
-	}
-
-	if ( ( count_ >= 6000 ) ) {// && ( count < 650 ) ){
-		//printf("$a0: %d; ", a0_);
-		printf("%d: $a0: %d; ", breakpoint_count, a0_);
-		if( *mem_value != prev_mem_value ) {
-			//printf("%d: $a0: %d\n", breakpoint_count, a0_);
-			//printf("mem adr: 0x%08x d: 0x%08x mem adr2: 0x%08x d: 0x%08x count: %d\n", mem_value, *mem_value, mem_value2, *mem_value2, count_);
-
-			if ( ( *mem_value == 0x00240100 ) ) {// && ( count < 650 ) ){
-				count_ += 0;
-			}
-//
-//			else {
-//				count_ += 0;
-//			}
-		}
-		prev_mem_value = *mem_value;
-
-		if( ( a0_ == 768 ) ) { // && ( count_ >= 2000 ) ) {
-			count_ += 0;
-		}
-	}
-
-//	if( ( a0_ == 10121) && ( count_ >= 2000 ) ) {
-//		count_ += 0;
-//	}
-//
-//	if( ( a0_ == 282) && ( count_ >= 4040 ) ) {
-//		count_ += 0;
-//	}
-//
-//	if( ( a0_ == 2068) && ( count_ >= 4037 ) ) {
-//		count_ += 0;
-//	}
-
-	breakpoint_count++;
-
-//	asm volatile ("sw $a2, ($sp)");
-//	asm volatile ("sw $a3, 4($sp)");
-//	asm volatile ("sw $t4, 8($sp)");
-//	asm volatile ("sw $t5, 12($sp)");
-//	asm volatile ("sw $t6, 16($sp)");
-//	asm volatile ("sw $t7, 20($sp)");
-//	asm volatile ("sw $t8, 24($sp)");
-//	asm volatile ("sw $t9, 28($sp)");
-//	asm volatile ("sw $s1, 32($sp)");
-//	asm volatile ("sw $s2, 36($sp)");
-//	asm volatile ("sw $s3, 40($sp)");
-//	asm volatile ("sw $s4, 44($sp)");
-//	asm volatile ("sw $s5, 48($sp)");
-//	asm volatile ("sw $s6, 52($sp)");
-//	asm volatile ("sw $s7, 56($sp)");
-//	asm volatile ("addiu $sp, $sp, -60");
-}
-
-static int first_time = 1;
-unsigned int a1_;
-unsigned int a2_;
-
-void breakpoint2(void) {
-	if (ssp_pm_read_count == 64) {
-		if (breakpoint_count == 18)  {
-			if (first_time) {
-				asm volatile ("move %0, $a1" : "=r" (a1_));
-				asm volatile ("sw $a1, %0" : "=m" (a1_));
-
-				asm volatile ("move %0, $a2" : "=r" (a2_));
-				asm volatile ("sw $a2, %0" : "=m" (a2_));
-
-				first_time = 0;
-			}
-		}
-	}
-}
 
 void update_mips_flags_register(void) {
 	MIPS_BLEZ(MIPS_s5,4);
@@ -534,8 +371,7 @@ static void tr_flush_dirty_pr(int r)
 	EOP_BIC_IMM(reg,reg,ror,0xff);
 #endif
 	if (known_regs.r[r] != 0){
-		MIPS_LUI(MIPS_s6,known_regs.r[r]>>16);
-		MIPS_ORI(MIPS_s6,MIPS_s6,known_regs.r[r]);
+		MIPS_ADDIU(MIPS_s6,MIPS_zero,known_regs.r[r]);
 		MIPS_ROTR(MIPS_s6,MIPS_s6,ror);
 		MIPS_OR(arm_reg_to_mips(reg),arm_reg_to_mips(reg),MIPS_s6);
 #if 0
@@ -584,8 +420,7 @@ static void tr_flush_dirty_prs(void)
 		EOP_BIC_IMM(reg,reg,ror,0xff);
 	#endif
 		if (known_regs.r[i] != 0) {
-			MIPS_LUI(MIPS_s6,known_regs.r[i]>>16);
-			MIPS_ORI(MIPS_s6,MIPS_s6,known_regs.r[i]);
+			MIPS_ADDIU(MIPS_s6,MIPS_zero,known_regs.r[i]);
 			MIPS_ROTR(MIPS_s6,MIPS_s6,ror);
 			MIPS_OR(arm_reg_to_mips(reg),arm_reg_to_mips(reg),MIPS_s6);
 	#if 0
@@ -631,8 +466,7 @@ static void tr_make_dirty_ST(void)
 		int flags = 0;
 		if (known_regs.gr[SSP_ST].h & SSP_FLAG_N) flags |= 8;
 		if (known_regs.gr[SSP_ST].h & SSP_FLAG_Z) flags |= 4;
-		MIPS_LUI(MIPS_s6,flags>>16);
-		MIPS_ORI(MIPS_s6,MIPS_s6,flags);
+		MIPS_ADDIU(MIPS_s6,MIPS_zero,flags);
 		MIPS_ROTR(MIPS_s7,MIPS_s6,4);
 #if 0
 		EOP_MSR_IMM(4/2, flags);
@@ -653,13 +487,7 @@ static void tr_make_dirty_ST(void)
 static void tr_mov16(int r, int val)
 {
 	if (hostreg_r[r] != val) {
-
-		if( ( r == 0 ) && ( val == 2 ) ) {
-			prev_mem_value = *mem_value;
-		}
-
-		MIPS_LUI(arm_reg_to_mips(r), val>>16);
-		MIPS_ORI(arm_reg_to_mips(r),arm_reg_to_mips(r), val);
+		MIPS_ADDIU(arm_reg_to_mips(r),MIPS_zero, val);
 #if 0
 		emith_move_r_imm(r, val);
 #endif
@@ -671,17 +499,14 @@ static void tr_mov16_cond(int cond, int r, int val)
 {
 	switch(cond) {
 		case A_COND_AL: break;
-		case A_COND_EQ: MIPS_BNEZ(MIPS_s5,3);MIPS_NOP();break;
-		case A_COND_NE: MIPS_BEQZ(MIPS_s5,3);MIPS_NOP();break;
-		case A_COND_MI: MIPS_BGEZ(MIPS_s5,3);MIPS_NOP();break;
-		case A_COND_PL: MIPS_BLTZ(MIPS_s5,3);MIPS_NOP();break;
+		case A_COND_EQ: MIPS_BNEZ(MIPS_s5,2);MIPS_NOP();break;
+		case A_COND_NE: MIPS_BEQZ(MIPS_s5,2);MIPS_NOP();break;
+		case A_COND_MI: MIPS_BGEZ(MIPS_s5,2);MIPS_NOP();break;
+		case A_COND_PL: MIPS_BLTZ(MIPS_s5,2);MIPS_NOP();break;
 		default: break;
 	}
 
-	MIPS_LUI(arm_reg_to_mips(r), val>>16);
-	MIPS_ORI(arm_reg_to_mips(r),arm_reg_to_mips(r), val);
-	//update_mips_flags_register();
-
+	MIPS_ADDIU(arm_reg_to_mips(r),MIPS_zero, val);
 #if 0
 	emith_op_imm(cond, 0, A_OP_MOV, r, val);
 #endif
@@ -750,9 +575,7 @@ static void tr_bank_read(int addr) /* word addr 0-0x1ff */
 	int breg = 7;
 	if (addr > 0x7f) {
 		if (hostreg_r[1] != (0x100000|((addr&0x180)<<1))) {
-			MIPS_LUI(MIPS_s6,((addr&0x180)>>1)>>16);
-			MIPS_ORI(MIPS_s6,MIPS_s6,(addr&0x180)>>1);
-			MIPS_ROTR(MIPS_s6,MIPS_s6,30);
+			MIPS_ADDIU(MIPS_s6,MIPS_zero,(addr&0x180)<<1);
 			MIPS_ADDU(MIPS_a1,MIPS_t7,MIPS_s6);      // add  $a1, $t7, ((op&0x180)<<1)
 #if 0
 			EOP_ADD_IMM(1,7,30/2,(addr&0x180)>>1);	// add  r1, r7, ((op&0x180)<<1)
@@ -774,9 +597,7 @@ static void tr_bank_write(int addr)
 	int breg = 7;
 	if (addr > 0x7f) {
 		if (hostreg_r[1] != (0x100000|((addr&0x180)<<1))) {
-			MIPS_LUI(MIPS_s6,((addr&0x180)>>1)>>16);
-			MIPS_ORI(MIPS_s6,MIPS_s6,(addr&0x180)>>1);
-			MIPS_ROTR(MIPS_s6,MIPS_s6,30);
+			MIPS_ADDIU(MIPS_s6,MIPS_zero,(addr&0x180)<<1);
 			MIPS_ADDU(MIPS_a1,MIPS_t7,MIPS_s6);      // add  $a1, $t7, ((op&0x180)<<1)
 #if 0
 			EOP_ADD_IMM(1,7,30/2,(addr&0x180)>>1);	// add  r1, r7, ((op&0x180)<<1)
@@ -786,9 +607,9 @@ static void tr_bank_write(int addr)
 		breg = 1;
 	}
 
-	if(breg==7) {
-		addr |= 0;
-	}
+//	if(breg==7) {
+//		addr |= 0;
+//	}
 
 	MIPS_SH(MIPS_a0,(addr&0x7f)<<1,arm_reg_to_mips(breg)); // sh   $t0, (op&0x7f)<<1 ($t1)
 #if 0
@@ -843,19 +664,19 @@ static void tr_ptrr_mod(int r, int mod, int need_modulo, int count)
 		MIPS_SRL(MIPS_a1,MIPS_a1,4); // srl $a1, $a1, 4
 		MIPS_ADDIU(MIPS_s6,MIPS_zero,8);
 		MIPS_SUBU(MIPS_a2,MIPS_s6,MIPS_a1); // sub $a2, 8, $a1
-		MIPS_LUI(MIPS_s6,count>>16);
-		MIPS_ORI(MIPS_s6,MIPS_s6,count);
+		MIPS_ADDIU(MIPS_s6,MIPS_zero,count);
 		MIPS_ROTR(MIPS_a3,MIPS_s6,8);    // li $a3, 0x01000000
 #if 0
 		EOP_MOV_REG_LSR(1, 1, 4);		// mov r1, r1, lsr #4
 		EOP_RSB_IMM(2, 1, 0, 8);		// rsb r1, r1, #8
 		EOP_MOV_IMM(3, 8/2, count);		// mov r3, #0x01000000
 #endif
-		if (r&3)
+		if (r&3) {
 			MIPS_ADDI(MIPS_a1,MIPS_a1,(r&3)*8); // add $a1, $a1, (r&3)*8
 #if 0
 			EOP_ADD_IMM(1, 1, 0, (r&3)*8);	// add r1, r1, #(r&3)*8
 #endif
+		}
 		MIPS_ROTRV(arm_reg_to_mips(reg),arm_reg_to_mips(reg),MIPS_a1); // rotr $mreg, $mreg, $a1
 #if 0
 		EOP_MOV_REG2_ROR(reg,reg,1);		// mov reg, reg, ror r1
@@ -899,8 +720,7 @@ static void tr_ptrr_mod(int r, int mod, int need_modulo, int count)
 		EOP_MOV_REG_ROR(reg,reg,ror);
 #endif
 		// {add|sub} $mreg, $mreg, #1<<shift
-		MIPS_LUI(MIPS_s6,(count << (8 - modulo_shift))>>16);
-		MIPS_ORI(MIPS_s6,MIPS_s6,count << (8 - modulo_shift));
+		MIPS_ADDIU(MIPS_s6,MIPS_zero,count << (8 - modulo_shift));
 		MIPS_ROTR(MIPS_s6,MIPS_s6,8);
 		if(mod==2)
 			MIPS_SUBU(arm_reg_to_mips(reg),arm_reg_to_mips(reg),MIPS_s6);
@@ -1049,8 +869,8 @@ static void tr_rX_read2(int op)
 #endif
 		}
 		if (r&3) {
-			MIPS_SRL(MIPS_s6,MIPS_a1,(r&3)*8-1);  // srl $s5, $a1, <lsr>
-			MIPS_ADDU(MIPS_a1,MIPS_t7,MIPS_s6);  // add $a1, $t7, $s5
+			MIPS_SRL(MIPS_s6,MIPS_a1,(r&3)*8-1);  // srl $s6, $a1, <lsr>
+			MIPS_ADDU(MIPS_a1,MIPS_t7,MIPS_s6);  // add $a1, $t7, $s6
 #if 0
 			EOP_ADD_REG_LSR(1,7,1, (r&3)*8-1);	// add r1, r7, r1, lsr #lsr
 #endif
@@ -1166,6 +986,7 @@ static int tr_cond_check(int op)
 		case 0x50:			/* Z matches f(?) bit */
 			if (dirty_regb & KRREG_ST) return f ? A_COND_EQ : A_COND_NE;
 			MIPS_ANDI(MIPS_s5,MIPS_t6,4);
+			update_mips_flags_register_fix_neg_over();
 #if 0
 			EOP_TST_IMM(6, 0, 4);
 #endif
@@ -1173,6 +994,7 @@ static int tr_cond_check(int op)
 		case 0x70:			/* N matches f(?) bit */
 			if (dirty_regb & KRREG_ST) return f ? A_COND_MI : A_COND_PL;
 			MIPS_ANDI(MIPS_s5,MIPS_t6,8);
+			update_mips_flags_register_fix_neg_over();
 #if 0
 			EOP_TST_IMM(6, 0, 8);
 #endif
@@ -1286,15 +1108,9 @@ static void tr_ST_to_r0(int op)
 static void tr_STACK_to_r0(int op)
 {
 	// 448
-	MIPS_ADDIU(MIPS_s6,MIPS_zero,0x20);
-
-	MIPS_ROTR(MIPS_s6,MIPS_s6,8);
-	//MIPS_ROTR(MIPS_t6,MIPS_t6,4);
+	MIPS_LUI(MIPS_s6,0x2000);
 	MIPS_SUBU(MIPS_t6,MIPS_t6,MIPS_s6);  // sub  $t6, $t6, 1<<29
-	//MIPS_ROTR(MIPS_t6,MIPS_t6,28);
-
-	MIPS_ADDIU(MIPS_s6,MIPS_zero,0x04);
-	MIPS_ROTR(MIPS_s6,MIPS_s6,24);
+	MIPS_ADDIU(MIPS_s6,MIPS_zero,0x400);
 	MIPS_ADDU(MIPS_a1,MIPS_t7,MIPS_s6);   // add  $a1, $t7, 0x400
 	MIPS_ADDI(MIPS_a1,MIPS_a1,0x48);    // add  $a1, $a1, 0x048
 	MIPS_SRL(MIPS_s6,MIPS_t6,28);       // srl	$s5, $t6, 28
@@ -1332,7 +1148,6 @@ static void tr_AL_to_r0(int op)
 			known_regs.emu_status &= ~(SSP_PMC_SET|SSP_PMC_HAVE_ADDR);
 		} else {
 			MIPS_LW(MIPS_a0,0x484,MIPS_t7);  // lw $a1, 0x484 ($t7)
-			//MIPS_LUI(MIPS_s6,(SSP_PMC_SET|SSP_PMC_HAVE_ADDR)>>16);
 			MIPS_ADDIU(MIPS_s6,MIPS_s6,SSP_PMC_SET|SSP_PMC_HAVE_ADDR);
 			MIPS_NOT(MIPS_s6,MIPS_s6);
 			MIPS_AND(MIPS_a0,MIPS_a0,MIPS_s6);
@@ -1391,7 +1206,7 @@ static void tr_PMX_to_r0(int reg)
 			MIPS_LW(MIPS_a1,0x490,MIPS_t7);   // dram_ptr
 			MIPS_LUI(MIPS_a0,((pmcv&0xffff)<<1)>>16);
 			MIPS_ORI(MIPS_a0,MIPS_a0,(pmcv&0xffff)<<1);
-			MIPS_ADDU(MIPS_s6,MIPS_a1,MIPS_a0);  // add $s5, $a1, $a0
+			MIPS_ADDU(MIPS_s6,MIPS_a1,MIPS_a0);  // add $s6, $a1, $a0
 			MIPS_LHU(MIPS_a0,0,MIPS_s6);		// lhu $a0,($s6)
 #if 0
 			EOP_LDR_IMM(1,7,0x490);		// dram_ptr
@@ -1404,10 +1219,9 @@ static void tr_PMX_to_r0(int reg)
 				tr_flush_dirty_ST();
 				MIPS_LW(MIPS_a1,0x484,MIPS_t7);   // lw $a1, 0x484($t7) // emu_status
 				MIPS_MOVE(MIPS_s5,MIPS_a0);
-				MIPS_BNEZ(MIPS_s5,8);
+				MIPS_BNEZ(MIPS_s5,7);
 				MIPS_NOP();
-				MIPS_ADDIU(MIPS_s6,MIPS_zero,1);
-				MIPS_ROTR(MIPS_s6,MIPS_s6,22);
+				MIPS_ADDIU(MIPS_s6,MIPS_zero,0x400);
 				MIPS_SUBU(MIPS_s2,MIPS_s2,MIPS_s6);  // sub $s2, $s2, 1024
 				MIPS_LUI(MIPS_s6,(flag>>8)>>16);
 				MIPS_ORI(MIPS_s6,MIPS_s6,flag>>8);
@@ -1634,8 +1448,7 @@ static void tr_r0_to_ST(int const_val)
 {
 	// VR doesn't need much accuracy here..
 	MIPS_ANDI(MIPS_a1,MIPS_a0,0x67);    // and   $a1, $a0, 0x67
-	MIPS_ADDIU(MIPS_s6,MIPS_zero,0xe0);
-	MIPS_ROTR(MIPS_s6,MIPS_s6,8);
+	MIPS_LUI(MIPS_s6,0xe000);
 	MIPS_AND(MIPS_t6,MIPS_t6,MIPS_s6);  // and $t6, $t6, (7<<29)
 	MIPS_SLL(MIPS_s6,MIPS_a1,4);		// sll	 $s5, $a1, 4
 	MIPS_OR(MIPS_t6,MIPS_t6,MIPS_s6);   // or    $t6, $t6, $s5
@@ -1652,20 +1465,13 @@ static void tr_r0_to_ST(int const_val)
 static void tr_r0_to_STACK(int const_val)
 {
 	// 448
-	MIPS_ADDIU(MIPS_s6,MIPS_zero,0x04);
-	MIPS_ROTR(MIPS_s6,MIPS_s6,24);
-	MIPS_ADDU(MIPS_a1,MIPS_t7,MIPS_s6);		// add $a1, $t7, 0x400
+	MIPS_ADDI(MIPS_a1,MIPS_t7,0x400);		// add $a1, $t7, 0x400
 	MIPS_ADDI(MIPS_a1,MIPS_a1,0x48);		// add $a1, $a1, 0x048
 	MIPS_SRL(MIPS_s6,MIPS_t6,28);			// srl $s5, $t6, 28
 	MIPS_ADDU(MIPS_a1,MIPS_a1,MIPS_s6);		// add $a1, $a1, $s5
 	MIPS_SH(MIPS_a0,0,MIPS_a1);				// sh  $a0, ($a1)
-	MIPS_ADDIU(MIPS_s6,MIPS_zero,0x20);
-
-	MIPS_ROTR(MIPS_s6,MIPS_s6,8);
-	//MIPS_ROTR(MIPS_t6,MIPS_t6,4);
+	MIPS_LUI(MIPS_s6,0x2000);
 	MIPS_ADDU(MIPS_t6,MIPS_t6,MIPS_s6);     // add $t6, $t6, (1<<29)
-	//MIPS_ROTR(MIPS_t6,MIPS_t6,28);
-
 #if 0
 	EOP_ADD_IMM(1, 7, 24/2, 0x04);		// add  r1, r7, 0x400
 	EOP_ADD_IMM(1, 1, 0, 0x48);		// add  r1, r1, 0x048
@@ -1844,10 +1650,8 @@ static void tr_r0_to_PMC(int const_val)
 	{
 		tr_flush_dirty_ST();
 		if (known_regb & KRREG_PMC) {
-			MIPS_LUI(MIPS_a1,known_regs.pmc.v>>16);
-			MIPS_ORI(MIPS_a1,MIPS_a1,known_regs.pmc.v);
+			MIPS_ADDIU(MIPS_a1,MIPS_zero,known_regs.pmc.v);
 			MIPS_SW(MIPS_a1,0x400+SSP_PMC*4,MIPS_t7);
-
 #if 0
 			emith_move_r_imm(1, known_regs.pmc.v);
 			EOP_STR_IMM(1,7,0x400+SSP_PMC*4);
@@ -1856,10 +1660,7 @@ static void tr_r0_to_PMC(int const_val)
 			dirty_regb &= ~KRREG_PMC;
 		}
 		MIPS_LW(MIPS_a1,0x484,MIPS_t7);  		// lw $a1, 0x484($t7) // emu_status
-		MIPS_ADDIU(MIPS_s6,MIPS_zero,0x04);
-		MIPS_ROTR(MIPS_s6,MIPS_s6,24);
-		MIPS_ADDU(MIPS_a2,MIPS_t7,MIPS_s6);		// add $aS, $t7, 0x400
-		//MIPS_ANDI(MIPS_s5,MIPS_a2,2);                     // TODO: remove after fix line above
+		MIPS_ADDIU(MIPS_a2,MIPS_t7,0x400);		// add $aS, $t7, 0x400
 		MIPS_ANDI(MIPS_s5,MIPS_a1,SSP_PMC_HAVE_ADDR);   // TODO: fixme, use this line
 		MIPS_BNEZ(MIPS_s5,5);
 		MIPS_NOP();
@@ -1984,12 +1785,9 @@ static int tr_detect_pm0_block(unsigned int op, int *pc, int imm)
 	if (op != 0x0840 || imm != 0) return 0;
 	pp = PROGRAM_P(*pc);
 	if (memcmp(pp, pm0_block_seq, sizeof(pm0_block_seq)) != 0) return 0;
-	MIPS_ADDIU(MIPS_s6,MIPS_zero,0xe0);
-	MIPS_ROTR(MIPS_s6,MIPS_s6,8);
+	MIPS_LUI(MIPS_s6,0xe000);
 	MIPS_AND(MIPS_t6,MIPS_t6,MIPS_s6);     // and   $t6, $t6, 7<<29     @ preserve STACK
-	MIPS_ADDIU(MIPS_s6,MIPS_zero,6);
-	MIPS_ROTR(MIPS_s6,MIPS_s6,24);
-	MIPS_OR(MIPS_t6,MIPS_t6,MIPS_s6);     // or    $t6, $t6, 0x600
+	MIPS_ORI(MIPS_t6,MIPS_t6,0x600);     // or    $t6, $t6, 0x600
 #if 0
 	EOP_AND_IMM(6, 6, 8/2, 0xe0);		// and   r6, r6, #7<<29     @ preserve STACK
 	EOP_ORR_IMM(6, 6, 24/2, 6);		// orr   r6, r6, 0x600
@@ -2151,7 +1949,7 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 #if 0
 					EOP_MOV_REG_LSR(0, reg, (r&3)*8);	// mov r0, r{7,8}, lsr #lsr
 #endif
-				MIPS_ANDI(MIPS_a0,(r&3)?arm_reg_to_mips(0):arm_reg_to_mips(reg),0xff);    // and $a0, $t{7,8}, <mask>
+				MIPS_ANDI(MIPS_a0,(r&3)?MIPS_a0:arm_reg_to_mips(reg),0xff);    // and $a0, $t{7,8}, <mask>
 #if 0
 				EOP_AND_IMM(0, (r&3)?0:reg, 0, 0xff);		// and r0, r{7,8}, <mask>
 #endif
@@ -2206,13 +2004,11 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 		// call cond, addr
 		case 0x24: {
 			u32 *jump_op = NULL;
-			int nop_size = 0;
 			tmpv = tr_cond_check(op);
 			if (tmpv != A_COND_AL) {
 				jump_op = tcache_ptr;
 				MIPS_MOVE(MIPS_a0,MIPS_zero);  // placeholder for branch
 				MIPS_NOP();                    // mips need one instruction slot after branch instruction
-				nop_size = 2;
 #if 0
 				EOP_MOV_IMM(0, 0, 0); // placeholder for branch
 #endif
@@ -2239,15 +2035,6 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 			if (tmpv != A_COND_AL)
 				tr_mov16_cond(tr_neg_cond(tmpv), 0, *pc);
 			tr_r0_to_PC(tmpv == A_COND_AL ? imm : -1);
-
-//			MIPS_ADDIU(MIPS_sp, MIPS_sp, -72);
-//			MIPS_SW(MIPS_a1, 4,MIPS_sp);
-//			MIPS_SW(MIPS_a0, 0,MIPS_sp);
-//			emith_call(breakpoint);
-//			MIPS_LW(MIPS_a0, 0,MIPS_sp);
-//			MIPS_LW(MIPS_a1, 4,MIPS_sp);
-//			MIPS_ADDIU(MIPS_sp, MIPS_sp, 72);
-
 			ret |= 0x10000;
 			*end_cond = tmpv;
 			*jump_pc = imm;
@@ -2282,15 +2069,6 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 			if (tmpv != A_COND_AL)
 				tr_mov16_cond(tr_neg_cond(tmpv), 0, *pc);
 			tr_r0_to_PC(tmpv == A_COND_AL ? imm : -1);
-
-//			MIPS_ADDIU(MIPS_sp, MIPS_sp, -72);
-//			MIPS_SW(MIPS_a1, 4,MIPS_sp);
-//			MIPS_SW(MIPS_a0, 0,MIPS_sp);
-//			emith_call(breakpoint);
-//			MIPS_LW(MIPS_a0, 0,MIPS_sp);
-//			MIPS_LW(MIPS_a1, 4,MIPS_sp);
-//			MIPS_ADDIU(MIPS_sp, MIPS_sp, 72);
-
 			ret |= 0x10000;
 			*end_cond = tmpv;
 			*jump_pc = imm;
@@ -2407,11 +2185,10 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 			tmpv = op & 0xf; // src
 			tmpv2 = tr_aop_ssp2mips(op>>13); // op
 			//tmpv3 = (tmpv2 == A_OP_CMP) ? 0 : 5;
-			tmpv3 = 5;
 			if (tmpv == SSP_P) {
 				tr_flush_dirty_P();
 				if( tmpv2 != -1 ) {
-					__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_s1,arm_reg_to_mips(tmpv3),0,tmpv2);  // OPs $t5, $t5, $s5
+					__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_s1,MIPS_t5,0,tmpv2);  // OPs $t5, $t5, $s1
 					MIPS_MOVE(MIPS_s5,MIPS_t5);
 					update_mips_flags_register_fix_neg_over();
 				}
@@ -2419,44 +2196,29 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 					MIPS_SRA(MIPS_t0,MIPS_t5,1);
 					MIPS_SRA(MIPS_t1,MIPS_s1,1);
 					MIPS_SUBU(MIPS_s5,MIPS_t0,MIPS_t1);
-					//MIPS_SUBU(MIPS_s5,MIPS_t5,MIPS_s1);  // sub $s5, $t5, $s1, replace arm cmp
 					update_mips_flags_register();
 				}
-				//MIPS_SRL(MIPS_s5,MIPS_s5,1);      //TODO: try to fix negative overflow
-
-				//MIPS_SLL(MIPS_s5,MIPS_s5,1);
 #if 0
 				EOP_C_DOP_REG_XIMM(A_COND_AL,tmpv2,1,5,tmpv3, 0,A_AM1_LSL,10); // OPs r5, r5, r10
 #endif
 			} else if (tmpv == SSP_A) {
 				if( tmpv2 != -1 ) {
-					__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_t5,arm_reg_to_mips(tmpv3),0,tmpv2);  // OPs $t5, $t5, $t5
+					__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_t5,MIPS_t5,0,tmpv2);  // OPs $t5, $t5, $t5
 					MIPS_MOVE(MIPS_s5,MIPS_t5);
 					update_mips_flags_register_fix_neg_over();
 				}
 				else {
 					MIPS_MOVE(MIPS_s5,MIPS_zero);
 					update_mips_flags_register();
-
-//					MIPS_SRL(MIPS_t0,MIPS_t5,1);
-//					MIPS_SUBU(MIPS_s5,MIPS_t0,MIPS_t0);
-//					//MIPS_SUBU(MIPS_s5,MIPS_t5,MIPS_t5);  // sub $s5, $t5, $s5, replace arm cmp
-//					update_mips_flags_register();
 				}
-				//MIPS_SRL(MIPS_s5,MIPS_s5,1);      //TODO: try to fix negative overflow
-				//update_mips_flags_register_fix_neg_over();
-				//MIPS_SLL(MIPS_s5,MIPS_s5,1);
 #if 0
 				EOP_C_DOP_REG_XIMM(A_COND_AL,tmpv2,1,5,tmpv3, 0,A_AM1_LSL, 5); // OPs r5, r5, r5
 #endif
 			} else {
 				tr_read_funcs[tmpv](op);
 				MIPS_SLL(MIPS_s6,MIPS_a0,16);
-				//MIPS_SRL(MIPS_s6,MIPS_t5,16);		//TODO: try to fix negative overflow
 				if( tmpv2 != -1 ) {
-					//MIPS_MOVE(MIPS_t3,MIPS_t5);
-					__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_s6,arm_reg_to_mips(tmpv3),0,tmpv2);  // OPs $t5, $t5, $s5
-					//__MIPS_INSN_REG(SPECIAL,MIPS_s6,MIPS_a0,arm_reg_to_mips(tmpv3),0,tmpv2);  // OPs $t5, $s6, $a0
+					__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_s6,MIPS_t5,0,tmpv2);  // OPs $t5, $t5, $s5
 					MIPS_MOVE(MIPS_s5,MIPS_t5);
 					update_mips_flags_register_fix_neg_over();
 				}
@@ -2464,55 +2226,8 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 					MIPS_SRA(MIPS_t0,MIPS_t5,1);
 					MIPS_SRA(MIPS_t1,MIPS_s6,1);
 					MIPS_SUBU(MIPS_s5,MIPS_t0,MIPS_t1);
-					//MIPS_SUBU(MIPS_s5,MIPS_t5,MIPS_s6);  // sub $s5, $t5, $s5, replace arm cmp
 					update_mips_flags_register();
-					//MIPS_SUBU(MIPS_s5,MIPS_s6,MIPS_a0);  // sub $s5, $s6, $a0, replace arm cmp
 				}
-
-//				MIPS_MOVE(MIPS_t2,MIPS_s5);
-//				if(tmpv2 == __SP_ADDU) {
-//					MIPS_LUI(MIPS_t0, 0xf000);
-//					MIPS_AND(MIPS_t1,MIPS_t3,MIPS_t0);
-//					MIPS_BEQZ(MIPS_t1,22);
-//					MIPS_NOP();
-//					MIPS_SUBU(MIPS_t1,MIPS_t0,MIPS_t1);
-//					MIPS_BEQZ(MIPS_t1,19);
-//					MIPS_NOP();
-//					MIPS_AND(MIPS_t1,MIPS_s6,MIPS_t0);
-//					MIPS_BEQZ(MIPS_t1,16);
-//					MIPS_NOP();
-//					MIPS_SUBU(MIPS_t1,MIPS_t0,MIPS_t1);
-//					MIPS_BEQZ(MIPS_t1,13);
-//					MIPS_NOP();
-//					MIPS_ADDIU(MIPS_sp, MIPS_sp, -12);
-//					MIPS_SW(MIPS_ra, 8,MIPS_sp);
-//					MIPS_SW(MIPS_a1, 4,MIPS_sp);
-//					MIPS_SW(MIPS_a0, 0,MIPS_sp);
-//					emith_call(breakpoint);
-//					MIPS_LW(MIPS_a0, 0,MIPS_sp);
-//					MIPS_LW(MIPS_a1, 4,MIPS_sp);
-//					MIPS_LW(MIPS_ra, 8,MIPS_sp);
-//					MIPS_ADDIU(MIPS_sp, MIPS_sp, 12);
-//					MIPS_SRL(MIPS_t0,MIPS_s6,16);
-//					MIPS_SRL(MIPS_t1,MIPS_t3,16);
-//					MIPS_ADDU(MIPS_s5,MIPS_t0,MIPS_t1);
-//				}
-//				MIPS_MOVE(MIPS_s6,MIPS_s5);        //TODO: try to fix negative overflow
-//				MIPS_SRL(MIPS_t0,MIPS_s5,31);
-//				MIPS_BEQZ(MIPS_t0,11);
-//				MIPS_NOP();
-//				MIPS_ADDIU(MIPS_sp, MIPS_sp, -12);
-//				MIPS_SW(MIPS_ra, 8,MIPS_sp);
-//				MIPS_SW(MIPS_a1, 4,MIPS_sp);
-//				MIPS_SW(MIPS_a0, 0,MIPS_sp);
-//				emith_call(breakpoint);
-//				MIPS_LW(MIPS_a0, 0,MIPS_sp);
-//				MIPS_LW(MIPS_a1, 4,MIPS_sp);
-//				MIPS_LW(MIPS_ra, 8,MIPS_sp);
-//				MIPS_ADDIU(MIPS_sp, MIPS_sp, 12);
-//				MIPS_SRL(MIPS_s5,MIPS_s5,1);
-				//update_mips_flags_register_fix_neg_over();
-				//MIPS_MOVE(MIPS_s5,MIPS_t2);
 #if 0
 				EOP_C_DOP_REG_XIMM(A_COND_AL,tmpv2,1,5,tmpv3,16,A_AM1_LSL, 0); // OPs r5, r5, r0, lsl #16
 #endif
@@ -2531,11 +2246,10 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 		case 0x71:
 			tmpv2 = tr_aop_ssp2mips(op>>13); // op
 			//tmpv3 = (tmpv2 == A_OP_CMP) ? 0 : 5;
-			tmpv3 = 5;
 			tr_rX_read((op&3)|((op>>6)&4), (op>>2)&3);
 			MIPS_SLL(MIPS_s6,MIPS_a0,16);
 			if( tmpv2 != -1 ) {
-				__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_s6,arm_reg_to_mips(tmpv3),0,tmpv2);  // OPs $t5, $t5, $s5
+				__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_s6,MIPS_t5,0,tmpv2);  // OPs $t5, $t5, $s5
 				MIPS_MOVE(MIPS_s5,MIPS_t5);
 				update_mips_flags_register_fix_neg_over();
 			}
@@ -2543,12 +2257,8 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 				MIPS_SRA(MIPS_t0,MIPS_t5,1);
 				MIPS_SRA(MIPS_t1,MIPS_s6,1);
 				MIPS_SUBU(MIPS_s5,MIPS_t0,MIPS_t1);
-				//MIPS_SUBU(MIPS_s5,MIPS_t5,MIPS_s6);  // sub $s5, $t5, $s5, replace arm cmp
 				update_mips_flags_register();
 			}
-			//MIPS_SRL(MIPS_s5,MIPS_s5,1);      //TODO: try to fix negative overflow
-			//update_mips_flags_register_fix_neg_over();
-			//MIPS_SLL(MIPS_s5,MIPS_s5,1);
 #if 0
 			EOP_C_DOP_REG_XIMM(A_COND_AL,tmpv2,1,5,tmpv3,16,A_AM1_LSL,0);	// OPs r5, r5, r0, lsl #16
 #endif
@@ -2566,11 +2276,10 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 		case 0x73:
 			tmpv2 = tr_aop_ssp2mips(op>>13); // op
 			//tmpv3 = (tmpv2 == A_OP_CMP) ? 0 : 5;
-			tmpv3 = 5;
 			tr_bank_read(op&0x1ff);
 			MIPS_SLL(MIPS_s6,MIPS_a0,16);
 			if( tmpv2 != -1 ) {
-				__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_s6,arm_reg_to_mips(tmpv3),0,tmpv2);  // OPs $t5, $t5, $s5
+				__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_s6,MIPS_t5,0,tmpv2);  // OPs $t5, $t5, $s5
 				MIPS_MOVE(MIPS_s5,MIPS_t5);
 				update_mips_flags_register_fix_neg_over();
 			}
@@ -2578,12 +2287,8 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 				MIPS_SRA(MIPS_t0,MIPS_t5,1);
 				MIPS_SRA(MIPS_t1,MIPS_s6,1);
 				MIPS_SUBU(MIPS_s5,MIPS_t0,MIPS_t1);
-				//MIPS_SUBU(MIPS_s5,MIPS_t5,MIPS_s6);  // sub $s5, $t5, $s5, replace arm cmp
 				update_mips_flags_register();
 			}
-			//MIPS_SRL(MIPS_s5,MIPS_s5,1);      //TODO: try to fix negative overflow
-
-			//MIPS_SLL(MIPS_s5,MIPS_s5,1);
 #if 0
 			EOP_C_DOP_REG_XIMM(A_COND_AL,tmpv2,1,5,tmpv3,16,A_AM1_LSL,0);	// OPs r5, r5, r0, lsl #16
 #endif
@@ -2602,11 +2307,10 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 			tmpv = (op & 0xf0) >> 4;
 			tmpv2 = tr_aop_ssp2mips(op>>13); // op
 			//tmpv3 = (tmpv2 == A_OP_CMP) ? 0 : 5;
-			tmpv3 = 5;
 			tr_mov16(0, imm);
 			MIPS_SLL(MIPS_s6,MIPS_a0,16);
 			if( tmpv2 != -1 ) {
-				__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_s6,arm_reg_to_mips(tmpv3),0,tmpv2);  // OPs $t5, $t5, $s5
+				__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_s6,MIPS_t5,0,tmpv2);  // OPs $t5, $t5, $s5
 				MIPS_MOVE(MIPS_s5,MIPS_t5);
 				update_mips_flags_register_fix_neg_over();
 			}
@@ -2614,12 +2318,8 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 				MIPS_SRA(MIPS_t0,MIPS_t5,1);
 				MIPS_SRA(MIPS_t1,MIPS_s6,1);
 				MIPS_SUBU(MIPS_s5,MIPS_t0,MIPS_t1);
-				//MIPS_SUBU(MIPS_s5,MIPS_t5,MIPS_s6);  // sub $s5, $t5, $s5, replace arm cmp
 				update_mips_flags_register();
 			}
-			//MIPS_SRL(MIPS_s5,MIPS_s5,1);      //TODO: try to fix negative overflow
-			//update_mips_flags_register_fix_neg_over();
-			//MIPS_SLL(MIPS_s5,MIPS_s5,1);
 #if 0
 			EOP_C_DOP_REG_XIMM(A_COND_AL,tmpv2,1,5,tmpv3,16,A_AM1_LSL,0);	// OPs r5, r5, r0, lsl #16
 #endif
@@ -2637,11 +2337,10 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 		case 0x75:
 			tmpv2 = tr_aop_ssp2mips(op>>13); // op
 			//tmpv3 = (tmpv2 == A_OP_CMP) ? 0 : 5; // mips dont has cmp
-			tmpv3 = 5;
 			tr_rX_read2(op);
 			MIPS_SLL(MIPS_s6,MIPS_a0,16);
 			if( tmpv2 != -1 ) {
-				__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_s6,arm_reg_to_mips(tmpv3),0,tmpv2);  // OPs $t5, $t5, $s5
+				__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_s6,MIPS_t5,0,tmpv2);  // OPs $t5, $t5, $s5
 				MIPS_MOVE(MIPS_s5,MIPS_t5);
 				update_mips_flags_register_fix_neg_over();
 			}
@@ -2649,12 +2348,8 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 				MIPS_SRA(MIPS_t0,MIPS_t5,1);
 				MIPS_SRA(MIPS_t1,MIPS_s6,1);
 				MIPS_SUBU(MIPS_s5,MIPS_t0,MIPS_t1);
-				//MIPS_SUBU(MIPS_s5,MIPS_t5,MIPS_s6);  // sub $s5, $t5, $s5, replace arm cmp
 				update_mips_flags_register();
 			}
-			//MIPS_SRL(MIPS_s5,MIPS_s5,1);      //TODO: try to fix negative overflow
-			//update_mips_flags_register_fix_neg_over();
-			//MIPS_SLL(MIPS_s5,MIPS_s5,1);
 #if 0
 			EOP_C_DOP_REG_XIMM(A_COND_AL,tmpv2,1,5,tmpv3,16,A_AM1_LSL,0);	// OPs r5, r5, r0, lsl #16
 #endif
@@ -2673,16 +2368,13 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 			int r;
 			tmpv2 = tr_aop_ssp2mips(op>>13); // op
 			//tmpv3 = (tmpv2 == A_OP_CMP) ? 0 : 5;
-			tmpv3 = 5;
 			r = (op&3) | ((op>>6)&4); // src
 			if ((r&3) == 3) tr_unhandled();
 
 			if (known_regb & (1 << (r+8))) {
-				MIPS_LUI(MIPS_s6,known_regs.r[r]>>16);
-				MIPS_ORI(MIPS_s6,MIPS_s6,known_regs.r[r]);
-				MIPS_ROTR(MIPS_s6,MIPS_s6,16);
+				MIPS_LUI(MIPS_s6,known_regs.r[r]);
 				if( tmpv2 != -1 ) {
-					__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_s6,arm_reg_to_mips(tmpv3),0,tmpv2);  // OPs $t5, $t5, $s5
+					__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_s6,MIPS_t5,0,tmpv2);  // OPs $t5, $t5, $s5
 					MIPS_MOVE(MIPS_s5,MIPS_t5);
 					update_mips_flags_register_fix_neg_over();
 				}
@@ -2690,12 +2382,8 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 					MIPS_SRA(MIPS_t0,MIPS_t5,1);
 					MIPS_SRA(MIPS_t1,MIPS_s6,1);
 					MIPS_SUBU(MIPS_s5,MIPS_t0,MIPS_t1);
-					//MIPS_SUBU(MIPS_s5,MIPS_t5,MIPS_s6);  // sub $s5, $t5, $s5, replace arm cmp
 					update_mips_flags_register();
 				}
-				//MIPS_SRL(MIPS_s5,MIPS_s5,1);      //TODO: try to fix negative overflow
-				//update_mips_flags_register_fix_neg_over();
-				//MIPS_SLL(MIPS_s5,MIPS_s5,1);
 #if 0
 				EOP_C_DOP_IMM(A_COND_AL,tmpv2,1,5,tmpv3,16/2,known_regs.r[r]);	// OPs r5, r5, #val<<16
 #endif
@@ -2706,10 +2394,10 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 #if 0
 					EOP_MOV_REG_LSR(0, reg, (r&3)*8);	// mov r0, r{7,8}, lsr #lsr
 #endif
-				MIPS_ANDI(MIPS_a0,(r&3)?arm_reg_to_mips(0):arm_reg_to_mips(reg),0xff);  // and $a0, $t{7,8}, <mask>
+				MIPS_ANDI(MIPS_a0,(r&3)?MIPS_a0:arm_reg_to_mips(reg),0xff);  // and $a0, $t{7,8}, <mask>
 				MIPS_SLL(MIPS_s6,MIPS_a0,16);
 				if( tmpv2 != -1 ) {
-					__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_s6,arm_reg_to_mips(tmpv3),0,tmpv2);  // OPs $t5, $t5, $s5
+					__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_s6,MIPS_t5,0,tmpv2);  // OPs $t5, $t5, $s5
 					MIPS_MOVE(MIPS_s5,MIPS_t5);
 					update_mips_flags_register_fix_neg_over();
 				}
@@ -2717,12 +2405,8 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 					MIPS_SRA(MIPS_t0,MIPS_t5,1);
 					MIPS_SRA(MIPS_t1,MIPS_s6,1);
 					MIPS_SUBU(MIPS_s5,MIPS_t0,MIPS_t1);
-					//MIPS_SUBU(MIPS_s5,MIPS_t5,MIPS_s6);  // sub $s5, $t5, $s5, replace arm cmp
 					update_mips_flags_register();
 				}
-				//MIPS_SRL(MIPS_s5,MIPS_s5,1);      //TODO: try to fix negative overflow
-				//update_mips_flags_register_fix_neg_over();
-				//MIPS_SLL(MIPS_s5,MIPS_s5,1);
 #if 0
 				EOP_AND_IMM(0, (r&3)?0:reg, 0, 0xff);		// and r0, r{7,8}, <mask>
 				EOP_C_DOP_REG_XIMM(A_COND_AL,tmpv2,1,5,tmpv3,16,A_AM1_LSL,0);	// OPs r5, r5, r0, lsl #16
@@ -2744,10 +2428,7 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 		case 0x7c:
 			tmpv2 = tr_aop_ssp2mips(op>>13); // op
 			//tmpv3 = (tmpv2 == A_OP_CMP) ? 0 : 5;
-			//tmpv3 = 5;
-			//MIPS_LUI(MIPS_s6,(op & 0xff)>>16);
-			MIPS_ADDIU(MIPS_s6,MIPS_zero,op & 0xff);
-			MIPS_ROTR(MIPS_s6,MIPS_s6,16);
+			MIPS_LUI(MIPS_s6,(op & 0xff));
 			if( tmpv2 != -1 ) {
 				__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_s6,MIPS_t5,0,tmpv2);  // OPs $t5, $t5, $s5
 				MIPS_MOVE(MIPS_s5,MIPS_t5);
@@ -2757,12 +2438,8 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 				MIPS_SRA(MIPS_t0,MIPS_t5,1);
 				MIPS_SRA(MIPS_t1,MIPS_s6,1);
 				MIPS_SUBU(MIPS_s5,MIPS_t0,MIPS_t1);
-				//MIPS_SUBU(MIPS_s5,MIPS_t5,MIPS_s6);  // sub $s5, $t5, $s5, replace arm cmp
 				update_mips_flags_register();
 			}
-			//MIPS_SRL(MIPS_s5,MIPS_s5,1);      //TODO: try to fix negative overflow
-			//update_mips_flags_register_fix_neg_over();
-			//MIPS_SLL(MIPS_s5,MIPS_s5,1);
 #if 0
 			EOP_C_DOP_IMM(A_COND_AL,tmpv2,1,5,tmpv3,16/2,op & 0xff);	// OPs r5, r5, #val<<16
 #endif
@@ -2782,12 +2459,9 @@ static void emit_block_prologue(void)
 	// check if there are enough cycles..
 	// note: r0 must contain PC of current block
 	MIPS_MOVE(MIPS_s5,MIPS_s2);
-	//update_mips_flags_register();
 	MIPS_BGTZ(MIPS_s5,3);
 	MIPS_NOP();
 	emith_jump(ssp_drc_end);
-
-
 #if 0
 	EOP_CMP_IMM(11,0,0);			// cmp r11, #0
 	emith_jump_cond(A_COND_LE, ssp_drc_end);
@@ -2808,6 +2482,7 @@ static void *emit_block_epilogue(int cycles, int cond, int pc, int end_pc)
 	}
 	MIPS_LUI(MIPS_s6,cycles>>16);
 	MIPS_ORI(MIPS_s6,MIPS_s6,cycles);
+	//MIPS_ADDIU(MIPS_s6,MIPS_zero,cycles);
 	MIPS_SUBU(MIPS_s2,MIPS_s2,MIPS_s6);   // sub $s2, $s2, cycles
 #if 0
 	EOP_SUB_IMM(11,11,0,cycles);		// sub r11, r11, #cycles
@@ -2824,15 +2499,7 @@ static void *emit_block_epilogue(int cycles, int cond, int pc, int end_pc)
 		if (target != NULL)
 			emith_jump(target);
 		else {
-//			MIPS_ADDIU(MIPS_sp, MIPS_sp, -12);
-//			MIPS_SW(MIPS_ra, 8,MIPS_sp);
-//		  	MIPS_SW(MIPS_a1, 4,MIPS_sp);
-//		  	MIPS_SW(MIPS_a0, 0,MIPS_sp);
 			int ops = emith_jump(ssp_drc_next);
-//		  	MIPS_LW(MIPS_a0, 0,MIPS_sp);
-//		  	MIPS_LW(MIPS_a1, 4,MIPS_sp);
-//		  	MIPS_LW(MIPS_ra, 8,MIPS_sp);
-//		  	MIPS_ADDIU(MIPS_sp, MIPS_sp, 12);
 			end_ptr = tcache_ptr;
 			// cause the next block to be emitted over jump instruction
 			tcache_ptr -= ops;
@@ -2847,7 +2514,6 @@ static void *emit_block_epilogue(int cycles, int cond, int pc, int end_pc)
 			ssp_block_table[end_pc];
 
 		if (target1 != NULL) {
-			//update_mips_flags_register();
 			switch(cond) {
 				case A_COND_AL: break;
 				case A_COND_EQ: MIPS_BNEZ(MIPS_s5,3);MIPS_NOP();break;
@@ -2860,7 +2526,6 @@ static void *emit_block_epilogue(int cycles, int cond, int pc, int end_pc)
 		}
 
 		if (target2 != NULL) {
-			//update_mips_flags_register();
 			switch(tr_neg_cond(cond)) {
 				case A_COND_AL: break;
 				case A_COND_EQ: MIPS_BNEZ(MIPS_s5,3);MIPS_NOP();break;
@@ -2908,44 +2573,13 @@ static void *emit_block_epilogue(int cycles, int cond, int pc, int end_pc)
 	return end_ptr;
 }
 
-//int *mem_value = 0x904cfd0;
-//int prev_mem_value = 0;
-int reg_value;
-
 void *ssp_translate_block(int pc)
 {
 	unsigned int op, op1, imm, ccount = 0;
 	unsigned int *block_start, *block_end;
 	int ret, end_cond = A_COND_AL, jump_pc = -1;
 
-	int cycles;
-
-	asm volatile ("move %0, $t8" : "=r" (reg_value));
-	asm volatile ("sw $t8, %0" : "=m" (reg_value));
-
-	if ( ( count_ >= 4020 ) ) {// && ( count < 650 ) ){
-		if( *mem_value != prev_mem_value ) {
-			printf("mem adr: 0x%08x d: 0x%08x\n", mem_value, *mem_value);
-		}
-		prev_mem_value = *mem_value;
-	}
-
-//	if ( ( count_ == 569 ) ) {// && ( count < 650 ) ){
-//		if( reg_value != prev_mem_value ) {
-//			printf("reg: $t8 d: 0x%08x\n", reg_value);
-//		}
-//		prev_mem_value = reg_value;
-//	}
-
 	//printf("translate %04x -> %04x\n", pc<<1, (tcache_ptr-tcache)<<2);
-
-	if( count_ == 530 ) {
-		asm volatile ("subu $s2, $s2, 8");
-	}
-
-	if( count_ == 542 ) {
-		asm volatile ("subu $s2, $s2, 4");
-	}
 
 	block_start = tcache_ptr;
 	known_regb = 0;
@@ -2961,23 +2595,6 @@ void *ssp_translate_block(int pc)
 		op1 = op >> 9;
 		imm = (u32)-1;
 
-		if( ( ( n_in_ops + 1 ) % 500 ) == 0 ) {
-			count_ += 0;
-		}
-
-		if( ( n_in_ops + 1 ) >= 3303 ) {
-			count_ += 0;
-		}
-
-		if( pc == 769 ) {
-			count_ += 0;
-		}
-
-		asm volatile ("move %0, $s2" : "=r" (cycles));
-		asm volatile ("sw $s2, %0" : "=m" (cycles));
-
-		printf("PC: %d, op: 0x%04x, op1: 0x%04x, count: %d, i: %d, cycles: %d known_regs.r[2]: %d\n", pc, op, op>>9, count_, n_in_ops + 1, cycles, known_regs.r[2] );
-
 		if ((op1 & 0xf) == 4 || (op1 & 0xf) == 6)
 			imm = PROGRAM(pc++); // immediate
 
@@ -2989,9 +2606,7 @@ void *ssp_translate_block(int pc)
 		}
 
 		ccount += ret & 0xffff;
-#if 1
 		if (ret & 0x10000) break;
-#endif
 	}
 
 	if (ccount >= 100) {
@@ -2999,6 +2614,7 @@ void *ssp_translate_block(int pc)
 		jump_pc = pc;
 		MIPS_LUI(MIPS_a0,pc>>16);
 		MIPS_ORI(MIPS_a0,MIPS_a0,pc);
+		//MIPS_ADDIU(MIPS_a0,MIPS_zero,pc);
 #if 0
 		emith_move_r_imm(0, pc);
 #endif
@@ -3038,35 +2654,6 @@ void *ssp_translate_block(int pc)
 	cache_flush_d_inval_i(block_start, block_end);
 #endif
 
-	if( pc == ( 281 + 1 ) ) {
-		count_ += 0;
-	}
-
-	if( pc == 281 ) {
-		count_ += 0;
-	}
-
-	if( count_ >= 614 ) {
-		count_ += 0;
-	}
-
-	if( ( n_in_ops + 1 ) >= 1229) {
-		count_ += 0;
-	}
-
-	if( ( n_in_ops + 1 ) >= 1323) {
-		count_ += 0;
-	}
-
-	if( ( n_in_ops + 1 ) >= 767) {
-		count_ += 0;
-	}
-
-	if( ( n_in_ops + 1 ) >= 2812) {
-		count_ += 0;
-	}
-
-	//printf("block_start -> %04x\n", block_start);
 	return block_start;
 }
 
@@ -3143,15 +2730,6 @@ void ssp1601_dyn_reset(ssp1601_t *ssp)
 
 void ssp1601_dyn_run(int cycles)
 {
-
-	count_++;
-	int val2;
-	int val = ssp->emu_status;
-
-	if(count_== 569) {
-		val2 = 0;
-	}
-
 	if (ssp->emu_status & SSP_WAIT_MASK) return;
 
 #ifdef DUMP_BLOCK
@@ -3159,19 +2737,5 @@ void ssp1601_dyn_run(int cycles)
 #endif
 #ifdef PSP
 	ssp_drc_entry(ssp, cycles);
-	int emu_status = ssp->emu_status;
-	int ssp_gr0 = ssp->gr[SSP_GR0].v;
-	int ssp_x = ssp->gr[SSP_X].v;
-	int ssp_y = ssp->gr[SSP_Y].v;
-	int ssp_a = ssp->gr[SSP_A].v;
-
-	if(count_== 886) {
-		val2 = 0;
-	}
-
-//	if(count>=530) {
-//		ssp->emu_status = val;    // TODO: trick, FIXME
-//	}
-
 #endif
 }
