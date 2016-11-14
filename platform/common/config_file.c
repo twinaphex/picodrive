@@ -352,6 +352,11 @@ static int custom_read(menu_entry *me, const char *var, const char *val)
 				return 0;
 			return 1;
 
+		case MA_OPT2_SVP_CYCLES:
+			currentConfig.svp_khz = atoi(val);
+			PicoSVPCycles = currentConfig.svp_khz;
+			return 1;
+
 		default:
 			lprintf("unhandled custom_read %i: %s\n", me->id, var);
 			return 0;

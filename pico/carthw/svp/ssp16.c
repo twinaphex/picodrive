@@ -1,4 +1,4 @@
-/*
+/* 
  * basic, incomplete SSP160x (SSP1601?) interpreter
  * with SVP memory controller emu
  *
@@ -207,10 +207,6 @@
  */
 
 #include "../../pico_int.h"
-
-#if 0
-#define PRINT_OP
-#endif
 
 #define u32 unsigned int
 
@@ -796,52 +792,20 @@ static u32 ptr1_read_(int ri, int isj2, int modi3)
 		// mod=0 (00)
 		case 0x00:
 		case 0x01:
-		case 0x02: {
-			int val3 = ssp->r0[t&3];
-			int val4 = ssp->RAM0[ssp->r0[t&3]];
-			int val5 = &(ssp->RAM0[0]);
-#ifdef PRINT_OP
-			printf("re addr RAM0: 0x%08x d: %d\n", val5, val4);
-#endif
-			return ssp->RAM0[ssp->r0[t&3]];
-		}
+		case 0x02: return ssp->RAM0[ssp->r0[t&3]];
 		case 0x03: return ssp->RAM0[0];
 		case 0x04:
 		case 0x05:
-		case 0x06: {
-			int val3 = ssp->r1[t&3];
-			int val4 = ssp->RAM1[ssp->r1[t&3]];
-			int val5 = &(ssp->RAM1[0]);
-#ifdef PRINT_OP
-			printf("re addr RAM1: 0x%08x d: %d\n", val5, val4);
-#endif
-			return ssp->RAM1[ssp->r1[t&3]];
-		}
+		case 0x06: return ssp->RAM1[ssp->r1[t&3]];
 		case 0x07: return ssp->RAM1[0];
 		// mod=1 (01), "+!"
 		case 0x08:
 		case 0x09:
-		case 0x0a: {
-			int val3 = ssp->r0[t&3];
-			int val4 = ssp->RAM0[ssp->r0[t&3]];
-			int val5 = &(ssp->RAM0[0]);
-#ifdef PRINT_OP
-			printf("re addr RAM0: 0x%08x d: %d\n", val5, val4);
-#endif
-			return ssp->RAM0[ssp->r0[t&3]++];
-		}
+		case 0x0a: return ssp->RAM0[ssp->r0[t&3]++];
 		case 0x0b: return ssp->RAM0[1];
 		case 0x0c:
 		case 0x0d:
-		case 0x0e: {
-			int val3 = ssp->r1[t&3];
-			int val4 = ssp->RAM1[ssp->r1[t&3]];
-			int val5 = &(ssp->RAM1[0]);
-#ifdef PRINT_OP
-			printf("re addr RAM1: 0x%08x d: %d\n", val5, val4);
-#endif
-			return ssp->RAM1[ssp->r1[t&3]++];
-		}
+		case 0x0e: return ssp->RAM1[ssp->r1[t&3]++];
 		case 0x0f: return ssp->RAM1[1];
 		// mod=2 (10), "-"
 		case 0x10:
@@ -897,29 +861,11 @@ static void ptr1_write(int op, u32 d)
 		// mod=3,      "+"
 		case 0x08:
 		case 0x09:
-		case 0x0a: {
-			int val3 = ssp->r0[t&3];
-			int val4 = ssp->RAM0[ssp->r0[t&3]];
-			int val5 = &(ssp->RAM0[ssp->r0[t&3]]);
-#ifdef PRINT_OP
-			printf("wr addr RAM0: 0x%08x d: %d\n", val5, d);
-#endif
-			ssp->RAM0[ssp->r0[t&3]++] = d; return;
-		}
-
-
+		case 0x0a: ssp->RAM0[ssp->r0[t&3]++] = d; return;
 		case 0x0b: ssp->RAM0[1] = d; return;
 		case 0x0c:
 		case 0x0d:
-		case 0x0e: {
-			int val3 = ssp->r1[t&3];
-			int val4 = ssp->RAM1[ssp->r1[t&3]];
-			int val5 = &(ssp->RAM1[ssp->r1[t&3]]);
-#ifdef PRINT_OP
-			printf("wr addr RAM1: 0x%08x d: %d\n", val5, d);
-#endif
-			ssp->RAM1[ssp->r1[t&3]++] = d; return;
-		}
+		case 0x0e: ssp->RAM1[ssp->r1[t&3]++] = d; return;
 		case 0x0f: ssp->RAM1[1] = d; return;
 		// mod=2 (10), "-"
 		case 0x10:
@@ -1091,18 +1037,6 @@ void ssp1601_reset(ssp1601_t *l_ssp)
 
 void ssp1601_run(int cycles)
 {
-
-	static int count = 0;
-	count++;
-	int val2;
-	int val = ssp->emu_status;
-	int updated = 0;
-	int i = 0;
-
-	if(count==529) {
-		val2 = 0;
-	}
-
 	SET_PC(rPC);
 
 	g_cycles = cycles;
@@ -1112,18 +1046,7 @@ void ssp1601_run(int cycles)
 		int op;
 		u32 tmpv;
 
-		if( i == 9058 ) {
-			val2 = 0;
-		}
-
 		op = *PC++;
-
-#ifdef PRINT_OP
-
-		if( count < 570 ){
-			printf("i: %d, op: 0x%04x, op1: 0x%04x, count: %d, PC: %d, cycles: %d\n", i, op, op>>9, count, PC - (unsigned short *)svp->iram_rom, g_cycles );
-		}
-#endif
 #ifdef USE_DEBUGGER
 		debug(GET_PC()-1, op);
 #endif
@@ -1315,23 +1238,6 @@ void ssp1601_run(int cycles)
 				break;
 		}
 		g_cycles--;
-
-		val2 = ssp->emu_status;
-
-		updated = 1;
-		i++;
-
-		if( (i % 500) == 0 ) {
-			val2 = 0;
-		}
-	}
-
-	if(updated) {
-		int emu_status = ssp->emu_status;
-		int ssp_gr0 = ssp->gr[SSP_GR0].v;
-		int ssp_x = ssp->gr[SSP_X].v;
-		int ssp_y = ssp->gr[SSP_Y].v;
-		int ssp_a = ssp->gr[SSP_A].v;
 	}
 
 	rPC = GET_PC();

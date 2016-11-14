@@ -493,6 +493,41 @@ static int menu_loop_32x_options(int id, int keys)
 
 // ------------ adv options menu ------------
 
+// convert from multiplier of VClk
+static int mh_opt_svpcycles(int id, int keys)
+{
+	//int *khz = &PicoSVPCycles;
+	int *khz = &currentConfig.svp_khz;
+
+	if (keys & (PBTN_LEFT|PBTN_RIGHT))
+		*khz += (keys & PBTN_LEFT) ? -50 : 50;
+	if (keys & (PBTN_L|PBTN_R))
+		*khz += (keys & PBTN_L) ? -500 : 500;
+
+	if (*khz < 1)
+		*khz = 1;
+	else if (*khz > 0x7fffffff / 1000)
+		*khz = 0x7fffffff / 1000;
+
+	//currentConfig.svp_khz = PicoSVPCycles;
+	PicoSVPCycles = currentConfig.svp_khz;
+
+	return 0;
+}
+
+static const char *mgn_opt_svpcycles(int id, int *offs)
+{
+	//int khz = PicoSVPCycles;
+	int khz = currentConfig.svp_khz;
+
+	sprintf(static_buff, "%d", khz);
+	return static_buff;
+}
+
+static const char h_svpcycles[]  = "Cycles/millisecond (similar to DOSBox)\n"
+				   "lower values speed up emulation but break games\n"
+				   "at least 18000 recommended for clock sync";
+
 static menu_entry e_menu_adv_options[] =
 {
 	mee_onoff     ("SRAM/BRAM saves",          MA_OPT_SRAM_STATES,    currentConfig.EmuOpt, EOPT_EN_SRAM),
@@ -500,11 +535,13 @@ static menu_entry e_menu_adv_options[] =
 	mee_onoff     ("Emulate Z80",              MA_OPT2_ENABLE_Z80,    PicoOpt, POPT_EN_Z80),
 	mee_onoff     ("Emulate YM2612 (FM)",      MA_OPT2_ENABLE_YM2612, PicoOpt, POPT_EN_FM),
 	mee_onoff     ("Emulate SN76496 (PSG)",    MA_OPT2_ENABLE_SN76496,PicoOpt, POPT_EN_PSG),
+	mee_onoff     ("Keep sound when it slowdown",    MA_OPT2_ENABLE_KEEP_SOUND,currentConfig.EmuOpt, EOPT_EN_KEEP_SOUND),
 	mee_onoff     ("gzip savestates",          MA_OPT2_GZIP_STATES,   currentConfig.EmuOpt, EOPT_GZIP_SAVES),
 	mee_onoff     ("Don't save last used ROM", MA_OPT2_NO_LAST_ROM,   currentConfig.EmuOpt, EOPT_NO_AUTOSVCFG),
 	mee_onoff     ("Disable idle loop patching",MA_OPT2_NO_IDLE_LOOPS,PicoOpt, POPT_DIS_IDLE_DET),
 	mee_onoff     ("Disable frame limiter",    MA_OPT2_NO_FRAME_LIMIT,currentConfig.EmuOpt, EOPT_NO_FRMLIMIT),
 	mee_onoff     ("Enable dynarecs",          MA_OPT2_DYNARECS,      PicoOpt, POPT_EN_DRC),
+	mee_cust_h    ("SVP cycles", 			   MA_OPT2_SVP_CYCLES,    mh_opt_svpcycles, mgn_opt_svpcycles, h_svpcycles),
 	mee_onoff     ("Status line in main menu", MA_OPT2_STATUS_LINE,   currentConfig.EmuOpt, EOPT_SHOW_RTC),
 	MENU_OPTIONS_ADV
 	mee_end,
@@ -1024,7 +1061,7 @@ static const char credits[] =
 	"Eke, Stef: some Sega CD code\n"
 	"Inder, ketchupgun: graphics\n"
 #ifdef PSP
-	"Robson Santana: PSP port reborn\n"
+	"Robson Santana: PSP port revive and PSP SVP dynarec\n"
 #endif
 #ifdef __GP2X__
 	"Squidge: mmuhack\n"

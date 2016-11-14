@@ -36,6 +36,7 @@ extern int g_screen_height;
 #define EOPT_NO_FRMLIMIT  (1<<18)
 #define EOPT_WIZ_TEAR_FIX (1<<19)
 #define EOPT_EXT_FRMLIMIT (1<<20) // no internal frame limiter (limited by snd, etc)
+#define EOPT_EN_KEEP_SOUND (1<<21)
 
 enum {
 	EOPT_SCALE_NONE = 0,
@@ -80,6 +81,7 @@ typedef struct _currentConfig_t {
 	int msh2_khz;
 	int ssh2_khz;
 #ifdef PSP
+	int svp_khz;
 	char lastRomFile[512];
 	int KeyBinds[32];
 #endif

@@ -1753,7 +1753,12 @@ void PicoMemSetup32x(void)
   unsigned int rs;
   int i;
 
+#ifndef PSP
   Pico32xMem = plat_mmap(0x06000000, sizeof(*Pico32xMem), 0, 0);
+#else
+  Pico32xMem = malloc(sizeof(struct Pico32xMem));
+  //if(Pico32xMem) memset(Pico32xMem+sizeof(struct Pico32xMem)-0x80000,0,0x80000);
+#endif
   if (Pico32xMem == NULL) {
     elprintf(EL_STATUS, "OOM");
     return;

@@ -7,9 +7,9 @@ PSPSDK = $(shell psp-config --pspsdk-path)
 #use_mz80 = 1
 amalgamate = 0
 for_15fw = 0
-release = 0
+release = 1
 profile = 0
-dynarecs = 0
+dynarecs = 1
 # :!touch platform/psp/psp.c
 
 CFLAGS += -IC:/pspsdk/powermgr/src/include
@@ -43,7 +43,7 @@ endif
 
 
 # frontend and stuff
-OBJS += emu_psp.o mp3.o psp.o asm_utils.o plat_psp.o
+OBJS += emu_psp.o mp3_psp.o psp.o asm_utils.o plat_psp.o
 
 # libpicofe
 OBJS += ../../platform/libpicofe/fonts.o  \
@@ -52,7 +52,7 @@ OBJS += ../../platform/libpicofe/fonts.o  \
 
 # common
 OBJS += ../../platform/common/main.o ../../platform/common/emu.o ../../platform/common/menu_pico.o \
-		../../platform/common/config_file.o
+		../../platform/common/config_file.o 
 
 # Pico
 ifeq "$(amalgamate)" "1"
@@ -191,6 +191,12 @@ ifeq "$(release)" "1"
 	$(CC) $(CFLAGS) -O3 -c $< -o $@
 endif
 
+ifeq "$(release)" "1"
+../../pico/carthw/svp/compiler_mips.o : ../../pico/carthw/svp/compiler_mips.c
+	@echo ">>>" $<
+	$(CC) $(CFLAGS) -O3 -c $< -o $@
+endif
+
 ../../pico/misc.o : ../../pico/misc.c
 	@echo ">>>" $<
 	$(CC) $(CFLAGS) -c $< -o $@ -D_ASM_MISC_C_AMIPS
@@ -201,7 +207,7 @@ endif
 
 ../../pico/memory.o : ../../pico/memory.c
 	@echo ">>>" $<
-	$(CC) $(CFLAGS) -O2 -c $< -o $@ -D_ASM_MEMORY_C -D_ASM_MEMORY_C_AMIPS
+	$(CC) $(CFLAGS) -O3 -c $< -o $@ -D_ASM_MEMORY_C -D_ASM_MEMORY_C_AMIPS
 
 ../../pico/cd/memory.o : ../../pico/cd/memory.c
 	@echo ">>>" $<

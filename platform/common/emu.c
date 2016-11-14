@@ -610,6 +610,9 @@ void emu_prep_defconfig(void)
 	defaultConfig.turbo_rate = 15;
 	defaultConfig.msh2_khz = PICO_MSH2_HZ / 1000;
 	defaultConfig.ssh2_khz = PICO_SSH2_HZ / 1000;
+#ifdef PSP
+	defaultConfig.svp_khz = 23000;  // 23 mhz
+#endif
 
 	// platform specific overrides
 	pemu_prep_defconfig();

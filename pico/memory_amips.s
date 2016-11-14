@@ -1,6 +1,6 @@
 #*
 #* memory handlers with banking support
-#* Robson Santana, 2016
+#* Robson Santana, 2016. email: robson.poli@gmail.com
 #*
 
 .eqv SRR_MAPPED,     1       #(1 <<  0)
@@ -210,7 +210,7 @@ m_read16_nosram:
     # XXX: banking unfriendly
     lw      $a1, ($a3)
     add		$t0, $a1, $a0
-    lh      $v0, ($t0)
+    lhu     $v0, ($t0)
     #andi	$v0, $v0, 0xffff
     jr      $ra
     nop
@@ -229,14 +229,14 @@ PicoRead16_io: # u32 a, u32 d
     bne     $a2, $t0, m_read16_not_io     # so check for it first
     nop
 
-	addiu   $sp, $sp, -8     # allocate 2 words on the stack
-	sw      $ra, 4($sp)
+	addiu   $sp, $sp, -4     # allocate 2 words on the stack
+	sw      $ra, ($sp)
     jal     io_ports_read    # same as read8
     nop
 	sll     $t0, $v0, 8
 	or      $v0, $v0, $t0    # only has bytes mirrored
-	lw      $ra, 4($sp)
-	addiu   $sp, $sp, 8      # restore $sp, freeing the allocated space
+	lw      $ra, ($sp)
+	addiu   $sp, $sp, 4      # restore $sp, freeing the allocated space
 	jr $ra
 	nop
 

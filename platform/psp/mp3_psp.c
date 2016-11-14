@@ -463,7 +463,7 @@ void mp3_update(int *buffer, int length, int stereo)
 }
 
 #if 0
-// Robson :cÃ³digo desabilitado (obsoleto)
+// Robson :código desabilitado (obsoleto)
 int mp3_get_offset(void) // 0-1023
 {
 	unsigned int offs1024 = 0;

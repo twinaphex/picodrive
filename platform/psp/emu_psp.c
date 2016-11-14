@@ -698,9 +698,12 @@ static SceUID sound_sem = -1;
 
 static void writeSound(int len);
 
+short sample_old[SOUND_BLOCK_SIZE_NTSC*8];
+
 static int sound_thread(SceSize args, void *argp)
 {
 	int ret = 0;
+	int i;
 
 	lprintf("sthr: started, priority %i\n", sceKernelGetThreadCurrentPriority());
 
@@ -709,18 +712,36 @@ static int sound_thread(SceSize args, void *argp)
 		if (samples_made - samples_done < samples_block) {
 			// wait for data (use at least 2 blocks)
 			//lprintf("sthr: wait... (%i)\n", samples_made - samples_done);
+
+			// play old sample while wait new sample
+			if( (currentConfig.EmuOpt & EOPT_EN_KEEP_SOUND) && (engineState == PGS_Running) && (samples_done > ( samples_block * 2))) {
+				i = 0;
+				do {
+					//lprintf("sthr: output old sample\n");
+					sceAudioSRCOutputBlocking(PSP_AUDIO_VOLUME_MAX, &sample_old);
+					i++;
+				} while( ( i < 6 ) && ( samples_made - samples_done < samples_block ) );
+			}
+
 			while (samples_made - samples_done <= samples_block*2 && !sound_thread_exit)
 				ret = sceKernelWaitSema(sound_sem, 1, 0);
 			if (ret < 0) lprintf("sthr: sceKernelWaitSema: %i\n", ret);
 			continue;
 		}
 
-		// lprintf("sthr: got data: %i\n", samples_made - samples_done);
+		//lprintf("sthr: got data: %i\n", samples_made - samples_done);
 
 		ret = sceAudioSRCOutputBlocking(PSP_AUDIO_VOLUME_MAX, snd_playptr);
 
+		// copy the last block sample
+		if(currentConfig.EmuOpt & EOPT_EN_KEEP_SOUND) {
+			if( ( sndBuffer_endptr - snd_playptr ) < ( SOUND_BLOCK_SIZE_NTSC*8) )
+				memcpy( &sample_old, snd_playptr, ( sndBuffer_endptr - snd_playptr ) );
+		}
+
 		samples_done += samples_block;
 		snd_playptr  += samples_block;
+
 		if (snd_playptr >= sndBuffer_endptr)
 			snd_playptr = sndBuffer;
 		// 1.5 kernel returns 0, newer ones return # of samples queued
@@ -884,6 +905,7 @@ void pemu_forced_frame(int no_scale, int do_emu)
 
 	int po_old = PicoOpt;
 	int eo_old = currentConfig.EmuOpt;
+	int renderer_old = currentConfig.renderer;
 
 	PicoOpt &= ~POPT_ALT_RENDERER;
 	currentConfig.renderer = RT_8BIT_ACC;
@@ -943,6 +965,7 @@ void pemu_forced_frame(int no_scale, int do_emu)
 
 	PicoOpt = po_old;
 	currentConfig.EmuOpt = eo_old;
+	currentConfig.renderer = renderer_old;
 }
 
 #if 0

@@ -31,7 +31,7 @@
 #include "compiler.h"
 
 svp_t *svp = NULL;
-int PicoSVPCycles = 850; // cycles/line, just a guess
+int PicoSVPCycles = 850*16; // cycles/line, just a guess
 static int svp_dyn_ready = 0;
 
 /* save state stuff */
@@ -78,11 +78,11 @@ static void PicoSVPLine(void)
 
 #ifdef _SVP_DRC
 	if ((PicoOpt & POPT_EN_DRC) && svp_dyn_ready)
-		ssp1601_dyn_run(PicoSVPCycles * count);
+		ssp1601_dyn_run((PicoSVPCycles/16) * count);
 	else
 #endif
 	{
-		ssp1601_run(PicoSVPCycles * count);
+		ssp1601_run((PicoSVPCycles/16) * count);
 		svp_dyn_ready = 0; // just in case
 	}
 

@@ -84,7 +84,8 @@ typedef struct
 		unsigned int tmp1;		// 4a8
 		unsigned int tmp2;		// 4ac
 #ifdef PSP
-		unsigned int ssp_flags; // 4b0
+		unsigned int mips_arm_flags; // 4b0
+		unsigned int mips_arm_result; // 4b4
 #endif
 	} drc;
 } ssp1601_t;

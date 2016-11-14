@@ -313,56 +313,8 @@ static int emith_xjump(void *target, int is_call)
 	if (direct)
 	{
 		if(is_call) {
-			//MIPS_ADDIU(MIPS_sp,MIPS_sp,-12);
-			//MIPS_SW(MIPS_ra,8,MIPS_sp);
-			//MIPS_SW(MIPS_a1,4,MIPS_sp);
-			//MIPS_SW(MIPS_a0,0,MIPS_sp);
-
-//			MIPS_ADDIU(MIPS_sp, MIPS_sp, -72);
-//			MIPS_SW(MIPS_ra, 68,MIPS_sp);
-//			MIPS_SW(MIPS_s7, 64,MIPS_sp);
-//			MIPS_SW(MIPS_s6, 60,MIPS_sp);
-//			MIPS_SW(MIPS_s5, 56,MIPS_sp);
-//			MIPS_SW(MIPS_s4, 52,MIPS_sp);
-//			MIPS_SW(MIPS_s3, 48,MIPS_sp);
-//			MIPS_SW(MIPS_s2, 44,MIPS_sp);
-//			MIPS_SW(MIPS_s1, 40,MIPS_sp);
-//			MIPS_SW(MIPS_t9, 36,MIPS_sp);
-//			MIPS_SW(MIPS_t8, 32,MIPS_sp);
-//			MIPS_SW(MIPS_t7, 28,MIPS_sp);
-//			MIPS_SW(MIPS_t6, 24,MIPS_sp);
-//			MIPS_SW(MIPS_t5, 20,MIPS_sp);
-//			MIPS_SW(MIPS_t4, 16,MIPS_sp);
-//			MIPS_SW(MIPS_a3, 12,MIPS_sp);
-//			MIPS_SW(MIPS_a2, 8,MIPS_sp);
-//		  	MIPS_SW(MIPS_a1, 4,MIPS_sp);
-//		  	MIPS_SW(MIPS_a0, 0,MIPS_sp);
 			MIPS_JAL(((uint32_t)target & 0x0FFFFFFC) >> 2);            // jal target
 			MIPS_NOP();
-//		  	MIPS_LW(MIPS_a0, 0,MIPS_sp);
-//		  	MIPS_LW(MIPS_a1, 4,MIPS_sp);
-//		  	MIPS_LW(MIPS_a2, 8,MIPS_sp);
-//		  	MIPS_LW(MIPS_a3, 12,MIPS_sp);
-//		  	MIPS_LW(MIPS_t4, 16,MIPS_sp);
-//		  	MIPS_LW(MIPS_t5, 20,MIPS_sp);
-//		  	MIPS_LW(MIPS_t6, 24,MIPS_sp);
-//		  	MIPS_LW(MIPS_t7, 28,MIPS_sp);
-//		  	MIPS_LW(MIPS_t8, 32,MIPS_sp);
-//		  	MIPS_LW(MIPS_t9, 36,MIPS_sp);
-//		  	MIPS_LW(MIPS_s1, 40,MIPS_sp);
-//		  	MIPS_LW(MIPS_s2, 44,MIPS_sp);
-//		  	MIPS_LW(MIPS_s3, 48,MIPS_sp);
-//		  	MIPS_LW(MIPS_s4, 52,MIPS_sp);
-//		  	MIPS_LW(MIPS_s5, 56,MIPS_sp);
-//		  	MIPS_LW(MIPS_s6, 60,MIPS_sp);
-//		  	MIPS_LW(MIPS_s7, 64,MIPS_sp);
-//		  	MIPS_LW(MIPS_ra, 68,MIPS_sp);
-//		  	MIPS_ADDIU(MIPS_sp, MIPS_sp, 72);
-
-			//MIPS_LW(MIPS_a0,0,MIPS_sp);
-			//MIPS_LW(MIPS_a1,4,MIPS_sp);
-			//MIPS_LW(MIPS_ra,8,MIPS_sp);
-			//MIPS_ADDIU(MIPS_sp,MIPS_sp,12);
 		}
 		else {
 			MIPS_J(((uint32_t)target & 0x0FFFFFFC) >> 2);              // j target
@@ -371,18 +323,9 @@ static int emith_xjump(void *target, int is_call)
 	}
 	else
 	{
-#ifdef __EPOC32__
-//		elprintf(EL_SVP, "emitting indirect jmp %08x->%08x", tcache_ptr, target);
-		if (is_call)
-			EOP_ADD_IMM(14,15,0,8);			// add lr,pc,#8
-		EOP_C_AM2_IMM(cond,1,0,1,15,15,0);		// ldrcc pc,[pc]
-		EOP_MOV_REG_SIMPLE(15,15);			// mov pc, pc
-		EMIT((u32)target);
-#else
 		// should never happen
 		printf(EL_STATUS|EL_SVP|EL_ANOMALY, "indirect jmp %08x->%08x", target, tcache_ptr);
 		exit(1);
-#endif
 	}
 
 	return (u32 *)tcache_ptr - start_ptr;

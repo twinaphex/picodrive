@@ -1,6 +1,6 @@
 /*
  * assembly optimized versions of most funtions from draw2.c
- * Robson Santana, 2016
+ * Robson Santana, 2016. email: robson.poli@gmail.com
  *
  * this is highly specialized, be careful if changing related C code!
  */
@@ -25,9 +25,9 @@
 .text
 .align 2
 
-.global BackFillFull_asm # int reg7
+.global BackFillFull # int reg7
 
-BackFillFull_asm:
+BackFillFull:
 	#addiu  $sp, $sp, -4     # allocate 1 word on the stack
     #sw     $sp, ($ra)
 
@@ -544,9 +544,9 @@ BackFillFull_asm:
 
 #static void DrawLayerFull(int plane, int *hcache, int planestart, int planeend)
 
-.global DrawLayerFull_asm
+.global DrawLayerFull
 
-DrawLayerFull_asm:
+DrawLayerFull:
 	addiu   $sp, $sp, -24
 	sw      $s6, 20($sp)
 	sw      $s5, 16($sp)
@@ -912,9 +912,9 @@ DrawLayerFull_asm:
     jr      $ra
     nop
 
-.global DrawTilesFromCacheF_asm # int *hc
+.global DrawTilesFromCacheF # int *hc
 
-DrawTilesFromCacheF_asm:
+DrawTilesFromCacheF:
 	addiu   $sp, $sp, -24
 	sw      $s6, 20($sp)
 	sw      $s5, 16($sp)
@@ -1043,9 +1043,9 @@ DrawTilesFromCacheF_asm:
 # ###############
 
 # (tile_start<<16)|row_start
-.global DrawWindowFull_asm # int tstart, int tend, int prio
+.global DrawWindowFull # int tstart, int tend, int prio
 
-DrawWindowFull_asm:
+DrawWindowFull:
 	addiu   $sp, $sp, -24
 	sw      $s6, 20($sp)
 	sw      $s5, 16($sp)
@@ -1356,9 +1356,9 @@ DrawWindowFull_asm:
 
 
 
-.global DrawSpriteFull_asm # unsigned int *sprite
+.global DrawSpriteFull # unsigned int *sprite
 
-DrawSpriteFull_asm:
+DrawSpriteFull:
 	addiu   $sp, $sp, -24
 	sw      $s6, 20($sp)
 	sw      $s5, 16($sp)

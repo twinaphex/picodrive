@@ -48,48 +48,64 @@
 .eqv SSP_WAIT_PM0,       0x2000
 
 
-.macro save_registers
-	addiu   $sp, $sp, -72
-	sw 		$ra, 68($sp)
-	sw 		$s7, 64($sp)
-	sw 		$s6, 60($sp)
-	sw 		$s5, 56($sp)
-	sw 		$s4, 52($sp)
-	sw 		$s3, 48($sp)
-	sw 		$s2, 44($sp)
-	sw 		$s1, 40($sp)
-	sw 		$t9, 36($sp)
-	sw 		$t8, 32($sp)
-	sw 		$t7, 28($sp)
-	sw 		$t6, 24($sp)
-	sw 		$t5, 20($sp)
-	sw 		$t4, 16($sp)
-	sw 		$a3, 12($sp)
-	sw 		$a2, 8($sp)
-  	sw 		$a1, 4($sp)
-  	sw 		$a0, ($sp)
+.macro save_registers_global
+	addiu   $sp, $sp, -32
+	sw 		$ra, 28($sp)
+	sw 		$s7, 24($sp)
+	sw 		$s6, 20($sp)
+	sw 		$s5, 16($sp)
+	sw 		$s4, 12($sp)
+	sw 		$s3, 8($sp)
+	sw 		$s2, 4($sp)
+	sw 		$s1, ($sp)
 .endm
 
-.macro restore_registers
-  	lw 		$a0, ($sp)
-  	lw 		$a1, 4($sp)
-  	lw 		$a2, 8($sp)
-  	lw 		$a3, 12($sp)
-  	lw 		$t4, 16($sp)
-  	lw 		$t5, 20($sp)
-  	lw 		$t6, 24($sp)
-  	lw 		$t7, 28($sp)
-  	lw 		$t8, 32($sp)
-  	lw 		$t9, 36($sp)
-  	lw 		$s1, 40($sp)
-  	lw 		$s2, 44($sp)
-  	lw 		$s3, 48($sp)
-  	lw 		$s4, 52($sp)
-  	lw 		$s5, 56($sp)
-  	lw 		$s6, 60($sp)
-  	lw 		$s7, 64($sp)
-  	lw 		$ra, 68($sp)
-  	addiu   $sp, $sp, 72
+.macro restore_registers_global
+  	lw 		$s1, ($sp)
+  	lw 		$s2, 4($sp)
+  	lw 		$s3, 8($sp)
+  	lw 		$s4, 12($sp)
+  	lw 		$s5, 16($sp)
+  	lw 		$s6, 20($sp)
+  	lw 		$s7, 24($sp)
+  	lw 		$ra, 28($sp)
+  	addiu   $sp, $sp, 32
+.endm
+
+.macro save_registers_local
+	addiu   $sp, $sp, -56
+	sw 		$ra, 52($sp)
+	sw 		$s7, 48($sp)
+	sw 		$s6, 44($sp)
+	sw 		$s5, 40($sp)
+	sw 		$s4, 36($sp)
+	sw 		$s3, 32($sp)
+	sw 		$s2, 28($sp)
+	sw 		$s1, 24($sp)
+	sw 		$t9, 20($sp)
+	sw 		$t8, 16($sp)
+	sw 		$t7, 12($sp)
+	sw 		$t6, 8($sp)
+	sw 		$t5, 4($sp)
+	sw 		$t4, 0($sp)
+.endm
+
+.macro restore_registers_local
+  	lw 		$t4, 0($sp)
+  	lw 		$t5, 4($sp)
+  	lw 		$t6, 8($sp)
+  	lw 		$t7, 12($sp)
+  	lw 		$t8, 16($sp)
+  	lw 		$t9, 20($sp)
+  	lw 		$s1, 24($sp)
+  	lw 		$s2, 28($sp)
+  	lw 		$s3, 32($sp)
+  	lw 		$s4, 36($sp)
+  	lw 		$s5, 40($sp)
+  	lw 		$s6, 44($sp)
+  	lw 		$s7, 48($sp)
+  	lw 		$ra, 52($sp)
+  	addiu   $sp, $sp, 56
 .endm
 
 
@@ -114,36 +130,14 @@
 .else
 	beqz	$a2, 0f
 	nop
-	#li		$s6, 0x08c00000
-	#subu 	$s6, $s6, $a2
-	#bgez	$s6, 88
-	#nop
-	#restore_registers
-	#jr		$ra
-	#nop
 	jr		$a2
     nop
 .endif
 0:
-	#addiu   $sp, $sp, -8
-	#sw      $a3, 16($sp)
-	#sw      $a2, 12($sp)
-	#sw      $a1, 8($sp)
-	#sw      $a0, 4($sp)
-	#sw      $t7, 4($sp)
-	#sw      $ra, ($sp)
-	save_registers
+	save_registers_local
     jal     ssp_translate_block
     nop
-    restore_registers
-    #lw      $ra, ($sp)
-    #lw      $t7, 4($sp)
-    #lw      $a0, 4($sp)
-    #lw      $a1, 8($sp)
-    #lw      $a2, 12($sp)
-    #lw      $a3, 16($sp)
-	#addiu   $sp, $sp, 8
-
+    restore_registers_local
     move    $a2, $v0
     lw      $a0, SSP_OFFS_TMP0($t7)		# entry PC
     lw      $a1, SSP_OFFS_BLTAB($t7)
@@ -154,21 +148,13 @@
     b       ssp_drc_do_patch
     nop
 .else
-	#li		$s6, 0x08c00000
-	#subu 	$s6, $s6, $a2
-	#bgez	$s6, 88
-	#nop
-	#restore_registers
-	#jr		$ra
-	#nop
 	jr		$a2
     nop
 .endif
 
 1: # ssp_de_iram:
     lw      $a1, SSP_OFFS_IRAM_DIRTY($t7)
-    and     $s6, $a1, $a1
-    bnez	$s6, 2f
+    bnez	$a1, 2f
     nop
     lw      $a1, SSP_OFFS_IRAM_CTX($t7)
     b       3f # ssp_de_iram_ctx
@@ -176,23 +162,16 @@
 
 2:
 	addiu   $sp, $sp, -4
-	#sw      $a1, 8($sp)
-	#sw      $a0, 4($sp)
 	sw      $ra, ($sp)
-	#save_registers
     jal     ssp_get_iram_context
     nop
-    #restore_registers
     lw      $ra, ($sp)
-    #lw      $a0, 4($sp)
-    #lw      $a1, 8($sp)
 	addiu   $sp, $sp, 4
     li      $a1, 0
     sw      $a1, SSP_OFFS_IRAM_DIRTY($t7)
     move    $a1, $v0
     sw      $a1, SSP_OFFS_IRAM_CTX($t7)
     lw      $a0, SSP_OFFS_TMP0($t7)		# entry PC
-
 3: # ssp_de_iram_ctx:
     lw      $a2, SSP_OFFS_BLTAB_IRAM($t7)
     sll		$s6, $a1, 12
@@ -204,40 +183,17 @@
 	bnez    $a2, ssp_drc_do_patch
     nop
 .else
-	#beqz	$s6, 4f
 	beqz	$a2, 4f
 	nop
-	#li		$s6, 0x08c00000
-	#subu 	$s6, $s6, $a2
-	#bgez	$s6, 88
-	#nop
-	#restore_registers
-	#jr		$ra
-	#nop
     jr      $a2
     nop
 .endif
 4:
     sw      $a1, SSP_OFFS_TMP1($t7)
-	#addiu   $sp, $sp, -8
-	#sw      $a3, 16($sp)
-	#sw      $a2, 12($sp)
-	#sw      $a1, 8($sp)
-	#sw      $a0, 4($sp)
-	#sw      $t7, 4($sp)
-	#sw      $ra, ($sp)
-	save_registers
+	save_registers_local
     jal     ssp_translate_block
     nop
-    restore_registers
-    #lw      $ra, ($sp)
-    #lw      $t7, 4($sp)
-    #lw      $a0, 4($sp)
-    #lw      $a1, 8($sp)
-    #lw      $a2, 12($sp)
-    #lw      $a3, 16($sp)
-	#addiu   $sp, $sp, 8
-
+    restore_registers_local
     move    $a2, $v0
     lw      $a0, SSP_OFFS_TMP0($t7)		# entry PC
     lw      $a1, SSP_OFFS_TMP1($t7)		# &block_table_iram(iram_context)(rPC)
@@ -246,13 +202,6 @@
     b       ssp_drc_do_patch
     nop
 .else
-	#li		$s6, 0x08c00000
-	#subu 	$s6, $s6, $a2
-	#bgez	$s6, 88
-	#nop
-	#restore_registers
-	#jr		$ra
-	#nop
     jr      $a2
     nop
 .endif
@@ -261,18 +210,7 @@
 
 .global ssp_drc_entry
 ssp_drc_entry:
-	#addiu   $sp, $sp, -36
-	#sw      $ra, 32($sp)
-	#sw      $s8, 28($sp)
-	#sw      $s7, 24($sp)
-	#sw      $s6, 20($sp)
-	#sw      $s6, 16($sp)
-	#sw      $s4, 12($sp)
-	#sw      $s3, 8($sp)
-	#sw      $s2, 4($sp)
-	#sw      $s1, ($sp)
-	save_registers
-
+	save_registers_global
     move     $t7, $a0                      # ssp
     move     $s2, $a1
 ssp_regfile_load:
@@ -284,11 +222,11 @@ ssp_regfile_load:
     lw		$t5, 8($a2)
     lw		$t6, 12($a2)
     lw		$t8, 16($a2)
-    #addiu   $a2, $a2, 20
     lw		$s7, 0x4b0($t7)
+    lw		$s5, 0x4b4($t7)
 
     srl     $a3, $a3, 16
-    srl     $a3, $a3, 16
+    sll     $a3, $a3, 16
     srl		$s6, $t4, 16
     or      $t4, $a3, $s6         # XXYY
 
@@ -334,136 +272,87 @@ ssp_drc_do_patch:
     subu    $s3, $a2, $a1
     bnez	$s3, skip_3
     nop
-    #li      $a3, 0x1			# nop
-    #li      $s6, 0x00a00000
-    #or      $a3, $a3, $s6		# nop
-    #sw      $a3, -16($a1)		# nop
-	#sw      $a3, -8($a1)		# nop
-
     sw      $zero, -16($a1)		# nop
 	sw      $zero, -8($a1)		# nop
     b       ssp_drc_dp_end
     nop
-
 skip_3:
 	subu    $s6, $s3, 16
     bnez    $s6, skip_4
     nop
     lw      $a3, ($a1)
-    #addu    $a3, $a3, 4  # need verify, maybe 4
-	#li      $a3, 0x3
     sw      $a3, -16($a1)               # move the other cond up
-	#li      $a3, 0x2			# nop
-	#sw      $a3, ($a1)
-    #li      $a3, 0xe1000000
-    #li      $s6, 0x00a00000
-    #or      $a3, $a3, $s6
-
     sw      $zero, ($a1)                    # fill it's place with nop
 	sw      $zero, 8($a1)                    # fill it's place with nop
-
     b       ssp_drc_dp_end
     nop
-
 skip_4:
-    #addu    $s3, $s3, 4
     move    $s3, $a2
-
-    #li		$a3, 4					 # BEQ opcode
     li		$a3, 2					 # J opcode
-
     rotr    $a3, $a3, 6              # patched branch instruction
     srl     $s3, $s3, 2
-
-    #andi	$s3, $s3, 0xffff		 # 16 bits offset
     lui		$s6, 0x3ff
     ori		$s6, $s6, 0xffff		 # 26 bits offset
     and		$s3, $s3, $s6
-
     or		$a3, $a3, $s3
-    sw      $a3, -8($a1)             # patch the bl/b to jump directly to another handler
-
+    sw      $a3, -8($a1)             # patch the jal to jump directly to another handler
 ssp_drc_dp_end:
     sw      $a2, SSP_OFFS_TMP1($t7)
     subu    $a0, $a1, 32
     addu    $a1, $a1, 32
-	#addiu   $sp, $sp, -12
-	#sw      $a1, 8($sp)
-	#sw      $a0, 4($sp)
-	#sw      $ra, ($sp)
-	save_registers
+	save_registers_local
     jal     cache_flush_d_inval_i
     nop
-    restore_registers
-    #lw      $ra, ($sp)
-    #lw      $a0, 4($sp)
-    #lw      $a1, 8($sp)
-	#addiu   $sp, $sp, 12
+    restore_registers_local
     lw      $a2, SSP_OFFS_TMP1($t7)
     lw      $a0, SSP_OFFS_TMP0($t7)
     jr      $a2
     nop
 
-
 .global ssp_drc_end
 ssp_drc_end:
-#addiu $sp,$sp,8  #only debug
     sll     $a0, $a0, 16
     sw      $a0, (SSP_OFFS_GR+SSP_PC*4)($t7)
 
 ssp_regfile_store:
-    sw      $s1, (0x400+SSP_P*4)($t7)  # P
-    sw      $t8, 0x440($t7)            # $a0-$a2
-    sw      $t9, 0x444($t7)            # $t4-$t6
+    sw      $s1, (0x400+SSP_P*4)($t7)  	# P
+    sw      $t8, 0x440($t7)            	# $a0-$a2
+    sw      $t9, 0x444($t7)         	# $t4-$t6
 
     srl     $t9, $t6, 13
     li		$s6, (7<<16)
-    and     $t9, $t9, $s6            # STACK
+    and     $t9, $t9, $s6   	        # STACK
     sll     $a3, $t6, 28
-    move	$s7, $a3
-    #msr     cpsr_f, r3                  @ to to ARM PSR
+    move	$s7, $a3					# to ARM PSR (emulated)
     and     $t6, $t6, 0x670
     sll     $t6, $t6, 12
-    and		$s6, $a3, $t6
-    bgez	$s6, skip_5
+    bgez	$s7, skip_5
     nop
     li		$s6, 0x80000000
-    or      $t6, $t6, $s6         # N
+    or      $t6, $t6, $s6         		# N
 skip_5:
-    and		$s6, $a3, $t6
-    bnez	$s6, skip_6
+    bnez	$s7, skip_6
     nop
     li		$s6, 0x20000000
-    or      $t6, $t6, $s6         # Z
+    or      $t6, $t6, $s6         		# Z
 skip_6:
-    sll     $a3, $t4, 16             # Y
+    sll     $a3, $t4, 16             	# Y
     srl     $a2, $t4, 16
-    sll     $a2, $a2, 16             # X
+    sll     $a2, $a2, 16             	# X
     addu    $t8, $t7, 0x400
     addu    $t8, $t8, 4
-    #stmia   $t8, {$a2,$a3,$t5,$t6,$t9}
 
     sw		$a2, ($t8)
     sw		$a3, 4($t8)
     sw		$t5, 8($t8)
     sw		$t6, 12($t8)
     sw		$t9, 16($t8)
-    #addiu   $t8, $t8, 20
     sw		$s7, 0x4b0($t7)
+    sw		$s5, 0x4b4($t7)
 
     move    $v0, $s2
 
-	#lw      $s1, ($sp)
-	#lw      $s2, 4($sp)
-	#lw      $s3, 8($sp)
-	#lw      $s4, 12($sp)
-	#lw      $s6, 16($sp)
-	#lw      $s6, 20($sp)
-	#lw      $s7, 24($sp)
-	#lw      $s8, 28($sp)
-	#lw      $ra, 32($sp)
-	#addiu   $sp, $sp, 36
-    restore_registers
+    restore_registers_global
 	jr		$ra
 	nop
 
@@ -619,7 +508,7 @@ skip_8_2:
 10:
 	bnez    $s5, 11f
 	nop
-	lui     $s7, 0x6000
+	lui     $s7, 0x4000
 	b		12f
 	nop
 11:
@@ -643,7 +532,6 @@ ssp_hle_11_12c:
 skip_8_3:
     li      $a0, 0
 
-	#save_registers
 	addiu   $sp, $sp, -12
 	sw      $a1, 8($sp)
 	sw      $a0, 4($sp)
@@ -676,7 +564,6 @@ skip_8_3:
 	sw      $ra, ($sp)
     jal     ssp_pm_read
     nop
-    #restore_registers
     lw      $ra, ($sp)
     lw      $a0, 4($sp)
     lw      $a1, 8($sp)
@@ -883,10 +770,8 @@ ssp_hle_07_036:
 	sw      $a1, 8($sp)
 	sw      $a0, 4($sp)
 	sw      $ra, ($sp)
-	#save_registers
     jal     ssp_pm_write
     nop
-    #restore_registers
     lw      $ra, ($sp)
     lw      $a0, 4($sp)
     lw      $a1, 8($sp)
@@ -932,10 +817,8 @@ ssp_hle_07_036:
 	sw      $a1, 8($sp)
 	sw      $a0, 4($sp)
 	sw      $ra, ($sp)
-	#save_registers
     jal     tr_unhandled
     nop
-    #restore_registers
     lw      $ra, ($sp)
     lw      $a0, 4($sp)
     lw      $a1, 8($sp)
@@ -1080,13 +963,13 @@ hle_07_036_ending1:
 skip21:
 	bnez    $s5, skip22
 	nop
-	lui     $s7, 0x6000
+	lui     $s7, 0x4000
 	b		skip23
 	nop
 skip22:
 	lui 	$s7, 0x8000
 
-skip23:	
+skip23:
     lw      $a1, 4($t7)	# new mode
     addu    $a2, $t7, 0x400
     sh      $a1, (0x6c+4*4+2)($a2) # SSP_OFFS_PM_WRITE+4*4 (high)
@@ -1095,10 +978,8 @@ skip23:
 	sw      $a1, 8($sp)
 	sw      $a0, 4($sp)
 	sw      $ra, ($sp)
-	#save_registers
     jal     ssp_pm_write
     nop
-    #restore_registers
     lw      $ra, ($sp)
     lw      $a0, 4($sp)
     lw      $a1, 8($sp)
@@ -1123,13 +1004,13 @@ hle_07_036_ending2:
 skip24:
 	bnez    $s5, skip25
 	nop
-	lui     $s7, 0x6000
+	lui     $s7, 0x4000
 	b		skip26
 	nop
 skip25:
 	lui 	$s7, 0x8000
 
-skip26:	
+skip26:
     bltz    $s5, hle_07_036_ret
     nop
     li      $a0, 0x87

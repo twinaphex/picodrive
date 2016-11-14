@@ -140,11 +140,25 @@ void plat_set_scale_fullscreen_zoomed(void) {
 
 void plat_set_scale_cut_borders(void) {
 	currentConfig.scale = 1.32;
-	currentConfig.hscale40 = 1.10;
-	currentConfig.hscale32 = 1.375;
+	currentConfig.hscale40 = 1.0;
+	currentConfig.hscale32 = 1.25;
 	currentConfig.scale_int = (int)(currentConfig.scale * 100.0f);
 	currentConfig.hscale40_int = (int)(currentConfig.hscale40 * 100.0f);
 	currentConfig.hscale32_int = (int)(currentConfig.hscale32 * 100.0f);
+}
+
+int plat_mem_set_exec(void *ptr, size_t size)
+{
+#if 0
+	int ret = mprotect(ptr, size, PROT_READ | PROT_WRITE | PROT_EXEC);
+	if (ret != 0)
+		fprintf(stderr, "mprotect(%p, %zd) failed: %d\n",
+			ptr, size, errno);
+
+	return ret;
+#else
+	return 0;
+#endif
 }
 
 int scandir(const char *dir, struct my_dirent **namelist_out,
