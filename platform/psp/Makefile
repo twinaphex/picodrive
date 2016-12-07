@@ -189,13 +189,20 @@ ifeq "$(release)" "1"
 ../../pico/carthw/svp/ssp16.o : ../../pico/carthw/svp/ssp16.c
 	@echo ">>>" $<
 	$(CC) $(CFLAGS) -O3 -c $< -o $@
-endif
 
-ifeq "$(release)" "1"
 ../../pico/carthw/svp/compiler_mips.o : ../../pico/carthw/svp/compiler_mips.c
 	@echo ">>>" $<
 	$(CC) $(CFLAGS) -O3 -c $< -o $@
+
+../../pico/sound/sound.o : ../../pico/sound/sound.c
+	@echo ">>>" $<
+	$(CC) $(CFLAGS) -O3 -c $< -o $@ 
+
+../../pico/sound/ym2612.o : ../../pico/sound/ym2612.c
+	@echo ">>>" $<
+	$(CC) $(CFLAGS) -O3 -c $< -o $@
 endif
+
 
 ../../pico/misc.o : ../../pico/misc.c
 	@echo ">>>" $<

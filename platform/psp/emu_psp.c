@@ -353,7 +353,7 @@ static int EmuScanSlowEnd8(unsigned int num)
 		if (dynamic_palette) {
 			int line_len = (Pico.video.reg[12]&1) ? 320 : 256;
 			void *dst = (char *)VRAM_STUFF + 512*240 + 512*2*num;
-			//amips_clut_f(dst, HighCol, localPal, line_len);
+			amips_clut_f(dst, HighCol + 8, localPal, line_len);
 		}
 	}
 
@@ -601,6 +601,8 @@ static void vidResetMode(void)
 	if(PicoAHW & PAHW_SMS) {
 		change_renderer(0);  // set 16 bit renderer for sms
 	}
+
+	PicoOpt |= POPT_ACC_SPRITES;
 
 	int renderer = get_renderer();
 
@@ -901,14 +903,13 @@ static void SkipFrame(void)
 void pemu_forced_frame(int no_scale, int do_emu)
 {
 
+	currentConfig.renderer = RT_8BIT_ACC;
 	int renderer = get_renderer();
 
 	int po_old = PicoOpt;
 	int eo_old = currentConfig.EmuOpt;
-	int renderer_old = currentConfig.renderer;
 
 	PicoOpt &= ~POPT_ALT_RENDERER;
-	currentConfig.renderer = RT_8BIT_ACC;
 	PicoOpt |= POPT_ACC_SPRITES;
 	if (!no_scale)
 		PicoOpt |= POPT_EN_SOFTSCALE;
@@ -965,7 +966,6 @@ void pemu_forced_frame(int no_scale, int do_emu)
 
 	PicoOpt = po_old;
 	currentConfig.EmuOpt = eo_old;
-	currentConfig.renderer = renderer_old;
 }
 
 #if 0

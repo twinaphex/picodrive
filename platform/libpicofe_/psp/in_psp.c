@@ -20,7 +20,7 @@
 
 #include "../input.h"
 //#include "soc.h"
-//#include "plat_psp.h"
+#include "../../common/emu.h"
 #include "in_psp.h"
 
 #define IN_PSP_PREFIX "psp:"
@@ -41,11 +41,14 @@ static const char *in_psp_keys[IN_PSP_NBUTTONS] = {
 	[PSP_BTN_L]     = "L",     [PSP_BTN_R]      = "R",
 	[PSP_BTN_X]     = "X",     [PSP_BTN_CIRCLE] = "Circle",
 	[PSP_BTN_SQUARE]   = "Square",     [PSP_BTN_TRIANGLE]   = "Triangle",
+	[PSP_BTN_NUB_UP]    = "Analog Up",    [PSP_BTN_NUB_LEFT]   = "Analog Left",
+	[PSP_BTN_NUB_DOWN]  = "Analog Down",  [PSP_BTN_NUB_RIGHT]  = "Analog Right",
 	[PSP_BTN_VOL_DOWN] = "VOL DOWN",
 	[PSP_BTN_VOL_UP]   = "VOL UP",
 	[PSP_BTN_HOME]     = "Home"
 };
 
+#if 0
 unsigned int mapPSPbuttonsToPicoDrive( unsigned int buttons ) {
 	unsigned int pico_buttons;
 
@@ -101,6 +104,7 @@ unsigned int mapPSPbuttonsToPicoDrive( unsigned int buttons ) {
 
 	return pico_buttons;
 }
+#endif
 
 static int in_psp_get_bits_(void)
 {
@@ -112,60 +116,16 @@ static int in_psp_get_bits_(void)
 	buttons = mapPSPbuttonsToPicoDrive( buttons );
 #endif
 
-#if 0
 	// analog..
-	buttons &= ~(PBTN_NUB_UP|PBTN_NUB_DOWN|PBTN_NUB_LEFT|PBTN_NUB_RIGHT);
-	if (pad.Lx < 128 - ANALOG_DEADZONE) buttons |= PBTN_NUB_LEFT;
-	if (pad.Lx > 128 + ANALOG_DEADZONE) buttons |= PBTN_NUB_RIGHT;
-	if (pad.Ly < 128 - ANALOG_DEADZONE) buttons |= PBTN_NUB_UP;
-	if (pad.Ly > 128 + ANALOG_DEADZONE) buttons |= PBTN_NUB_DOWN;
-#endif
+	if( currentConfig.EmuOpt & EOPT_EN_ANALOG) {
+		if (pad.Lx < 128 - ANALOG_DEADZONE) buttons |= (1<<PSP_BTN_NUB_LEFT);
+		if (pad.Lx > 128 + ANALOG_DEADZONE) buttons |= (1<<PSP_BTN_NUB_RIGHT);
+		if (pad.Ly < 128 - ANALOG_DEADZONE) buttons |= (1<<PSP_BTN_NUB_UP);
+		if (pad.Ly > 128 + ANALOG_DEADZONE) buttons |= (1<<PSP_BTN_NUB_DOWN);
+	}
 
 	return buttons;
 }
-
-#if 0
-static int in_psp_get_mmsp2_bits(void)
-{
-	int value;
-	value = memregs[0x1198>>1] & 0xff; // GPIO M
-	if (value == 0xFD) value = 0xFA;
-	if (value == 0xF7) value = 0xEB;
-	if (value == 0xDF) value = 0xAF;
-	if (value == 0x7F) value = 0xBE;
-	value |= memregs[0x1184>>1] & 0xFF00; // GPIO C
-	value |= memregs[0x1186>>1] << 16; // GPIO D
-	value = ~value & 0x08c0ff55;
-
-	return value;
-}
-
-static int in_psp_get_wiz_bits(void)
-{
-	int r, value = 0;
-	r = read(gpiodev, &value, 4);
-	if (value & 0x02)
-		value |= 0x05;
-	if (value & 0x08)
-		value |= 0x14;
-	if (value & 0x20)
-		value |= 0x50;
-	if (value & 0x80)
-		value |= 0x41;
-
-	/* convert to PSP style */
-	value &= 0x7ff55;
-	if (value & (1 << 16))
-		value |= 1 << PSP_BTN_VOL_UP;
-	if (value & (1 << 17))
-		value |= 1 << PSP_BTN_VOL_DOWN;
-	if (value & (1 << 18))
-		value |= 1 << PSP_BTN_PUSH;
-	value &= ~0x70000;
-
-	return value;
-}
-#endif
 
 static void in_psp_probe(const in_drv_t *drv)
 {
@@ -241,13 +201,17 @@ static const struct {
 } key_pbtn_map[] =
 {
 	{ PSP_BTN_UP,		PBTN_UP },
-	{ PSP_BTN_DOWN,	PBTN_DOWN },
-	{ PSP_BTN_LEFT,	PBTN_LEFT },
+	{ PSP_BTN_DOWN,		PBTN_DOWN },
+	{ PSP_BTN_LEFT,		PBTN_LEFT },
 	{ PSP_BTN_RIGHT,	PBTN_RIGHT },
-	{ PSP_BTN_CIRCLE,		PBTN_MOK },
+	{ PSP_BTN_NUB_UP,	PBTN_UP },
+	{ PSP_BTN_NUB_DOWN,	PBTN_DOWN },
+	{ PSP_BTN_NUB_LEFT,	PBTN_LEFT },
+	{ PSP_BTN_NUB_RIGHT,PBTN_RIGHT },
+	{ PSP_BTN_CIRCLE,	PBTN_MOK },
 	{ PSP_BTN_X,		PBTN_MBACK },
-	{ PSP_BTN_SQUARE,		PBTN_MA2 },
-	{ PSP_BTN_TRIANGLE,		PBTN_MA3 },
+	{ PSP_BTN_SQUARE,	PBTN_MA2 },
+	{ PSP_BTN_TRIANGLE,	PBTN_MA3 },
 	{ PSP_BTN_L,		PBTN_L },
 	{ PSP_BTN_R,		PBTN_R },
 	{ PSP_BTN_SELECT,	PBTN_MENU },

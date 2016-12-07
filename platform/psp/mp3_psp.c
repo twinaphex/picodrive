@@ -112,6 +112,7 @@ static int read_next_frame(int which_buffer)
 		{
 			lprintf("unfit, foffs=%i\n", mp3_src_pos - bytes_read);
 			mp3_src_pos -= bytes_read - frame_offset;
+			mp3_src_size = sceIoLseek32(mp3_handle, 0, PSP_SEEK_END);
 			if (mp3_src_size - mp3_src_pos < frame_size) {
 				mp3_src_pos = mp3_src_size;
 				return 0; // EOF

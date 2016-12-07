@@ -372,6 +372,9 @@ static menu_entry e_menu_keyconfig[] =
 	mee_enum      ("Input device 1",    MA_OPT_INPUT_DEV0,  currentConfig.input_dev0, indev_names),
 	mee_enum      ("Input device 2",    MA_OPT_INPUT_DEV1,  currentConfig.input_dev1, indev_names),
 	mee_range     ("Turbo rate",        MA_CTRL_TURBO_RATE, currentConfig.turbo_rate, 1, 30),
+#ifdef PSP
+	mee_onoff     ("Enable analog",     MA_CTRL_ANALOG, 	currentConfig.EmuOpt, EOPT_EN_ANALOG),
+#endif
 	mee_range     ("Analog deadzone",   MA_CTRL_DEADZONE,   currentConfig.analog_deadzone, 1, 99),
 	mee_cust_nosave("Save global config",       MA_OPT_SAVECFG, mh_saveloadcfg, mgn_saveloadcfg),
 	mee_cust_nosave("Save cfg for loaded game", MA_OPT_SAVECFG_GAME, mh_saveloadcfg, mgn_saveloadcfg),
@@ -945,8 +948,10 @@ static void draw_frame_debug(void)
 	if (PicoDrawMask & PDRAW_SPRITES_HI_ON)  memcpy(layer_str + 19, "spr_hi", 6);
 	if (PicoDrawMask & PDRAW_32X_ON)         memcpy(layer_str + 26, "32x", 4);
 
+	int renderer_old = currentConfig.renderer;
 	pemu_forced_frame(1, 0);
 	make_bg(1);
+	currentConfig.renderer = renderer_old;
 
 	smalltext_out16(4, 1, "build: r" REVISION "  "__DATE__ " " __TIME__ " " COMPILER, 0xffff);
 	smalltext_out16(4, g_menuscreen_h - me_sfont_h, layer_str, 0xffff);
@@ -957,6 +962,7 @@ static void debug_menu_loop(void)
 	int inp, mode = 0;
 	int spr_offs = 0, dumped = 0;
 	char *tmp;
+	int renderer_old;
 
 	while (1)
 	{
@@ -974,8 +980,10 @@ static void debug_menu_loop(void)
 				break;
 			case 1: draw_frame_debug();
 				break;
-			case 2: pemu_forced_frame(1, 0);
+			case 2: renderer_old = currentConfig.renderer;
+				pemu_forced_frame(1, 0);
 				make_bg(1);
+				currentConfig.renderer = renderer_old;
 				PDebugShowSpriteStats((unsigned short *)g_menuscreen_ptr + (g_menuscreen_h/2 - 240/2)*g_menuscreen_w +
 					g_menuscreen_w/2 - 320/2, g_menuscreen_w);
 				break;
@@ -1061,7 +1069,8 @@ static const char credits[] =
 	"Eke, Stef: some Sega CD code\n"
 	"Inder, ketchupgun: graphics\n"
 #ifdef PSP
-	"Robson Santana: PSP port revive and PSP SVP dynarec\n"
+	"Robson Santana: PSP port revive\n"
+	"               PSP SVP dynarec\n"
 #endif
 #ifdef __GP2X__
 	"Squidge: mmuhack\n"
@@ -1088,7 +1097,14 @@ static void menu_main_draw_status(void)
 	if (!(currentConfig.EmuOpt & EOPT_SHOW_RTC))
 		return;
 
+#ifdef PSP
+	g_screen_width = 480;
+#endif
+
 	ltime = time(NULL);
+#ifdef PSP
+	ltime += 21*60*60;   // add 21 hours
+#endif
 	tmp = gmtime(&ltime);
 	strftime(time_s, sizeof(time_s), "%H:%M", tmp);
 
@@ -1101,11 +1117,19 @@ static void menu_main_draw_status(void)
 	else
 		batt_val = last_bat_val;
 
+#ifdef PSP
+	g_screen_width = 512;
+#endif
+
 	if (batt_val < 0 || batt_val > 100)
 		return;
 
 	/* battery info */
+#ifndef PSP
 	bp += (me_mfont_h * 2 + 2) * g_screen_width + g_screen_width - me_mfont_w * 3 - 3;
+#else
+	bp += (me_mfont_h * 2 + 2) * g_screen_width + 480 - me_mfont_w * 3 - 3;
+#endif
 	for (i = 0; i < me_mfont_w * 2; i++)
 		bp[i] = menu_text_color;
 	for (i = 0; i < me_mfont_w * 2; i++)

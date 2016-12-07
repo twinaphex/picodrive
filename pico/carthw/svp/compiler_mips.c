@@ -229,9 +229,10 @@ void emit_save_registers(void) {
 	MIPS_SW(MIPS_t9, 32,MIPS_sp);
 	MIPS_SW(MIPS_t8, 28,MIPS_sp);
 	MIPS_SW(MIPS_t7, 24,MIPS_sp);
-	MIPS_SW(MIPS_t6, 16,MIPS_sp);
-	MIPS_SW(MIPS_t5, 12,MIPS_sp);
-	MIPS_SW(MIPS_t4, 8,MIPS_sp);
+	MIPS_SW(MIPS_t6, 20,MIPS_sp);
+	MIPS_SW(MIPS_t5, 16,MIPS_sp);
+	MIPS_SW(MIPS_t4, 12,MIPS_sp);
+	MIPS_SW(MIPS_a3, 8,MIPS_sp);
 	MIPS_SW(MIPS_a1, 4,MIPS_sp);
 	MIPS_SW(MIPS_a0, 0,MIPS_sp);
 }
@@ -239,9 +240,10 @@ void emit_save_registers(void) {
 void emit_restore_registers(void) {
 	MIPS_LW(MIPS_a0, 0,MIPS_sp);
 	MIPS_LW(MIPS_a1, 4,MIPS_sp);
-	MIPS_LW(MIPS_t4, 8,MIPS_sp);
-	MIPS_LW(MIPS_t5, 12,MIPS_sp);
-	MIPS_LW(MIPS_t6, 16,MIPS_sp);
+	MIPS_LW(MIPS_a3, 8,MIPS_sp);
+	MIPS_LW(MIPS_t4, 12,MIPS_sp);
+	MIPS_LW(MIPS_t5, 16,MIPS_sp);
+	MIPS_LW(MIPS_t6, 20,MIPS_sp);
 	MIPS_LW(MIPS_t7, 24,MIPS_sp);
 	MIPS_LW(MIPS_t8, 28,MIPS_sp);
 	MIPS_LW(MIPS_t9, 32,MIPS_sp);
@@ -1119,7 +1121,7 @@ static void tr_PMX_to_r0(int reg)
 	//tr_flush_dirty_pmcrs();
 	tr_mov16(0, reg);
 	emit_save_registers();
-	emith_call(ssp_pm_read);
+	emith_call(ssp_pm_read_asm);
 	emit_restore_registers();
   	MIPS_MOVE(MIPS_a0,MIPS_v0);
 	hostreg_clear();
@@ -1298,7 +1300,6 @@ static void tr_r0_to_PC(int const_val)
 
 static void tr_r0_to_AL(int const_val)
 {
-
 	MIPS_SRL(MIPS_t5,MIPS_t5,16);		// srl  $t5, $t5, 16
 	MIPS_SLL(MIPS_s6,MIPS_a0,16);		// sll  $s5, $a0, 16
 	MIPS_OR(MIPS_t5,MIPS_t5,MIPS_s6);	// or  $t5, $t5, $s5
@@ -1384,7 +1385,7 @@ static void tr_r0_to_PMX(int reg)
 	//tr_flush_dirty_pmcrs();
 	tr_mov16(1, reg);
 	emit_save_registers();
-	emith_call(ssp_pm_write);
+	emith_call(ssp_pm_write_asm);
 	emit_restore_registers();
 	hostreg_clear();
 }
@@ -1747,7 +1748,6 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 			if (tmpv != A_COND_AL) {
 				u32 *real_ptr = tcache_ptr;
 				tcache_ptr = jump_op;
-				//update_mips_flags_register();
 				switch(tr_neg_cond(tmpv)) {  // MIPS need skip one more instruction
 					case A_COND_EQ: MIPS_BEQZ(MIPS_s5,real_ptr - jump_op - 1);MIPS_NOP();break;
 					case A_COND_NE: MIPS_BNEZ(MIPS_s5,real_ptr - jump_op - 1);MIPS_NOP();break;
@@ -1884,7 +1884,6 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 		case 0x70:
 			tmpv = op & 0xf; // src
 			tmpv2 = tr_aop_ssp2mips(op>>13); // op
-			//tmpv3 = (tmpv2 == A_OP_CMP) ? 0 : 5;
 			if (tmpv == SSP_P) {
 				tr_flush_dirty_P();
 				if( tmpv2 != -1 ) {
@@ -1990,7 +1989,6 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 		case 0x61:
 		case 0x71:
 			tmpv2 = tr_aop_ssp2mips(op>>13); // op
-			//tmpv3 = (tmpv2 == A_OP_CMP) ? 0 : 5;
 			tr_rX_read((op&3)|((op>>6)&4), (op>>2)&3);
 			MIPS_SLL(MIPS_s6,MIPS_a0,16);
 			if( tmpv2 != -1 ) {
@@ -2035,7 +2033,6 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 		case 0x63:
 		case 0x73:
 			tmpv2 = tr_aop_ssp2mips(op>>13); // op
-			//tmpv3 = (tmpv2 == A_OP_CMP) ? 0 : 5;
 			tr_bank_read(op&0x1ff);
 			MIPS_SLL(MIPS_s6,MIPS_a0,16);
 			if( tmpv2 != -1 ) {
@@ -2081,7 +2078,6 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 		case 0x74:
 			tmpv = (op & 0xf0) >> 4;
 			tmpv2 = tr_aop_ssp2mips(op>>13); // op
-			//tmpv3 = (tmpv2 == A_OP_CMP) ? 0 : 5;
 			tr_mov16(0, imm);
 			MIPS_SLL(MIPS_s6,MIPS_a0,16);
 			if( tmpv2 != -1 ) {
@@ -2126,7 +2122,6 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 		case 0x65:
 		case 0x75:
 			tmpv2 = tr_aop_ssp2mips(op>>13); // op
-			//tmpv3 = (tmpv2 == A_OP_CMP) ? 0 : 5; // mips dont has cmp
 			tr_rX_read2(op);
 			MIPS_SLL(MIPS_s6,MIPS_a0,16);
 			if( tmpv2 != -1 ) {
@@ -2172,7 +2167,6 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 		case 0x79: {
 			int r;
 			tmpv2 = tr_aop_ssp2mips(op>>13); // op
-			//tmpv3 = (tmpv2 == A_OP_CMP) ? 0 : 5;
 			r = (op&3) | ((op>>6)&4); // src
 			if ((r&3) == 3) tr_unhandled();
 
@@ -2259,7 +2253,6 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 		case 0x6c:
 		case 0x7c:
 			tmpv2 = tr_aop_ssp2mips(op>>13); // op
-			//tmpv3 = (tmpv2 == A_OP_CMP) ? 0 : 5;
 			MIPS_LUI(MIPS_s6,(op & 0xff));
 
 			if( tmpv2 != -1 ) {
@@ -2557,6 +2550,7 @@ void ssp1601_dyn_reset(ssp1601_t *ssp)
 void ssp1601_dyn_run(int cycles)
 {
 	if (ssp->emu_status & SSP_WAIT_MASK) return;
+
 #ifdef DUMP_BLOCK
 	ssp_translate_block(DUMP_BLOCK >> 1);
 #endif

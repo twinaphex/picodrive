@@ -560,10 +560,7 @@ void cache_flush_d_inval_i(void *start_addr, void *end_addr)
 	int size = end_addr - start_addr;
 
 	sceKernelDcacheWritebackInvalidateRange(start_addr, size);
-	invalidate_icache_region(start_addr, size);
-#if 0
-	sceKernelIcacheClearAll();
-#endif
+	invalidate_icache_region(start_addr - 0x0, size + 0x00);
 }
 #endif
 

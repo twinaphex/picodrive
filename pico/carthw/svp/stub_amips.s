@@ -34,6 +34,7 @@
 .eqv SSP_P,                   7
 .eqv SSP_PM0,                 8
 .eqv SSP_PMC,                14
+.eqv SSP_OFFS_PM_READ,	  0x454 # pmac_read()
 .eqv SSP_OFFS_PM_WRITE,   0x46c # pmac_write()
 .eqv SSP_OFFS_EMUSTAT,    0x484 # emu_status
 .eqv SSP_OFFS_IRAM_ROM,   0x48c # ptr_iram_rom
@@ -46,6 +47,7 @@
 .eqv SSP_OFFS_TMP1,       0x4a8
 .eqv SSP_OFFS_TMP2,       0x4ac
 .eqv SSP_WAIT_PM0,       0x2000
+.eqv SSP_PMC_SET,		 0x0002
 
 
 .macro save_registers_global
@@ -106,6 +108,34 @@
   	lw 		$s7, 48($sp)
   	lw 		$ra, 52($sp)
   	addiu   $sp, $sp, 56
+.endm
+
+.macro save_registers_temporarys
+	addiu   $sp, $sp, -40
+	sw 		$ra, 36($sp)
+	sw 		$t9, 32($sp)
+	sw 		$t8, 28($sp)
+	sw 		$t7, 24($sp)
+	sw 		$t6, 20($sp)
+	sw 		$t5, 16($sp)
+	sw 		$t4, 12($sp)
+	sw 		$a3, 8($sp)
+	sw 		$a1, 4($sp)
+	sw 		$a0, 0($sp)
+.endm
+
+.macro restore_registers_temporarys
+	lw 		$a0, 0($sp)
+	lw 		$a1, 4($sp)
+	lw 		$a3, 8($sp)
+  	lw 		$t4, 12($sp)
+  	lw 		$t5, 16($sp)
+  	lw 		$t6, 20($sp)
+  	lw 		$t7, 24($sp)
+  	lw 		$t8, 28($sp)
+  	lw 		$t9, 32($sp)
+  	lw 		$ra, 36($sp)
+  	addiu   $sp, $sp, 40
 .endm
 
 
@@ -531,43 +561,87 @@ ssp_hle_11_12c:
 
 skip_8_3:
     li      $a0, 0
-
-	addiu   $sp, $sp, -12
-	sw      $a1, 8($sp)
-	sw      $a0, 4($sp)
-	sw      $ra, ($sp)
-    jal     ssp_pm_read
+	addiu   $sp, $sp, -20
+	sw 		$ra, 16($sp)
+	sw 		$t8, 12($sp)
+	sw 		$t6, 8($sp)
+	sw 		$t5, 4($sp)
+	sw 		$t4, ($sp)
+    jal     ssp_pm_read_asm
     nop
-    lw      $ra, ($sp)
-    lw      $a0, 4($sp)
-    lw      $a1, 8($sp)
-	addiu   $sp, $sp, 12
+  	lw 		$t4, ($sp)
+  	lw 		$t5, 4($sp)
+  	lw 		$t6, 8($sp)
+  	lw 		$t8, 12($sp)
+  	lw 		$ra, 16($sp)
+  	addiu   $sp, $sp, 20
+
+	#addiu   $sp, $sp, -12
+	#sw      $a1, 8($sp)
+	#sw      $a0, 4($sp)
+	#sw      $ra, ($sp)
+    #jal     ssp_pm_read
+    #nop
+    #lw      $ra, ($sp)
+    #lw      $a0, 4($sp)
+    #lw      $a1, 8($sp)
+	#addiu   $sp, $sp, 12
     move    $t4, $v0
 
     li      $a0, 0
-	addiu   $sp, $sp, -12
-	sw      $a1, 8($sp)
-	sw      $a0, 4($sp)
-	sw      $ra, ($sp)
-    jal     ssp_pm_read
+	addiu   $sp, $sp, -20
+	sw 		$ra, 16($sp)
+	sw 		$t8, 12($sp)
+	sw 		$t6, 8($sp)
+	sw 		$t5, 4($sp)
+	sw 		$t4, ($sp)
+    jal     ssp_pm_read_asm
     nop
-    lw      $ra, ($sp)
-    lw      $a0, 4($sp)
-    lw      $a1, 8($sp)
-	addiu   $sp, $sp, 12
+  	lw 		$t4, ($sp)
+  	lw 		$t5, 4($sp)
+  	lw 		$t6, 8($sp)
+  	lw 		$t8, 12($sp)
+  	lw 		$ra, 16($sp)
+  	addiu   $sp, $sp, 20
+
+	#addiu   $sp, $sp, -12
+	#sw      $a1, 8($sp)
+	#sw      $a0, 4($sp)
+	#sw      $ra, ($sp)
+    #jal     ssp_pm_read
+    #nop
+    #lw      $ra, ($sp)
+    #lw      $a0, 4($sp)
+    #lw      $a1, 8($sp)
+	#addiu   $sp, $sp, 12
 	move    $t5, $v0
 
     li      $a0, 0
-	addiu   $sp, $sp, -12
-	sw      $a1, 8($sp)
-	sw      $a0, 4($sp)
-	sw      $ra, ($sp)
-    jal     ssp_pm_read
+	addiu   $sp, $sp, -20
+	sw 		$ra, 16($sp)
+	sw 		$t8, 12($sp)
+	sw 		$t6, 8($sp)
+	sw 		$t5, 4($sp)
+	sw 		$t4, ($sp)
+    jal     ssp_pm_read_asm
     nop
-    lw      $ra, ($sp)
-    lw      $a0, 4($sp)
-    lw      $a1, 8($sp)
-	addiu   $sp, $sp, 12
+  	lw 		$t4, ($sp)
+  	lw 		$t5, 4($sp)
+  	lw 		$t6, 8($sp)
+  	lw 		$t8, 12($sp)
+  	lw 		$ra, 16($sp)
+  	addiu   $sp, $sp, 20
+
+	#addiu   $sp, $sp, -12
+	#sw      $a1, 8($sp)
+	#sw      $a0, 4($sp)
+	#sw      $ra, ($sp)
+    #jal     ssp_pm_read
+    #nop
+    #lw      $ra, ($sp)
+    #lw      $a0, 4($sp)
+    #lw      $a1, 8($sp)
+	#addiu   $sp, $sp, 12
 	move	$a0, $v0
 
     sll     $a2, $t4, 16
@@ -605,7 +679,7 @@ ssp_hle_11_38a:
     li     $a3, 3		# $t5
 
 ssp_hle_11_38x:
-    bgt     $s2, 0, skip_8_4
+    bgtz    $s2, skip_8_4
     nop
     j       ssp_drc_end
     nop
@@ -677,7 +751,7 @@ skip_11:
 
 .global ssp_hle_07_6d6
 ssp_hle_07_6d6:
-    bgt     $s2, 0, skip_11_2
+    bgtz    $s2, skip_11_2
     nop
     j       ssp_drc_end
     nop
@@ -766,16 +840,28 @@ ssp_hle_07_036:
     lw      $a0, ($t7)
     li      $a1, 4
     and     $a0, $a0, $a2
+	#addiu   $sp, $sp, -12
+	#sw      $a1, 8($sp)
+	#sw      $a0, 4($sp)
+	#sw      $ra, ($sp)
+	#save_registers_local
+
 	addiu   $sp, $sp, -12
-	sw      $a1, 8($sp)
-	sw      $a0, 4($sp)
-	sw      $ra, ($sp)
-    jal     ssp_pm_write
+	sw 		$ra, 8($sp)
+	sw 		$t8, 4($sp)
+	sw 		$t6, ($sp)
+    jal     ssp_pm_write_asm
     nop
-    lw      $ra, ($sp)
-    lw      $a0, 4($sp)
-    lw      $a1, 8($sp)
-	addiu   $sp, $sp, 12
+  	lw 		$t6, ($sp)
+  	lw 		$t8, 4($sp)
+  	lw 		$ra, 8($sp)
+  	addiu   $sp, $sp, 12
+
+    #restore_registers_local
+    #lw      $ra, ($sp)
+    #lw      $a0, 4($sp)
+    #lw      $a1, 8($sp)
+	#addiu   $sp, $sp, 12
 
     # will handle PMC later
     lw      $a0, 0x1e8($t7)	# F5h << 16
@@ -973,17 +1059,35 @@ skip23:
     lw      $a1, 4($t7)	# new mode
     addu    $a2, $t7, 0x400
     sh      $a1, (0x6c+4*4+2)($a2) # SSP_OFFS_PM_WRITE+4*4 (high)
+
+    #addiu   $sp, $sp, -4
+    #sw      $ra, ($sp)
+    #lw      $ra, ($sp)
+    #addiu   $sp, $sp, 12
+
     li      $a1, 4
+	#addiu   $sp, $sp, -12
+	#sw      $a1, 8($sp)
+	#sw      $a0, 4($sp)
+	#sw      $ra, ($sp)
+	#save_registers_local
+
 	addiu   $sp, $sp, -12
-	sw      $a1, 8($sp)
-	sw      $a0, 4($sp)
-	sw      $ra, ($sp)
-    jal     ssp_pm_write
+	sw 		$ra, 8($sp)
+	sw 		$t8, 4($sp)
+	sw 		$t6, ($sp)
+    jal     ssp_pm_write_asm
     nop
-    lw      $ra, ($sp)
-    lw      $a0, 4($sp)
-    lw      $a1, 8($sp)
-	addiu   $sp, $sp, 12
+  	lw 		$t6, ($sp)
+  	lw 		$t8, 4($sp)
+  	lw 		$ra, 8($sp)
+  	addiu   $sp, $sp, 12
+
+    #restore_registers_local
+    #lw      $ra, ($sp)
+    #lw      $a0, 4($sp)
+    #lw      $a1, 8($sp)
+	#addiu   $sp, $sp, 12
     subu    $s2, $s2, 35
 
 hle_07_036_ret:
@@ -1016,5 +1120,259 @@ skip26:
     li      $a0, 0x87
     j       ssp_drc_next	# let the dispatcher finish this
     nop
+
+.macro get_inc__
+	srl		$s6, $t2, 11
+	andi	$t4, $s6, 7							#$t4 - inc
+	beqz	$t4, 21f
+	nop
+	addi	$s6, $t4, -7
+	beqz	$s6, 20f
+	nop
+	addi	$t4, $t4, -1
+20:
+	li		$s6, 1
+	sllv	$t4, $s6, $t4
+	li		$s6, 0x8000
+	and		$s6, $t2, $s6
+	beqz	$s6, 21f
+	nop
+	sub		$t4, $zero, $t4
+21:
+
+.endm
+
+.macro overwrite_write__
+	move	$v0, $t0
+	andi	$s6, $a0, 0xf000
+	beqz	$s6, 30f
+	#nop
+	li		$t8, 0x0fff
+	and		$t8, $v0, $t8
+	or		$v0, $t8, $s6
+
+30:
+	andi	$s6, $a0, 0x0f00
+	beqz	$s6, 31f
+	#nop
+	li		$t8, 0xf0ff
+	and		$t8, $v0, $t8
+	or		$v0, $t8, $s6
+
+31:
+	andi	$s6, $a0, 0x00f0
+	beqz	$s6, 32f
+	#nop
+	li		$t8, 0xff0f
+	and		$t8, $v0, $t8
+	or		$v0, $t8, $s6
+
+32:
+	andi	$s6, $a0, 0x000f
+	beqz	$s6, 33f
+	#nop
+	li		$t8, 0xfff0
+	and		$t8, $v0, $t8
+	or		$v0, $t8, $s6
+
+33:
+
+.endm
+
+.global ssp_pm_read_asm   # $a0 reg
+ssp_pm_read_asm:
+	#move	$t0, $a0
+	lw		$t8, SSP_OFFS_EMUSTAT($t7)			# $t8 - emustat
+	andi	$t9, $t8, SSP_PMC_SET
+	beqz	$t9, skip37
+	nop
+	lw      $t9, (SSP_OFFS_GR+SSP_PMC*4)($t7)
+	li		$s6, 4
+	mul		$s6, $a0, $s6
+	add		$t5, $t7, $s6						# $t5 - reg offset
+	sw      $t9, SSP_OFFS_PM_READ($t5)
+	li		$s6, -3 							# ~SSP_PMC_SET
+	and		$t8, $t8, $s6
+	sw		$t8, SSP_OFFS_EMUSTAT($t7)
+	move	$v0, $zero
+	jr		$ra
+	nop
+
+skip37:
+	li		$s6, -2 							# ~SSP_PMC_HAVE_ADDR
+	and		$t8, $t8, $s6
+	sw		$t8, SSP_OFFS_EMUSTAT($t7)
+	li		$s6, 4
+	mul		$s6, $a0, $s6
+	add		$t5, $t7, $s6						# $t5 - reg offset
+	lw      $t9, SSP_OFFS_PM_READ($t5)			# $t9 - ssp->pmac_read[reg]
+	srl		$t2, $t9, 16						# $t2 - mode
+
+	andi	$s6, $t2, 0xfff0
+	addi	$s6, $s6, -0x0800
+	bnez	$s6, dram_block
+	nop
+	#lui     $t0, %hi(Pico+0x22200)
+    #li		$a1, %lo(Pico+0x22200)
+    #addu	$t0, $t0, $a1
+    #lw		$t0, ($t0)
+    lw		$t0, (Pico+0x22200)
+    li		$a1, 0xfffff
+    and		$a1, $t9, $a1
+	li		$s6, 2
+	mul		$a1, $a1, $s6
+    addu	$t0, $t0, $a1
+    lhu		$v0, ($t0)
+    addi	$t9, $t9, 1
+    sw      $t9, SSP_OFFS_PM_READ($t5)
+	b		skip38
+	nop
+
+dram_block:
+	andi	$s6, $t2, 0x47ff
+	addi	$s6, $s6, -0x0018
+	bnez	$s6, skip38
+	nop
+	get_inc__ 									# $t4 - inc
+	andi	$t3, $t9, 0xffff					# $t3 - addr
+	li		$s6, 2
+	mul		$t8, $t3, $s6
+    lw      $s6, SSP_OFFS_DRAM($t7)
+    addu    $t6, $s6, $t8						# addr (based)
+    lhu		$v0, ($t6)
+    add		$t9, $t9, $t4
+    sw      $t9, SSP_OFFS_PM_READ($t5)
+
+
+skip38:
+	sw      $t9, (SSP_OFFS_GR+SSP_PMC*4)($t7)
+	jr		$ra
+	nop
+
+
+.global ssp_pm_write_asm   # $t0 d, $t1 reg
+ssp_pm_write_asm:
+# $a0 $t0, $a1 $t1, $t2 mode, $t3 addr, $t4 inc, $t5 reg offset, $t6 addr (based), $t7 ssp, $t8 temp - emustat, $t9 temp
+	#move	$a0, $t0
+	#move	$a1, $t1
+	lw		$t8, SSP_OFFS_EMUSTAT($t7)			# $t8 - emustat
+	andi	$t9, $t8, SSP_PMC_SET
+	beqz	$t9, skip27
+	nop
+	lw      $t9, (SSP_OFFS_GR+SSP_PMC*4)($t7)
+	li		$s6, 4
+	mul		$s6, $a1, $s6
+	add		$t5, $t7, $s6						# $t5 - reg offset
+	sw      $t9, SSP_OFFS_PM_WRITE($t5)
+	li		$s6, -3 							# ~SSP_PMC_SET
+	and		$t8, $t8, $s6
+	sw		$t8, SSP_OFFS_EMUSTAT($t7)
+	jr		$ra
+	nop
+skip27:
+	li		$s6, -2 							# ~SSP_PMC_HAVE_ADDR
+	and		$t8, $t8, $s6
+	sw		$t8, SSP_OFFS_EMUSTAT($t7)
+	li		$s6, 4
+	mul		$s6, $a1, $s6
+	add		$t5, $t7, $s6						# $t5 - reg offset
+	lw      $t9, SSP_OFFS_PM_WRITE($t5)			#$t9 - ssp->pmac_write[reg]
+	srl		$t2, $t9, 16						#$t2 - mode
+	andi	$t3, $t9, 0xffff						#$t3 - addr
+
+	andi	$s6, $t2, 0x43ff
+	addi	$s6, $s6, -0x0018
+	bnez	$s6, dram_cell_inc
+	nop
+
+    get_inc__ 							#$t4 - inc
+
+	li		$s6, 2
+	mul		$t8, $t3, $s6
+    lw      $s6, SSP_OFFS_DRAM($t7)
+    addu    $t6, $s6, $t8						# addr (based)
+
+	andi	$s6, $t2, 0x0400
+	beqz	$s6, skip29
+	nop
+
+	lhu		$t0, ($t6)
+    overwrite_write__
+	sh		$v0, ($t6)
+	b		skip30
+	nop
+
+skip29:
+	sh		$a0, ($t6)
+
+skip30:
+	add		$t9, $t9, $t4
+	sw      $t9, SSP_OFFS_PM_WRITE($t5)
+	b		skip31
+	nop
+
+dram_cell_inc:
+	andi	$s6, $t2, 0xfbff
+	addi	$s6, $s6, -0x4018
+	bnez	$s6, iram_block
+	nop
+
+	li		$s6, 2
+	mul		$t8, $t3, $s6
+    lw      $s6, SSP_OFFS_DRAM($t7)
+    addu    $t6, $s6, $t8						# addr (based)
+
+	andi	$s6, $t2, 0x0400
+	beqz	$s6, skip33
+	nop
+
+	lhu		$t0, ($t6)
+    overwrite_write__
+	sh		$v0, ($t6)
+	b		skip34
+	nop
+
+skip33:
+	sh		$a0, ($t6)
+
+skip34:
+	andi	$s6, $t3, 1
+	beqz	$s6, skip35
+	nop
+	li		$t8, 0x1f
+	b		skip36
+	nop
+
+skip35:
+	li		$t8, 1
+
+skip36:
+	add		$t9, $t9, $t8
+	sw      $t9, SSP_OFFS_PM_WRITE($t5)
+	b		skip31
+	nop
+
+iram_block:
+	andi	$s6, $t2, 0x47ff
+	addi	$s6, $s6, -0x001c
+	bnez	$s6, skip31
+	nop
+
+    get_inc__
+
+	andi	$s6, $t3, 0x3ff
+	addu	$s6, $t7, $s6
+    sw      $a1, SSP_OFFS_IRAM_ROM($s6)
+
+	add		$t9, $t9, $t4
+	sw      $t9, SSP_OFFS_PM_WRITE($t5)
+
+	li		$s6, 1
+	lw      $s6, SSP_OFFS_IRAM_DIRTY($t7)
+
+skip31:
+	sw      $t9, (SSP_OFFS_GR+SSP_PMC*4)($t7)
+	jr		$ra
+	nop
 
 # vim:filetype=mipsasm
