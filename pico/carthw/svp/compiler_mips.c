@@ -661,8 +661,9 @@ static void tr_ptrr_mod(int r, int mod, int need_modulo, int count)
 		if (dirty_regb & KRREG_ST) {
 			// avoid flushing ARM flags
 			MIPS_ANDI(MIPS_a1,MIPS_t6,0x70);
-			MIPS_ADDIU(MIPS_s6,MIPS_zero,0x10);
-			MIPS_SUBU(MIPS_a1,MIPS_a1,MIPS_s6);
+			//MIPS_ADDIU(MIPS_s6,MIPS_zero,0x10);
+			//MIPS_SUBU(MIPS_a1,MIPS_a1,MIPS_s6);
+			MIPS_ADDIU(MIPS_a1,MIPS_a1,-0x10);
 			MIPS_ANDI(MIPS_a1,MIPS_a1,0x70);
 			MIPS_ADDI(MIPS_a1,MIPS_a1,0x10);
 		} else {
@@ -1089,8 +1090,9 @@ static void tr_PMX_to_r0(int reg)
 				MIPS_MOVE(MIPS_s5,MIPS_a0);
 				MIPS_BNEZ(MIPS_s5,7);
 				MIPS_NOP();
-				MIPS_ADDIU(MIPS_s6,MIPS_zero,0x400);
-				MIPS_SUBU(MIPS_s2,MIPS_s2,MIPS_s6);  // sub $s2, $s2, 1024
+				//MIPS_ADDIU(MIPS_s6,MIPS_zero,0x400);
+				//MIPS_SUBU(MIPS_s2,MIPS_s2,MIPS_s6);  // sub $s2, $s2, 1024
+				MIPS_ADDIU(MIPS_s2,MIPS_s2,-0x400);  // sub $s2, $s2, 1024
 				MIPS_LUI(MIPS_s6,(flag>>8)>>16);
 				MIPS_ORI(MIPS_s6,MIPS_s6,flag>>8);
 				MIPS_ROTR(MIPS_s6,MIPS_s6,24);

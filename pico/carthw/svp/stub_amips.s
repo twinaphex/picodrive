@@ -321,8 +321,9 @@ skip_4:
     li		$a3, 2					 # J opcode
     rotr    $a3, $a3, 6              # patched branch instruction
     srl     $s3, $s3, 2
-    lui		$s6, 0x3ff
-    ori		$s6, $s6, 0xffff		 # 26 bits offset
+    #lui		$s6, 0x3ff
+    #ori		$s6, $s6, 0xffff		 # 26 bits offset
+    li		$s6, 0x3ffffff		 # 26 bits offset
     and		$s3, $s3, $s6
     or		$a3, $a3, $s3
     sw      $a3, -8($a1)             # patch the jal to jump directly to another handler
@@ -405,8 +406,9 @@ ssp_hle_800:
     nop
 
 skip_7:
-	li      $a0, 0x400
-    or      $a0, $a0, 0x004
+	#li      $a0, 0x400
+    #or      $a0, $a0, 0x004
+    li      $a0, 0x404
     j       ssp_drc_next
     nop
 
@@ -421,8 +423,9 @@ skip_7:
 .macro hle_popstack
 	li		$s6, 0x20000000
     subu    $t6, $t6, $s6
-    addu    $a1, $t7, 0x400
-    addu    $a1, $a1, 0x048			# stack
+    #addu    $a1, $t7, 0x400
+    #addu    $a1, $a1, 0x048			# stack
+    addu    $a1, $t7, 0x448
     srl		$s6, $t6, 28
     addu    $a1, $a1, $s6
     lhu     $a0, ($a1)
@@ -532,7 +535,7 @@ skip_8_2:
 
 	blez	$s5, 10f
 	nop
-	lui		$s7, 0x0
+	li		$s7, 0x0
 	b		12f
 	nop
 10:
@@ -569,12 +572,12 @@ skip_8_3:
 	sw 		$t4, ($sp)
     jal     ssp_pm_read_asm
     nop
-  	lw 		$t4, ($sp)
-  	lw 		$t5, 4($sp)
-  	lw 		$t6, 8($sp)
-  	lw 		$t8, 12($sp)
+  	#lw 		$t4, ($sp)
+  	#lw 		$t5, 4($sp)
+  	#lw 		$t6, 8($sp)
+  	#lw 		$t8, 12($sp)
   	lw 		$ra, 16($sp)
-  	addiu   $sp, $sp, 20
+  	#addiu   $sp, $sp, 20
 
 	#addiu   $sp, $sp, -12
 	#sw      $a1, 8($sp)
@@ -589,20 +592,20 @@ skip_8_3:
     move    $t4, $v0
 
     li      $a0, 0
-	addiu   $sp, $sp, -20
-	sw 		$ra, 16($sp)
-	sw 		$t8, 12($sp)
-	sw 		$t6, 8($sp)
-	sw 		$t5, 4($sp)
+	#addiu   $sp, $sp, -20
+	#sw 		$ra, 16($sp)
+	#sw 		$t8, 12($sp)
+	#sw 		$t6, 8($sp)
+	#sw 		$t5, 4($sp)
 	sw 		$t4, ($sp)
     jal     ssp_pm_read_asm
     nop
-  	lw 		$t4, ($sp)
-  	lw 		$t5, 4($sp)
-  	lw 		$t6, 8($sp)
-  	lw 		$t8, 12($sp)
+  	#lw 		$t4, ($sp)
+  	#lw 		$t5, 4($sp)
+  	#lw 		$t6, 8($sp)
+  	#lw 		$t8, 12($sp)
   	lw 		$ra, 16($sp)
-  	addiu   $sp, $sp, 20
+  	#addiu   $sp, $sp, 20
 
 	#addiu   $sp, $sp, -12
 	#sw      $a1, 8($sp)
@@ -617,12 +620,12 @@ skip_8_3:
 	move    $t5, $v0
 
     li      $a0, 0
-	addiu   $sp, $sp, -20
-	sw 		$ra, 16($sp)
-	sw 		$t8, 12($sp)
-	sw 		$t6, 8($sp)
+	#addiu   $sp, $sp, -20
+	#sw 		$ra, 16($sp)
+	#sw 		$t8, 12($sp)
+	#sw 		$t6, 8($sp)
 	sw 		$t5, 4($sp)
-	sw 		$t4, ($sp)
+	#sw 		$t4, ($sp)
     jal     ssp_pm_read_asm
     nop
   	lw 		$t4, ($sp)
@@ -890,8 +893,9 @@ ssp_hle_07_036:
     lhu     $a2, ($t7)	# pattern
     lhu     $a3, 6($t7)	# mode
 
-    li      $s3,    0x4000
-    or      $s3, $s3,0x0018
+    #li      $s3,    0x4000
+    #or      $s3, $s3,0x0018
+    li      $s3,    0x4018
     subu    $s3, $a3, $s3
     beqz 	$s3, skip_13
     nop
@@ -1043,7 +1047,7 @@ hle_07_036_ending1:
 
 	blez	$s5, skip21
 	nop
-	lui		$s7, 0x0
+	li		$s7, 0x0
 	b		skip23
 	nop
 skip21:
@@ -1102,7 +1106,7 @@ hle_07_036_ending2:
 
 	blez	$s5, skip24
 	nop
-	lui		$s7, 0x0
+	li		$s7, 0x0
 	b		skip26
 	nop
 skip24:
@@ -1125,16 +1129,17 @@ skip26:
 	srl		$s6, $t2, 11
 	andi	$t4, $s6, 7							#$t4 - inc
 	beqz	$t4, 21f
-	nop
-	addi	$s6, $t4, -7
+	#nop
+	sub 	$s6, $t4, 7
 	beqz	$s6, 20f
 	nop
-	addi	$t4, $t4, -1
+	sub 	$t4, $t4, 1
 20:
 	li		$s6, 1
 	sllv	$t4, $s6, $t4
-	li		$s6, 0x8000
-	and		$s6, $t2, $s6
+	#li		$s6, 0x8000
+	#and		$s6, $t2, $s6
+	and		$s6, $t2, 0x8000
 	beqz	$s6, 21f
 	nop
 	sub		$t4, $zero, $t4
@@ -1147,32 +1152,36 @@ skip26:
 	andi	$s6, $a0, 0xf000
 	beqz	$s6, 30f
 	#nop
-	li		$t8, 0x0fff
-	and		$t8, $v0, $t8
+	#li		$t8, 0x0fff
+	#and		$t8, $v0, $t8
+	and		$t8, $v0, 0x0fff
 	or		$v0, $t8, $s6
 
 30:
 	andi	$s6, $a0, 0x0f00
 	beqz	$s6, 31f
 	#nop
-	li		$t8, 0xf0ff
-	and		$t8, $v0, $t8
+	#li		$t8, 0xf0ff
+	#and		$t8, $v0, $t8
+	and		$t8, $v0, 0xf0ff
 	or		$v0, $t8, $s6
 
 31:
 	andi	$s6, $a0, 0x00f0
 	beqz	$s6, 32f
 	#nop
-	li		$t8, 0xff0f
-	and		$t8, $v0, $t8
+	#li		$t8, 0xff0f
+	#and		$t8, $v0, $t8
+	and		$t8, $v0, 0xff0f
 	or		$v0, $t8, $s6
 
 32:
 	andi	$s6, $a0, 0x000f
 	beqz	$s6, 33f
 	#nop
-	li		$t8, 0xfff0
-	and		$t8, $v0, $t8
+	#li		$t8, 0xfff0
+	#and		$t8, $v0, $t8
+	and		$t8, $v0, 0xfff0
 	or		$v0, $t8, $s6
 
 33:
@@ -1209,7 +1218,7 @@ skip37:
 	srl		$t2, $t9, 16						# $t2 - mode
 
 	andi	$s6, $t2, 0xfff0
-	addi	$s6, $s6, -0x0800
+	sub 	$s6, $s6, 0x0800
 	bnez	$s6, dram_block
 	nop
 	#lui     $t0, %hi(Pico+0x22200)
@@ -1223,14 +1232,14 @@ skip37:
 	mul		$a1, $a1, $s6
     addu	$t0, $t0, $a1
     lhu		$v0, ($t0)
-    addi	$t9, $t9, 1
+    add 	$t9, $t9, 1
     sw      $t9, SSP_OFFS_PM_READ($t5)
 	b		skip38
 	nop
 
 dram_block:
 	andi	$s6, $t2, 0x47ff
-	addi	$s6, $s6, -0x0018
+	sub 	$s6, $s6, 0x0018
 	bnez	$s6, skip38
 	nop
 	get_inc__ 									# $t4 - inc
@@ -1281,7 +1290,7 @@ skip27:
 	andi	$t3, $t9, 0xffff						#$t3 - addr
 
 	andi	$s6, $t2, 0x43ff
-	addi	$s6, $s6, -0x0018
+	sub 	$s6, $s6, 0x0018
 	bnez	$s6, dram_cell_inc
 	nop
 
@@ -1313,7 +1322,7 @@ skip30:
 
 dram_cell_inc:
 	andi	$s6, $t2, 0xfbff
-	addi	$s6, $s6, -0x4018
+	sub 	$s6, $s6, 0x4018
 	bnez	$s6, iram_block
 	nop
 
@@ -1354,7 +1363,7 @@ skip36:
 
 iram_block:
 	andi	$s6, $t2, 0x47ff
-	addi	$s6, $s6, -0x001c
+	sub 	$s6, $s6, 0x001c
 	bnez	$s6, skip31
 	nop
 

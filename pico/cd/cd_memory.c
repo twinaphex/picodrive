@@ -241,27 +241,29 @@ write_comm:
 u32 s68k_poll_detect(u32 a, u32 d)
 {
 #ifdef USE_POLL_DETECT
-  u32 cycles, cnt = 0;
-  if (SekIsStoppedS68k())
-    return d;
+	if( PicoOpt & POPT_EN_ACCURATE_SYNC_CPUS ) {
+	  u32 cycles, cnt = 0;
+	  if (SekIsStoppedS68k())
+		return d;
 
-  cycles = SekCyclesDoneS68k();
-  if (!SekNotPolling && a == Pico_mcd->m.s68k_poll_a) {
-    u32 clkdiff = cycles - Pico_mcd->m.s68k_poll_clk;
-    if (clkdiff <= POLL_CYCLES) {
-      cnt = Pico_mcd->m.s68k_poll_cnt + 1;
-      //printf("-- diff: %u, cnt = %i\n", clkdiff, cnt);
-      if (Pico_mcd->m.s68k_poll_cnt > POLL_LIMIT) {
-        SekSetStopS68k(1);
-        elprintf(EL_CDPOLL, "s68k poll detected @%06x, a=%02x",
-          SekPcS68k, a);
-      }
-    }
-  }
-  Pico_mcd->m.s68k_poll_a = a;
-  Pico_mcd->m.s68k_poll_clk = cycles;
-  Pico_mcd->m.s68k_poll_cnt = cnt;
-  SekNotPollingS68k = 0;
+	  cycles = SekCyclesDoneS68k();
+	  if (!SekNotPolling && a == Pico_mcd->m.s68k_poll_a) {
+		u32 clkdiff = cycles - Pico_mcd->m.s68k_poll_clk;
+		if (clkdiff <= POLL_CYCLES) {
+		  cnt = Pico_mcd->m.s68k_poll_cnt + 1;
+		  //printf("-- diff: %u, cnt = %i\n", clkdiff, cnt);
+		  if (Pico_mcd->m.s68k_poll_cnt > POLL_LIMIT) {
+			SekSetStopS68k(1);
+			elprintf(EL_CDPOLL, "s68k poll detected @%06x, a=%02x",
+			  SekPcS68k, a);
+		  }
+		}
+	  }
+	  Pico_mcd->m.s68k_poll_a = a;
+	  Pico_mcd->m.s68k_poll_clk = cycles;
+	  Pico_mcd->m.s68k_poll_cnt = cnt;
+	  SekNotPollingS68k = 0;
+	}
 #endif
   return d;
 }

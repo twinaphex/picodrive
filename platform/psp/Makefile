@@ -14,7 +14,8 @@ dynarecs = 1
 
 CFLAGS += -IC:/pspsdk/powermgr/src/include
 CFLAGS += -IC:/pspsdk/psp/sdk/include/libc
-CFLAGS += -I../.. -I. -DNO_SYNC 
+CFLAGS += -I../.. -I. -DNO_SYNC -D_ASM_YM2612_C 
+#CFLAGS += -I../.. -I. -DNO_SYNC
 CFLAGS += -Wall -Winline -G0
 
 #SVP dynarec
@@ -90,7 +91,8 @@ ifneq "$(amalgamate)" "1"
 OBJS += ../../pico/sound/sound.o
 endif
 OBJS += ../../pico/sound/mix.o
-OBJS += ../../pico/sound/sn76496.o ../../pico/sound/ym2612.o
+OBJS += ../../pico/sound/sn76496.o ../../pico/sound/ym2612.o ../../pico/sound/ym2612_amips.o
+#OBJS += ../../pico/sound/sn76496.o ../../pico/sound/ym2612.o
 # zlib (hacked)
 OBJS += ../../zlib/gzio.o ../../zlib/inffast.o ../../zlib/inflate.o ../../zlib/inftrees.o ../../zlib/trees.o \
 	../../zlib/deflate.o ../../zlib/crc32.o ../../zlib/adler32.o ../../zlib/zutil.o ../../zlib/compress.o \
@@ -218,11 +220,11 @@ endif
 
 ../../pico/cd/memory.o : ../../pico/cd/memory.c
 	@echo ">>>" $<
-	$(CC) $(CFLAGS) -O2 -c $< -o $@
+	$(CC) $(CFLAGS) -O3 -c $< -o $@
 
 ../../pico/cd/gfx_cd.o : ../../pico/cd/gfx_cd.c
 	@echo ">>>" $<
-	$(CC) $(CFLAGS) -O2 -c $< -o $@
+	$(CC) $(CFLAGS) -O3 -c $< -o $@
 
 readme.txt: ../../tools/textfilter ../base_readme.txt
 	../../tools/textfilter ../base_readme.txt $@ PSP

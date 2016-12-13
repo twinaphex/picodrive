@@ -422,6 +422,7 @@ static menu_entry e_menu_cd_options[] =
 	mee_onoff_h("PCM audio",            MA_CDOPT_PCM,           PicoOpt, POPT_EN_MCD_PCM, h_cdpcm),
 	mee_onoff_h("SaveRAM cart",         MA_CDOPT_SAVERAM,       PicoOpt, POPT_EN_MCD_RAMCART, h_srcart),
 	mee_onoff_h("Scale/Rot. fx",        MA_CDOPT_SCALEROT_CHIP, PicoOpt, POPT_EN_MCD_GFX, h_scfx),
+	mee_onoff_h("Accurate sync for CPUs",        MA_CDOPT_ACCURATE_SYNC_CPUS, PicoOpt, POPT_EN_ACCURATE_SYNC_CPUS, h_bsync),
 	mee_end,
 };
 
@@ -1052,7 +1053,7 @@ static void draw_frame_credits(void)
 }
 
 static const char credits[] =
-	"PicoDrive v" VERSION " (c) notaz, 2006-2013\n\n\n"
+	"PicoDrive v" VERSION " (c) notaz, 2006-2016\n\n\n"
 	"Credits:\n"
 	"fDave: initial code\n"
 #ifdef EMU_C68K
@@ -1070,7 +1071,7 @@ static const char credits[] =
 	"Inder, ketchupgun: graphics\n"
 #ifdef PSP
 	"Robson Santana: PSP port revive\n"
-	"               PSP SVP dynarec\n"
+	"                PSP SVP dynarec\n"
 #endif
 #ifdef __GP2X__
 	"Squidge: mmuhack\n"
@@ -1237,8 +1238,8 @@ static menu_entry e_menu_main[] =
 	mee_handler_id("Load State",         MA_MAIN_LOAD_STATE,  main_menu_handler),
 	mee_handler_id("Reset game",         MA_MAIN_RESET_GAME,  main_menu_handler),
 	mee_handler_id("Load new ROM/ISO",   MA_MAIN_LOAD_ROM,    main_menu_handler),
-	mee_handler_id("Change CD/ISO",      MA_MAIN_CHANGE_CD,   main_menu_handler),
 	mee_handler   ("Change options",                          menu_loop_options),
+	mee_handler_id("Change CD/ISO",      MA_MAIN_CHANGE_CD,   main_menu_handler),
 	mee_handler   ("Configure controls",                      menu_loop_keyconfig),
 	mee_handler_id("Credits",            MA_MAIN_CREDITS,     main_menu_handler),
 	mee_handler_id("Patches / GameGenie",MA_MAIN_PATCHES,     main_menu_handler),
