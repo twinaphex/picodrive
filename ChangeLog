@@ -1,5 +1,13 @@
+1.91 (2016-12-16)
+  * Reverting to how to list the roms of version 1.51b
+  * Changed build from 'libretro' branch to 'master' branch
+
+1.91 (2016-12-13)
+  + Asm code for Yamaha sound chip
+  + Option for Sega CD CPUs sync (speed-up for some games)
+
 1.91 (2016-12-07)
-  * Bug fixes in interface, renderer and PSP SVP dynarec
+  * Bug fixes in interface, renderer, Sega CD audio and PSP SVP dynarec
   + SVP dynarec for PSP (mirror tracks don't work)
   + Option to keep sound while slowdown  
   + More screen size options (PSP)

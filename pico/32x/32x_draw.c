@@ -76,7 +76,7 @@ static inline unsigned short RGB5551toBGR5650(unsigned short src)
     else                                                          \
       pmd_draw_code;                                              \
   }                                                               \
-}
+} 
 
 // run length mode
 #define do_line_rl(pd, p32x, pmd, pmd_draw_code)                  \
@@ -304,7 +304,7 @@ void PicoDraw32xLayerMdOnly(int offs, int lines)
   for (l = 0; l < lines; l++) {
     if (have_scan) {
       PicoScan32xBegin(l + offs);
-      dst = (unsigned short*)DrawLineDest + poffs;
+      dst = DrawLineDest + poffs;
     }
     for (p = 0; p < plen; p += 4) {
       dst[p + 0] = pal[*pmd++];

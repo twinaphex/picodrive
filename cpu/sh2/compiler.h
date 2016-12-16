@@ -21,6 +21,6 @@ void sh2_drc_frame(void);
 #define OF_T_SET      (1 << 2) // T is known to be set
 #define OF_T_CLEAR    (1 << 3) // ... clear
 
-void scan_block(unsigned int base_pc, int is_slave,
-		unsigned char *op_flags, unsigned int *end_pc,
-		unsigned int *end_literals);
+void scan_block(u32 base_pc, int is_slave,
+		u8 *op_flags, u32 *end_pc,
+		u32 *end_literals);

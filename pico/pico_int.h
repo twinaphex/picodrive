@@ -601,10 +601,11 @@ void PicoDrawSetOutputMode4(pdso_t which);
 
 // memory.c
 PICO_INTERNAL void PicoMemSetup(void);
-unsigned int PicoRead8_io(unsigned int a);
-unsigned int PicoRead16_io(unsigned int a);
-void PicoWrite8_io(unsigned int a, unsigned int d);
-void PicoWrite16_io(unsigned int a, unsigned int d);
+u32 PicoRead8_io(u32 a);
+u32 PicoRead8_io_(u32 a);
+u32 PicoRead16_io(u32 a);
+void PicoWrite8_io(u32 a, u32 d);
+void PicoWrite16_io(u32 a, u32 d);
 
 // pico/memory.c
 PICO_INTERNAL void PicoMemSetupPico(void);
@@ -646,10 +647,10 @@ void DmaSlowCell(unsigned int source, unsigned int a, int len, unsigned char inc
 
 // cd/memory.c
 PICO_INTERNAL void PicoMemSetupCD(void);
-unsigned int PicoRead8_mcd_io(unsigned int a);
-unsigned int PicoRead16_mcd_io(unsigned int a);
-void PicoWrite8_mcd_io(unsigned int a, unsigned int d);
-void PicoWrite16_mcd_io(unsigned int a, unsigned int d);
+u32 PicoRead8_mcd_io(u32 a);
+u32 PicoRead16_mcd_io(u32 a);
+void PicoWrite8_mcd_io(u32 a, u32 d);
+void PicoWrite16_mcd_io(u32 a, u32 d);
 void pcd_state_loaded_mem(void);
 
 // pico.c
@@ -848,15 +849,15 @@ void p32x_schedule_hint(SH2 *sh2, int m68k_cycles);
 
 // 32x/memory.c
 struct Pico32xMem *Pico32xMem;
-unsigned int PicoRead8_32x(unsigned int a);
-unsigned int PicoRead16_32x(unsigned int a);
-void PicoWrite8_32x(unsigned int a, unsigned int d);
-void PicoWrite16_32x(unsigned int a, unsigned int d);
+u32 PicoRead8_32x(u32 a);
+u32 PicoRead16_32x(u32 a);
+void PicoWrite8_32x(u32 a, u32 d);
+void PicoWrite16_32x(u32 a, u32 d);
 void PicoMemSetup32x(void);
 void Pico32xSwapDRAM(int b);
 void Pico32xMemStateLoaded(void);
-void p32x_m68k_poll_event(unsigned int flags);
-void p32x_sh2_poll_event(SH2 *sh2, unsigned int flags, unsigned int m68k_cycles);
+void p32x_m68k_poll_event(u32 flags);
+void p32x_sh2_poll_event(SH2 *sh2, u32 flags, u32 m68k_cycles);
 
 // 32x/draw.c
 void PicoDrawSetOutFormat32x(pdso_t which, int use_32x_line_mode);
@@ -891,12 +892,12 @@ void p32x_dreq1_trigger(void);
 void p32x_timers_recalc(void);
 void p32x_timers_do(unsigned int m68k_slice);
 void sh2_peripheral_reset(SH2 *sh2);
-unsigned int sh2_peripheral_read8(unsigned int a, SH2 *sh2);
-unsigned int sh2_peripheral_read16(unsigned int a, SH2 *sh2);
-unsigned int sh2_peripheral_read32(unsigned int a, SH2 *sh2);
-void REGPARM(3) sh2_peripheral_write8(unsigned int a, unsigned int d, SH2 *sh2);
-void REGPARM(3) sh2_peripheral_write16(unsigned int a, unsigned int d, SH2 *sh2);
-void REGPARM(3) sh2_peripheral_write32(unsigned int a, unsigned int d, SH2 *sh2);
+u32 sh2_peripheral_read8(u32 a, SH2 *sh2);
+u32 sh2_peripheral_read16(u32 a, SH2 *sh2);
+u32 sh2_peripheral_read32(u32 a, SH2 *sh2);
+void REGPARM(3) sh2_peripheral_write8(u32 a, u32 d, SH2 *sh2);
+void REGPARM(3) sh2_peripheral_write16(u32 a, u32 d, SH2 *sh2);
+void REGPARM(3) sh2_peripheral_write32(u32 a, u32 d, SH2 *sh2);
 
 #else
 #define Pico32xInit()
@@ -957,11 +958,15 @@ static __inline int isspace_(int c)
 #define EL_ANOMALY 0x80000000 /* some unexpected conditions (during emulation) */
 
 #if EL_LOGMASK
+#ifdef LOG
 #define elprintf(w,f,...) \
 do { \
 	if ((w) & EL_LOGMASK) \
 		lprintf("%05i:%03i: " f "\n",Pico.m.frame_count,Pico.m.scanline,##__VA_ARGS__); \
 } while (0)
+#else
+#define elprintf(w,f,...)
+#endif
 #elif defined(_MSC_VER)
 #define elprintf
 #else

@@ -60,15 +60,16 @@ ifeq "$(amalgamate)" "1"
 OBJS += ../../picoAll.o
 else
 OBJS += ../../pico/cart.o ../../pico/memory.o ../../pico/misc.o ../../pico/pico.o ../../pico/sek.o ../../pico/videoport.o \
-	    ../../pico/draw2.o ../../pico/draw.o ../../pico/z80if.o ../../pico/patch.o ../../pico/draw_amips.o \
+	    ../../pico/draw2.o ../../pico/draw.o ../../pico/z80if.o ../../pico/patch.o ../../pico/draw_amips.o ../../pico/memory_amips.o \
 	    ../../pico/misc_amips.o ../../pico/debug.o ../../pico/state.o ../../pico/media.o ../../pico/sms.o ../../pico/eeprom.o \
-	    ../../pico/mode4.o ../../pico/draw2_amips.o ../../pico/memory_amips.o 
+	    ../../pico/mode4.o ../../pico/draw2_amips.o  
 # Pico - CD
 OBJS += ../../pico/cd/cd_memory.o ../../pico/cd/cd_sek.o \
 		../../pico/cd/cue.o ../../pico/cd/gfx.o \
 		../../pico/cd/cd_misc.o ../../pico/cd/pcm.o ../../pico/cd/mcd.o \
 		../../pico/cd/gfx_dma.o ../../pico/cd/cdd.o \
-		../../pico/cd/cdc.o ../../pico/cd/cd_image.o ../../pico/cd/cell_map.o
+		../../pico/cd/cdc.o ../../pico/cd/cd_image.o ../../pico/cd/cell_map.o		
+#		../../pico/cd/cdc.o ../../pico/cd/cd_image.o ../../pico/cd/cell_map.o ../../pico/cd/memory_amips.o		
 # Pico - 32x
 OBJS += ../../pico/32x/32x.o ../../pico/32x/32x_draw.o \
 		../../pico/32x/32x_memory.o ../../pico/32x/pwm.o \
@@ -107,17 +108,9 @@ else
 CFLAGS += -DEMU_F68K
 OBJS += ../../cpu/fame/famec.o
 endif
-# sh2
-ifeq "$(use_drc_sh2_psp)" "1"
-CFLAGS += -DDRC_SH2_PSP -fomit-frame-pointer
-OBJS += ../../cpu/yabause_sh2/sh2core.o ../../cpu/yabause_sh2/memory.o \
-        ../../cpu/yabause_sh2/sh2int.o ../../cpu/yabause_sh2/sh2idle.o \
-        ../../cpu/yabause_sh2/psp/psp-sh2.o
-else        
+# sh2    
 OBJS += ../../cpu/sh2/sh2.o ../../cpu/sh2/compiler.o \
-        ../../cpu/sh2/mame/sh2pico.o
-#        ../../cpu/sh2/mame/sh2.o ../../cpu/sh2/mame/sh2dasm.o ../../cpu/sh2/mame/sh2pico.o        
-endif    
+        ../../cpu/sh2/mame/sh2pico.o        
 # z80
 ifeq "$(use_mz80)" "1"
 CFLAGS += -D_USE_MZ80
@@ -216,15 +209,15 @@ endif
 
 ../../pico/memory.o : ../../pico/memory.c
 	@echo ">>>" $<
-	$(CC) $(CFLAGS) -O3 -c $< -o $@ -D_ASM_MEMORY_C -D_ASM_MEMORY_C_AMIPS
+	$(CC) $(CFLAGS) -O2 -c $< -o $@ -D_ASM_MEMORY_C -D_ASM_MEMORY_C_AMIPS
 
-../../pico/cd/memory.o : ../../pico/cd/memory.c
+../../pico/cd/memory.o : ../../pico/cd/cd_memory.c
 	@echo ">>>" $<
-	$(CC) $(CFLAGS) -O3 -c $< -o $@
+	$(CC) $(CFLAGS) -O2 -c $< -o $@
 
-../../pico/cd/gfx_cd.o : ../../pico/cd/gfx_cd.c
+../../pico/cd/gfx_cd.o : ../../pico/cd/gfx.c
 	@echo ">>>" $<
-	$(CC) $(CFLAGS) -O3 -c $< -o $@
+	$(CC) $(CFLAGS) -O2 -c $< -o $@
 
 readme.txt: ../../tools/textfilter ../base_readme.txt
 	../../tools/textfilter ../base_readme.txt $@ PSP
@@ -240,7 +233,7 @@ data/bg40.o: data/bg40.bin
 
 #
 ifndef UPDIR
-UPDIR = E:/PSP/GAME/PicoDrive/
+UPDIR = /media/disk/PSP/GAME/PicoDrive/
 endif
 up: EBOOT.PBP
 	@cp -v $^ $(UPDIR)
