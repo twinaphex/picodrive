@@ -1052,6 +1052,81 @@ static int dirent_seek_char(struct my_dirent **namelist, int len, int sel, char 
 	return i - 1;
 }
 
+#ifdef PSP
+static int my_scandir(const char *dir, struct my_dirent ***namelist_out,
+		int(*filter)(const struct my_dirent *),
+		int(*compar)(const void *, const void *))
+{
+	int ret = -1, dir_uid = -1, name_alloc = 4, name_count = 0;
+	struct my_dirent **namelist = NULL, *ent;
+	SceIoDirent sce_ent;
+
+	namelist = malloc(sizeof(*namelist) * name_alloc);
+	if (namelist == NULL) { lprintf("%s:%i: OOM\n", __FILE__, __LINE__); goto fail; }
+
+	// try to read first..
+	dir_uid = sceIoDopen(dir);
+	if (dir_uid >= 0)
+	{
+		/* it is very important to clear SceIoDirent to be passed to sceIoDread(), */
+		/* or else it may crash, probably misinterpreting something in it. */
+		memset(&sce_ent, 0, sizeof(sce_ent));
+		ret = sceIoDread(dir_uid, &sce_ent);
+		if (ret < 0)
+		{
+			lprintf("sceIoDread(\"%s\") failed with %i\n", dir, ret);
+			goto fail;
+		}
+	}
+	else
+		lprintf("sceIoDopen(\"%s\") failed with %i\n", dir, dir_uid);
+
+	while (ret > 0)
+	{
+		ent = malloc(sizeof(*ent));
+		if (ent == NULL) { lprintf("%s:%i: OOM\n", __FILE__, __LINE__); goto fail; }
+		ent->d_type = sce_ent.d_stat.st_attr;
+		strncpy(ent->d_name, sce_ent.d_name, sizeof(ent->d_name));
+		ent->d_name[sizeof(ent->d_name)-1] = 0;
+		if (filter == NULL || filter(ent))
+		     namelist[name_count++] = ent;
+		else free(ent);
+
+		if (name_count >= name_alloc)
+		{
+			void *tmp;
+			name_alloc *= 2;
+			tmp = realloc(namelist, sizeof(*namelist) * name_alloc);
+			if (tmp == NULL) { lprintf("%s:%i: OOM\n", __FILE__, __LINE__); goto fail; }
+			namelist = tmp;
+		}
+
+		memset(&sce_ent, 0, sizeof(sce_ent));
+		ret = sceIoDread(dir_uid, &sce_ent);
+	}
+
+	// sort
+	if (compar != NULL && name_count > 3) qsort(&namelist[2], name_count - 2, sizeof(namelist[0]), compar);
+
+	// all done.
+	ret = name_count;
+	*namelist_out = namelist;
+	goto end;
+
+fail:
+	if (namelist != NULL)
+	{
+		while (name_count--)
+			free(namelist[name_count]);
+		free(namelist);
+	}
+end:
+	if (dir_uid >= 0) sceIoDclose(dir_uid);
+	return ret;
+}
+#endif
+
+
 #ifndef PSP
 static const char *menu_loop_romsel(char *curr_path, int len,
 	const char **filter_exts,
@@ -1109,7 +1184,11 @@ rescan:
 	if (!g_menu_filter_off)
 		filter = scandir_filter;
 
+#ifndef PSP
 	n = scandir(curr_path, &namelist, filter, (void *)scandir_cmp);
+#else
+	n = my_scandir(curr_path, &namelist, filter, (void *)scandir_cmp);
+#endif
 	if (n < 0) {
 		char *t;
 		lprintf("menu_loop_romsel failed, dir: %s\n", curr_path);
@@ -1118,7 +1197,11 @@ rescan:
 		t = getcwd(curr_path, len);
 		if (t == NULL)
 			plat_get_root_dir(curr_path, len);
-		n = scandir(curr_path, &namelist, filter, (void *)scandir_cmp);
+#ifndef PSP
+			n = scandir(curr_path, &namelist, filter, (void *)scandir_cmp);
+#else
+			n = my_scandir(curr_path, &namelist, filter, (void *)scandir_cmp);
+#endif
 		if (n < 0) {
 			// oops, we failed
 			lprintf("menu_loop_romsel failed, dir: %s\n", curr_path);
@@ -1126,6 +1209,7 @@ rescan:
 		}
 	}
 
+#ifndef PSP
 	// try to resolve DT_UNKNOWN and symlinks
 	changed = 0;
 	for (i = 0; i < n; i++) {
@@ -1149,6 +1233,7 @@ rescan:
 			}
 		}
 	}
+#endif
 
 	if (!g_menu_filter_off && extra_filter != NULL)
 		n = extra_filter(namelist, n, curr_path);
@@ -1290,6 +1375,7 @@ static void draw_savestate_menu(int menu_sel, int is_loading)
 {
 	int i, x, y, w, h;
 	char time_buf[32];
+	int renderer_old = currentConfig.renderer;
 
 	if (state_slot_flags & (1 << menu_sel))
 		draw_savestate_bg(menu_sel);
@@ -1331,6 +1417,7 @@ static void draw_savestate_menu(int menu_sel, int is_loading)
 	text_out16(x, y, "back");
 
 	menu_draw_end();
+	currentConfig.renderer = renderer_old;
 }
 
 static int menu_loop_savestate(int is_loading)
