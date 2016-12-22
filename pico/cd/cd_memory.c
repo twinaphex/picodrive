@@ -278,7 +278,7 @@ u32 s68k_poll_detect(u32 a, u32 d)
 
 
 #ifndef _ASM_CD_MEMORY_C
-static
+//static
 #endif
 u32 s68k_reg_read16(u32 a)
 {
@@ -290,7 +290,10 @@ u32 s68k_reg_read16(u32 a)
     case 2:
       d = (Pico_mcd->s68k_regs[2]<<8) | (Pico_mcd->s68k_regs[3]&0x1f);
       elprintf(EL_CDREG3, "s68k_regs r3: %02x @%06x", (u8)d, SekPcS68k);
-      return s68k_poll_detect(a, d);
+      if( PicoOpt & POPT_EN_ACCURATE_SYNC_CPUS )
+    	  return s68k_poll_detect(a, d);
+      return d;
+
     case 6:
       return cdc_reg_r();
     case 8:
@@ -322,8 +325,11 @@ u32 s68k_reg_read16(u32 a)
 
   d = (Pico_mcd->s68k_regs[a]<<8) | Pico_mcd->s68k_regs[a+1];
 
-  if (a >= 0x0e && a < 0x30)
-    return s68k_poll_detect(a, d);
+  if (a >= 0x0e && a < 0x30) {
+	  if( PicoOpt & POPT_EN_ACCURATE_SYNC_CPUS )
+		  return s68k_poll_detect(a, d);
+	  return d;
+  }
 
   return d;
 }
@@ -901,7 +907,8 @@ static u32 PicoReadS68k8_pr(u32 a)
     a &= 0x1ff;
     if (a >= 0x0e && a < 0x30) {
       d = Pico_mcd->s68k_regs[a];
-      s68k_poll_detect(a & ~1, d);
+      if( PicoOpt & POPT_EN_ACCURATE_SYNC_CPUS )
+    	  s68k_poll_detect(a & ~1, d);
       goto regs_done;
     }
     d = s68k_reg_read16(a & ~1);
