@@ -14,8 +14,8 @@ dynarecs = 1
 
 CFLAGS += -IC:/pspsdk/powermgr/src/include
 CFLAGS += -IC:/pspsdk/psp/sdk/include/libc
-CFLAGS += -I../.. -I. -DNO_SYNC -D_ASM_YM2612_C 
-#CFLAGS += -I../.. -I. -DNO_SYNC
+#CFLAGS += -I../.. -I. -DNO_SYNC -D_ASM_YM2612_C 
+CFLAGS += -I../.. -I. -DNO_SYNC
 CFLAGS += -Wall -Winline -G0
 
 #SVP dynarec
@@ -68,8 +68,9 @@ OBJS += ../../pico/cd/cd_memory.o ../../pico/cd/cd_sek.o \
 		../../pico/cd/cue.o ../../pico/cd/gfx.o \
 		../../pico/cd/cd_misc.o ../../pico/cd/pcm.o ../../pico/cd/mcd.o \
 		../../pico/cd/gfx_dma.o ../../pico/cd/cdd.o \
-		../../pico/cd/cdc.o ../../pico/cd/cd_image.o ../../pico/cd/cell_map.o		
-#		../../pico/cd/cdc.o ../../pico/cd/cd_image.o ../../pico/cd/cell_map.o ../../pico/cd/memory_amips.o		
+		../../pico/cd/cdc.o ../../pico/cd/cd_image.o ../../pico/cd/cell_map.o ../../pico/cd/memory_amips.o		
+#		../../pico/cd/cdc.o ../../pico/cd/cd_image.o ../../pico/cd/cell_map.o		
+		
 # Pico - 32x
 OBJS += ../../pico/32x/32x.o ../../pico/32x/32x_draw.o \
 		../../pico/32x/32x_memory.o ../../pico/32x/pwm.o \
@@ -92,8 +93,9 @@ ifneq "$(amalgamate)" "1"
 OBJS += ../../pico/sound/sound.o
 endif
 OBJS += ../../pico/sound/mix.o
-OBJS += ../../pico/sound/sn76496.o ../../pico/sound/ym2612.o ../../pico/sound/ym2612_amips.o
-#OBJS += ../../pico/sound/sn76496.o ../../pico/sound/ym2612.o
+#OBJS += ../../pico/sound/mix_amips.o
+#OBJS += ../../pico/sound/sn76496.o ../../pico/sound/ym2612.o ../../pico/sound/ym2612_amips.o
+OBJS += ../../pico/sound/sn76496.o ../../pico/sound/ym2612.o
 # zlib (hacked)
 OBJS += ../../zlib/gzio.o ../../zlib/inffast.o ../../zlib/inflate.o ../../zlib/inftrees.o ../../zlib/trees.o \
 	../../zlib/deflate.o ../../zlib/crc32.o ../../zlib/adler32.o ../../zlib/zutil.o ../../zlib/compress.o \

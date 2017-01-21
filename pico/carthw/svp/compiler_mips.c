@@ -661,8 +661,6 @@ static void tr_ptrr_mod(int r, int mod, int need_modulo, int count)
 		if (dirty_regb & KRREG_ST) {
 			// avoid flushing ARM flags
 			MIPS_ANDI(MIPS_a1,MIPS_t6,0x70);
-			//MIPS_ADDIU(MIPS_s6,MIPS_zero,0x10);
-			//MIPS_SUBU(MIPS_a1,MIPS_a1,MIPS_s6);
 			MIPS_ADDIU(MIPS_a1,MIPS_a1,-0x10);
 			MIPS_ANDI(MIPS_a1,MIPS_a1,0x70);
 			MIPS_ADDI(MIPS_a1,MIPS_a1,0x10);
@@ -1090,8 +1088,6 @@ static void tr_PMX_to_r0(int reg)
 				MIPS_MOVE(MIPS_s5,MIPS_a0);
 				MIPS_BNEZ(MIPS_s5,7);
 				MIPS_NOP();
-				//MIPS_ADDIU(MIPS_s6,MIPS_zero,0x400);
-				//MIPS_SUBU(MIPS_s2,MIPS_s2,MIPS_s6);  // sub $s2, $s2, 1024
 				MIPS_ADDIU(MIPS_s2,MIPS_s2,-0x400);  // sub $s2, $s2, 1024
 				MIPS_LUI(MIPS_s6,(flag>>8)>>16);
 				MIPS_ORI(MIPS_s6,MIPS_s6,flag>>8);
@@ -1856,10 +1852,8 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 			tr_flush_dirty_P();
 			tr_mac_load_XY(op);
 			tr_make_dirty_ST();
-			generate_op_add_flags_prologue(MIPS_t5,MIPS_s1);
 			MIPS_ADDU(MIPS_t5,MIPS_t5,MIPS_s1);
 			MIPS_MOVE(MIPS_s5,MIPS_t5);
-			generate_op_add_flags_epilogue(MIPS_t5);
 			hostreg_sspreg_changed(SSP_A);
 			known_regb &= ~(KRREG_A|KRREG_AL);
 			dirty_regb |= KRREG_ST;
@@ -1889,86 +1883,33 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 			if (tmpv == SSP_P) {
 				tr_flush_dirty_P();
 				if( tmpv2 != -1 ) {
-
-					if( tmpv2 == __SP_ADDU ) {
-						generate_op_add_flags_prologue(MIPS_t5,MIPS_s1);
-					}
-
-					else if( tmpv2 == __SP_SUBU ){
-						generate_op_sub_flags_prologue(MIPS_t5,MIPS_s1);
-					}
-
 					__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_s1,MIPS_t5,0,tmpv2);  // OPs $t5, $t5, $s1
 					MIPS_MOVE(MIPS_s5,MIPS_t5);
-					if( ( tmpv2 == __SP_AND ) || ( tmpv2 == __SP_OR ) || ( tmpv2 == __SP_XOR ) ) {
-						generate_op_logic_flags(MIPS_t5);
-					}
-
-					else if( tmpv2 == __SP_ADDU ) {
-						generate_op_add_flags_epilogue(MIPS_t5);
-					}
-
-					else {
-						generate_op_sub_flags_epilogue(MIPS_t5);
-					}
 				}
 				else {
-					generate_op_sub_flags_prologue(MIPS_t5,MIPS_s1);
 					MIPS_SUBU(MIPS_s5,MIPS_t5,MIPS_s1);
-					generate_op_sub_flags_epilogue(MIPS_s5);
 				}
 			} else if (tmpv == SSP_A) {
 				if( tmpv2 != -1 ) {
-					if( tmpv2 == __SP_ADDU ) {
-						generate_op_add_flags_prologue(MIPS_t5,MIPS_t5);
-					}
-
-					else if( tmpv2 == __SP_SUBU ){
-						generate_op_sub_flags_prologue(MIPS_t5,MIPS_t5);
-					}
-
 					__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_t5,MIPS_t5,0,tmpv2);  // OPs $t5, $t5, $t5
 					MIPS_MOVE(MIPS_s5,MIPS_t5);
-					if( ( tmpv2 == __SP_AND ) || ( tmpv2 == __SP_OR ) || ( tmpv2 == __SP_XOR ) ) {
-						generate_op_logic_flags(MIPS_t5);
-					}
-
-					else if( tmpv2 == __SP_ADDU ) {
-						generate_op_add_flags_epilogue(MIPS_t5);
-					}
-
-					else {
-						generate_op_sub_flags_epilogue(MIPS_t5);
-					}
 				}
 				else {
 					MIPS_MOVE(MIPS_s5,MIPS_zero);
-					generate_op_logic_flags(MIPS_s5);
 				}
 			} else {
 				tr_read_funcs[tmpv](op);
 				MIPS_SLL(MIPS_s6,MIPS_a0,16);
 				if( tmpv2 != -1 ) {
 
-					if( tmpv2 == __SP_ADDU ) {
-						generate_op_add_flags_prologue(MIPS_t5,MIPS_s6);
-					}
-
-					else if( tmpv2 == __SP_SUBU ){
+					if( tmpv2 == __SP_SUBU ){
 						generate_op_sub_flags_prologue(MIPS_t5,MIPS_s6);
 					}
 
 					__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_s6,MIPS_t5,0,tmpv2);  // OPs $t5, $t5, $s6
 					MIPS_MOVE(MIPS_s5,MIPS_t5);
-					if( ( tmpv2 == __SP_AND ) || ( tmpv2 == __SP_OR ) || ( tmpv2 == __SP_XOR ) ) {
-						generate_op_logic_flags(MIPS_t5);
-					}
 
-					else if( tmpv2 == __SP_ADDU ) {
-						generate_op_add_flags_epilogue(MIPS_t5);
-					}
-
-					else {
+					if( tmpv2 == __SP_SUBU ){
 						generate_op_sub_flags_epilogue(MIPS_t5);
 					}
 				}
@@ -1994,28 +1935,8 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 			tr_rX_read((op&3)|((op>>6)&4), (op>>2)&3);
 			MIPS_SLL(MIPS_s6,MIPS_a0,16);
 			if( tmpv2 != -1 ) {
-
-				if( tmpv2 == __SP_ADDU ) {
-					generate_op_add_flags_prologue(MIPS_t5,MIPS_s6);
-				}
-
-				else if( tmpv2 == __SP_SUBU ){
-					generate_op_sub_flags_prologue(MIPS_t5,MIPS_s6);
-				}
-
 				__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_s6,MIPS_t5,0,tmpv2);  // OPs $t5, $t5, $s5
 				MIPS_MOVE(MIPS_s5,MIPS_t5);
-				if( ( tmpv2 == __SP_AND ) || ( tmpv2 == __SP_OR ) || ( tmpv2 == __SP_XOR ) ) {
-					generate_op_logic_flags(MIPS_t5);
-				}
-
-				else if( tmpv2 == __SP_ADDU ) {
-					generate_op_add_flags_epilogue(MIPS_t5);
-				}
-
-				else {
-					generate_op_sub_flags_epilogue(MIPS_t5);
-				}
 			}
 			else {
 				generate_op_sub_flags_prologue(MIPS_t5,MIPS_s6);
@@ -2038,33 +1959,11 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 			tr_bank_read(op&0x1ff);
 			MIPS_SLL(MIPS_s6,MIPS_a0,16);
 			if( tmpv2 != -1 ) {
-
-				if( tmpv2 == __SP_ADDU ) {
-					generate_op_add_flags_prologue(MIPS_t5,MIPS_s6);
-				}
-
-				else if( tmpv2 == __SP_SUBU ){
-					generate_op_sub_flags_prologue(MIPS_t5,MIPS_s6);
-				}
-
 				__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_s6,MIPS_t5,0,tmpv2);  // OPs $t5, $t5, $s5
 				MIPS_MOVE(MIPS_s5,MIPS_t5);
-				if( ( tmpv2 == __SP_AND ) || ( tmpv2 == __SP_OR ) || ( tmpv2 == __SP_XOR ) ) {
-					generate_op_logic_flags(MIPS_t5);
-				}
-
-				else if( tmpv2 == __SP_ADDU ) {
-					generate_op_add_flags_epilogue(MIPS_t5);
-				}
-
-				else {
-					generate_op_sub_flags_epilogue(MIPS_t5);
-				}
 			}
 			else {
-				generate_op_sub_flags_prologue(MIPS_t5,MIPS_s6);
 				MIPS_SUBU(MIPS_s5,MIPS_t5,MIPS_s6);
-				generate_op_sub_flags_epilogue(MIPS_s5);
 			}
 			hostreg_sspreg_changed(SSP_A);
 			known_regb &= ~(KRREG_A|KRREG_AL|KRREG_ST);
@@ -2083,33 +1982,15 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 			tr_mov16(0, imm);
 			MIPS_SLL(MIPS_s6,MIPS_a0,16);
 			if( tmpv2 != -1 ) {
-
-				if( tmpv2 == __SP_ADDU ) {
-					generate_op_add_flags_prologue(MIPS_t5,MIPS_s6);
-				}
-
-				else if( tmpv2 == __SP_SUBU ){
-					generate_op_sub_flags_prologue(MIPS_t5,MIPS_s6);
-				}
-
 				__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_s6,MIPS_t5,0,tmpv2);  // OPs $t5, $t5, $s5
 				MIPS_MOVE(MIPS_s5,MIPS_t5);
+
 				if( ( tmpv2 == __SP_AND ) || ( tmpv2 == __SP_OR ) || ( tmpv2 == __SP_XOR ) ) {
 					generate_op_logic_flags(MIPS_t5);
 				}
-
-				else if( tmpv2 == __SP_ADDU ) {
-					generate_op_add_flags_epilogue(MIPS_t5);
-				}
-
-				else {
-					generate_op_sub_flags_epilogue(MIPS_t5);
-				}
 			}
 			else {
-				generate_op_sub_flags_prologue(MIPS_t5,MIPS_s6);
 				MIPS_SUBU(MIPS_s5,MIPS_t5,MIPS_s6);
-				generate_op_sub_flags_epilogue(MIPS_s5);
 			}
 			hostreg_sspreg_changed(SSP_A);
 			known_regb &= ~(KRREG_A|KRREG_AL|KRREG_ST);
@@ -2127,28 +2008,8 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 			tr_rX_read2(op);
 			MIPS_SLL(MIPS_s6,MIPS_a0,16);
 			if( tmpv2 != -1 ) {
-
-				if( tmpv2 == __SP_ADDU ) {
-					generate_op_add_flags_prologue(MIPS_t5,MIPS_s6);
-				}
-
-				else if( tmpv2 == __SP_SUBU ){
-					generate_op_sub_flags_prologue(MIPS_t5,MIPS_s6);
-				}
-
 				__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_s6,MIPS_t5,0,tmpv2);  // OPs $t5, $t5, $s5
 				MIPS_MOVE(MIPS_s5,MIPS_t5);
-				if( ( tmpv2 == __SP_AND ) || ( tmpv2 == __SP_OR ) || ( tmpv2 == __SP_XOR ) ) {
-					generate_op_logic_flags(MIPS_t5);
-				}
-
-				else if( tmpv2 == __SP_ADDU ) {
-					generate_op_add_flags_epilogue(MIPS_t5);
-				}
-
-				else {
-					generate_op_sub_flags_epilogue(MIPS_t5);
-				}
 			}
 			else {
 				generate_op_sub_flags_prologue(MIPS_t5,MIPS_s6);
@@ -2176,32 +2037,19 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 				MIPS_LUI(MIPS_s6,known_regs.r[r]);
 				if( tmpv2 != -1 ) {
 
-					if( tmpv2 == __SP_ADDU ) {
-						generate_op_add_flags_prologue(MIPS_t5,MIPS_s6);
-					}
-
-					else if( tmpv2 == __SP_SUBU ){
+					if( tmpv2 == __SP_SUBU ){
 						generate_op_sub_flags_prologue(MIPS_t5,MIPS_s6);
 					}
 
 					__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_s6,MIPS_t5,0,tmpv2);  // OPs $t5, $t5, $s5
 					MIPS_MOVE(MIPS_s5,MIPS_t5);
-					if( ( tmpv2 == __SP_AND ) || ( tmpv2 == __SP_OR ) || ( tmpv2 == __SP_XOR ) ) {
-						generate_op_logic_flags(MIPS_t5);
-					}
 
-					else if( tmpv2 == __SP_ADDU ) {
-						generate_op_add_flags_epilogue(MIPS_t5);
-					}
-
-					else {
+					if( tmpv2 == __SP_SUBU ){
 						generate_op_sub_flags_epilogue(MIPS_t5);
 					}
 				}
 				else {
-					generate_op_sub_flags_prologue(MIPS_t5,MIPS_s6);
 					MIPS_SUBU(MIPS_s5,MIPS_t5,MIPS_s6);
-					generate_op_sub_flags_epilogue(MIPS_s5);
 				}
 			} else {
 				int reg = (r < 4) ? 8 : 9;
@@ -2212,32 +2060,11 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 
 				if( tmpv2 != -1 ) {
 
-					if( tmpv2 == __SP_ADDU ) {
-						generate_op_add_flags_prologue(MIPS_t5,MIPS_s6);
-					}
-
-					else if( tmpv2 == __SP_SUBU ){
-						generate_op_sub_flags_prologue(MIPS_t5,MIPS_s6);
-					}
-
 					__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_s6,MIPS_t5,0,tmpv2);  // OPs $t5, $t5, $s5
 					MIPS_MOVE(MIPS_s5,MIPS_t5);
-					if( ( tmpv2 == __SP_AND ) || ( tmpv2 == __SP_OR ) || ( tmpv2 == __SP_XOR ) ) {
-						generate_op_logic_flags(MIPS_t5);
-					}
-
-					else if( tmpv2 == __SP_ADDU ) {
-						generate_op_add_flags_epilogue(MIPS_t5);
-					}
-
-					else {
-						generate_op_sub_flags_epilogue(MIPS_t5);
-					}
 				}
 				else {
-					generate_op_sub_flags_prologue(MIPS_t5,MIPS_s6);
 					MIPS_SUBU(MIPS_s5,MIPS_t5,MIPS_s6);
-					generate_op_sub_flags_epilogue(MIPS_s5);
 				}
 				hostreg_r[0] = -1;
 			}
@@ -2258,28 +2085,8 @@ static int translate_op(unsigned int op, int *pc, int imm, int *end_cond, int *j
 			MIPS_LUI(MIPS_s6,(op & 0xff));
 
 			if( tmpv2 != -1 ) {
-
-				if( tmpv2 == __SP_ADDU ) {
-					generate_op_add_flags_prologue(MIPS_t5,MIPS_s6);
-				}
-
-				else if( tmpv2 == __SP_SUBU ){
-					generate_op_sub_flags_prologue(MIPS_t5,MIPS_s6);
-				}
-
 				__MIPS_INSN_REG(SPECIAL,MIPS_t5,MIPS_s6,MIPS_t5,0,tmpv2);  // OPs $t5, $t5, $s5
 				MIPS_MOVE(MIPS_s5,MIPS_t5);
-				if( ( tmpv2 == __SP_AND ) || ( tmpv2 == __SP_OR ) || ( tmpv2 == __SP_XOR ) ) {
-					generate_op_logic_flags(MIPS_t5);
-				}
-
-				else if( tmpv2 == __SP_ADDU ) {
-					generate_op_add_flags_epilogue(MIPS_t5);
-				}
-
-				else {
-					generate_op_sub_flags_epilogue(MIPS_t5);
-				}
 			}
 			else {
 
