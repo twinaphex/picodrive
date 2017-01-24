@@ -111,7 +111,7 @@ CFLAGS += -DEMU_F68K
 OBJS += ../../cpu/fame/famec.o
 endif
 # sh2    
-OBJS += ../../cpu/sh2/sh2.o ../../cpu/sh2/compiler.o \
+OBJS += ../../cpu/sh2/sh2.o ../../cpu/sh2/compiler_sh2_mips.o \
         ../../cpu/sh2/mame/sh2pico.o        
 # z80
 ifeq "$(use_mz80)" "1"

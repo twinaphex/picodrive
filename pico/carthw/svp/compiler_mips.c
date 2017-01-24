@@ -206,23 +206,6 @@ static struct
 #define KRREG_PM3W  (1 << 28)
 #define KRREG_PM4W  (1 << 29)
 
-// arm conditions
-#define A_COND_AL 0xe
-#define A_COND_EQ 0x0
-#define A_COND_NE 0x1
-#define A_COND_HS 0x2
-#define A_COND_LO 0x3
-#define A_COND_MI 0x4
-#define A_COND_PL 0x5
-#define A_COND_VS 0x6
-#define A_COND_VC 0x7
-#define A_COND_HI 0x8
-#define A_COND_LS 0x9
-#define A_COND_GE 0xa
-#define A_COND_LT 0xb
-#define A_COND_GT 0xc
-#define A_COND_LE 0xd
-
 void emit_save_registers(void) {
 	MIPS_ADDIU(MIPS_sp, MIPS_sp, -40);
 	MIPS_SW(MIPS_ra, 36,MIPS_sp);

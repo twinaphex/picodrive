@@ -331,6 +331,377 @@ static int emith_xjump(void *target, int is_call)
 	return (u32 *)tcache_ptr - start_ptr;
 }
 
+
+// arm conditions
+#define A_COND_AL 0xe
+#define A_COND_EQ 0x0
+#define A_COND_NE 0x1
+#define A_COND_HS 0x2
+#define A_COND_LO 0x3
+#define A_COND_MI 0x4
+#define A_COND_PL 0x5
+#define A_COND_VS 0x6
+#define A_COND_VC 0x7
+#define A_COND_HI 0x8
+#define A_COND_LS 0x9
+#define A_COND_GE 0xa
+#define A_COND_LT 0xb
+#define A_COND_GT 0xc
+#define A_COND_LE 0xd
+
+/* unified conditions */
+#define DCOND_EQ A_COND_EQ
+#define DCOND_NE A_COND_NE
+#define DCOND_MI A_COND_MI
+#define DCOND_PL A_COND_PL
+#define DCOND_HI A_COND_HI
+#define DCOND_HS A_COND_HS
+#define DCOND_LO A_COND_LO
+#define DCOND_GE A_COND_GE
+#define DCOND_GT A_COND_GT
+#define DCOND_LT A_COND_LT
+#define DCOND_LS A_COND_LS
+#define DCOND_LE A_COND_LE
+#define DCOND_VS A_COND_VS
+#define DCOND_VC A_COND_VC
+
+// fake "simple" or "short" jump - using cond insns instead
+#define EMITH_NOTHING1(cond) \
+	(void)(cond)
+
+#define EMITH_SJMP_START(cond)	EMITH_NOTHING1(cond)
+#define EMITH_SJMP_END(cond)	EMITH_NOTHING1(cond)
+#define EMITH_SJMP3_START(cond)	EMITH_NOTHING1(cond)
+#define EMITH_SJMP3_MID(cond)	EMITH_NOTHING1(cond)
+#define EMITH_SJMP3_END()
+
+#define emith_jump_patch(ptr, target) do { \
+	u32 *ptr_ = ptr; \
+	u32 val_ = (u32 *)(target) - ptr_ - 2; \
+	*ptr_ = (*ptr_ & 0xff000000) | (val_ & 0x00ffffff); \
+} while (0)
+
+#define emith_move_r_imm(r, imm) \
+	MIPS_LUI(r, imm>>16);  \
+	MIPS_ORI(r,r,imm);
+
+#define emith_move_r_r(d, s) \
+	MIPS_MOVE(d,s);
+
+#define emith_neg_r_r(d, s) \
+	MIPS_SUBU(d,0,s);
+
+#define emith_lsl(d, s, cnt) \
+	MIPS_SLL(d,s,cnt);
+
+#define emith_lsr(d, s, cnt) \
+	MIPS_SRL(d,s,cnt);
+
+#define emith_asr(d, s, cnt) \
+	MIPS_SRA(d,s,cnt);
+
+#define emith_ror_c(cond, d, s, cnt) { \
+	switch(cond) {						\
+		case A_COND_AL: break;			\
+		case A_COND_EQ: MIPS_BNEZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_NE: MIPS_BEQZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_MI: MIPS_BGEZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_PL: MIPS_BLTZ(MIPS_s5,2);MIPS_NOP();break;	\
+		default: break;    										\
+	}															\
+	MIPS_ROTR(d,s,cnt);											\
+}
+
+#define emith_ror(d, s, cnt) \
+	emith_ror_c(A_COND_AL, d, s, cnt)
+
+#define emith_add_r_imm(r, imm) \
+	emith_op_imm(A_COND_AL, 0, __SP_ADDU, r, imm)
+
+//#define emith_adc_r_imm(r, imm) \
+//	emith_op_imm(A_COND_AL, 0, A_OP_ADC, r, imm)
+
+#define emith_sub_r_imm(r, imm) \
+	emith_op_imm(A_COND_AL, 0, __SP_SUBU, r, imm)
+
+#define emith_bic_r_imm(r, imm) { \
+	int imm_;					\
+	MIPS_NOT(imm_,imm);			\
+	emith_op_imm(A_COND_AL, 0, __SP_AND, r, imm_);  \
+}
+
+#define emith_and_r_imm(r, imm) \
+	emith_op_imm(A_COND_AL, 0, __SP_AND, r, imm)
+
+#define emith_or_r_imm(r, imm) \
+	emith_op_imm(A_COND_AL, 0, __SP_OR, r, imm)
+
+#define emith_eor_r_imm(r, imm) \
+	emith_op_imm(A_COND_AL, 0, __SP_XOR, r, imm)
+
+#define emith_tst_r_imm(r, imm) \
+	MIPS_ANDI(MIPS_s5,r,imm)
+
+#define emith_add_r_r_r_lsl(d, s1, s2, lslimm) { \
+	MIPS_SLL(MIPS_s6,s2,lslimm);				\
+	MIPS_ADDU(d,s1,MIPS_s6);					\
+}
+
+#define emith_or_r_r_r_lsl(d, s1, s2, lslimm) { \
+	MIPS_SLL(MIPS_s6,s2,lslimm);				\
+	MIPS_OR(d,s1,MIPS_s6);	    				\
+}
+
+#define emith_eor_r_r_r_lsl(d, s1, s2, lslimm) { \
+	MIPS_SLL(MIPS_s6,s2,lslimm);				\
+	MIPS_XOR(d,s1,MIPS_s6);	    				\
+}
+
+#define emith_eor_r_r_r_lsr(d, s1, s2, lsrimm) { \
+	MIPS_SRL(MIPS_s6,s2,lsrimm);				\
+	MIPS_XOR(d,s1,MIPS_s6);	    				\
+}
+
+#define emith_or_r_r_lsl(d, s, lslimm) \
+	emith_or_r_r_r_lsl(d, d, s, lslimm)
+
+#define emith_eor_r_r_lsr(d, s, lsrimm) \
+	emith_eor_r_r_r_lsr(d, d, s, lsrimm)
+
+#define emith_add_r_r_r(d, s1, s2) \
+	MIPS_ADDU(d,s1,s2);
+
+#define emith_or_r_r_r(d, s1, s2) \
+	MIPS_OR(d,s1,s2);
+
+#define emith_eor_r_r_r(d, s1, s2) \
+	MIPS_XOR(d,s1,s2);
+
+#define emith_add_r_r(d, s) \
+	emith_add_r_r_r(d, d, s)
+
+#define emith_sub_r_r(d, s) \
+	MIPS_SUBU(d,d,s);
+
+//#define emith_adc_r_r(d, s) \
+//	EOP_ADC_REG(A_COND_AL,0,d,d,s,A_AM1_LSL,0)
+
+#define emith_and_r_r(d, s) \
+	MIPS_AND(d,d,s);
+
+#define emith_or_r_r(d, s) \
+	MIPS_OR(d,d,s);
+
+#define emith_eor_r_r(d, s) \
+	MIPS_XOR(d,d,s);
+
+#define emith_tst_r_r(d, s) \
+	MIPS_AND(MIPS_s5,d,s);
+
+#define emith_teq_r_r(d, s) \
+	MIPS_XOR(MIPS_s5,d,s);
+
+#define emith_add_r_imm_c(cond, r, imm) \
+	emith_op_imm(cond, 0, __SP_ADDU, r, imm)
+
+#define emith_sub_r_imm_c(cond, r, imm) \
+	emith_op_imm(cond, 0, __SP_SUBU, r, imm)
+
+#define emith_or_r_imm_c(cond, r, imm) \
+	emith_op_imm(cond, 0, __SP_OR, r, imm)
+
+#define emith_eor_r_imm_c(cond, r, imm) \
+	emith_op_imm(cond, 0, __SP_XOR, r, imm)
+
+#define emith_bic_r_imm_c(cond, r, imm) \
+	int imm_;					\
+	MIPS_NOT(imm_,imm);			\
+	emith_op_imm(cond, 0, __SP_AND, r, imm_)
+
+#define emith_ctx_write(r, offs) \
+	MIPS_SW(r,offs,CONTEXT_REG);
+
+#define emith_ctx_read(r, offs) \
+	MIPS_LW(r,offs,CONTEXT_REG);
+
+#define host_arg2reg(rd, arg) \
+	rd = arg
+
+#define emith_op_imm(cond, s, op, r, imm) \
+	emith_op_imm2(cond, s, op, r, r, imm)
+
+#define emith_sext(d, s, bits) { \
+	MIPS_SLL(d,s,32 - (bits)); \
+	MIPS_SRA(d,d,32 - (bits)); \
+}
+
+#define emith_jump_reg_c(cond, r) {\
+	switch(cond) {						\
+		case A_COND_AL: break;			\
+		case A_COND_EQ: MIPS_BNEZ(MIPS_s5,3);MIPS_NOP();break;	\
+		case A_COND_NE: MIPS_BEQZ(MIPS_s5,3);MIPS_NOP();break;	\
+		case A_COND_MI: MIPS_BGEZ(MIPS_s5,3);MIPS_NOP();break;	\
+		case A_COND_PL: MIPS_BLTZ(MIPS_s5,3);MIPS_NOP();break;	\
+		default: break;    										\
+	}															\
+	MIPS_JR(r);													\
+	MIPS_NOP();													\
+}
+
+#define emith_jump_reg(r) \
+	emith_jump_reg_c(A_COND_AL, r)
+
+#define emith_ctx_do_multiple(op, r, offs, count, tmpr) do { \
+	int v_, r_ = r, c_ = count, b_ = CONTEXT_REG;        \
+	for (v_ = 0; c_; c_--, r_++)                         \
+		v_ |= 1 << r_;                               \
+	if ((offs) != 0) {                                   \
+		MIPS_ADDI(tmpr,CONTEXT_REG,offs);				\
+		b_ = tmpr;                                   \
+	}                                                    \
+} while(0)
+	//op(b_,v_);                                           \ //	TODO: não terminado
+//} while(0)
+
+//#define emith_ctx_do_multiple(op, r, offs, count, tmpr) do { \
+//	int v_, r_ = r, c_ = count, b_ = CONTEXT_REG;        \
+//	for (v_ = 0; c_; c_--, r_++)                         \
+//		v_ |= 1 << r_;                               \
+//	if ((offs) != 0) {                                   \
+//		emith_move_r_imm(MIPS_s6,offs);					\
+//		MIPS_SLL(MIPS_s6,MIPS_s6,2);					\
+//		MIPS_ROTR(MIPS_s6,MIPS_s6,30);					\
+//		MIPS_ADD(tmpr,CONTEXT_REG,MIPS_s6);				\
+//		b_ = tmpr;                                   \
+//	}                                                    \
+//} while(0)
+//	//op(b_,v_);                                           \
+////} while(0)
+
+#define emith_ctx_read_multiple(r, offs, count, tmpr) \
+	emith_ctx_do_multiple(EOP_LDMIA, r, offs, count, tmpr)
+
+#define emith_ctx_write_multiple(r, offs, count, tmpr) \
+	emith_ctx_do_multiple(EOP_STMIA, r, offs, count, tmpr)
+
+// misc
+#define emith_read_r_r_offs_c(cond, r, rs, offs) {\
+	switch(cond) {						\
+		case A_COND_AL: break;			\
+		case A_COND_EQ: MIPS_BNEZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_NE: MIPS_BEQZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_MI: MIPS_BGEZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_PL: MIPS_BLTZ(MIPS_s5,2);MIPS_NOP();break;	\
+		default: break;    										\
+	}															\
+	MIPS_LW(r,offs,rs);											\
+}
+
+#define emith_read8_r_r_offs_c(cond, r, rs, offs) {\
+	switch(cond) {						\
+		case A_COND_AL: break;			\
+		case A_COND_EQ: MIPS_BNEZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_NE: MIPS_BEQZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_MI: MIPS_BGEZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_PL: MIPS_BLTZ(MIPS_s5,2);MIPS_NOP();break;	\
+		default: break;    										\
+	}															\
+	MIPS_LBU(r,offs,rs);										\
+}
+
+#define emith_read16_r_r_offs_c(cond, r, rs, offs) {\
+	switch(cond) {						\
+		case A_COND_AL: break;			\
+		case A_COND_EQ: MIPS_BNEZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_NE: MIPS_BEQZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_MI: MIPS_BGEZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_PL: MIPS_BLTZ(MIPS_s5,2);MIPS_NOP();break;	\
+		default: break;    										\
+	}															\
+	MIPS_LHU(r,offs,rs);										\
+}
+
+#define emith_read_r_r_offs(r, rs, offs) \
+	emith_read_r_r_offs_c(A_COND_AL, r, rs, offs)
+
+#define emith_read8_r_r_offs(r, rs, offs) \
+	emith_read8_r_r_offs_c(A_COND_AL, r, rs, offs)
+
+#define emith_read16_r_r_offs(r, rs, offs) \
+	emith_read16_r_r_offs_c(A_COND_AL, r, rs, offs)
+
+#define A_OP_MOV 050
+#define A_OP_MVN 051
+#define A_OP_BIC 052
+#define EOP_STMIA 053
+#define EOP_LDMIA 053
+
+#define __MIPS_INSN_IMM_(op,rs,rt,imm) \
+	EMIT(op<<26 | ((rs)&0x1F)<<21 | ((rt)&0x1F)<<16 | ((imm)&0xFFFF))
+
+unsigned int _rotr(const unsigned int value, int shift) {
+    if ((shift &= sizeof(value)*8 - 1) == 0)
+      return value;
+    return (value >> shift) | (value << (sizeof(value)*8 - shift));
+}
+
+static void EOP_C_DOP_IMM(int cond, int op, int s, int rn, int rd, int ror2, unsigned int imm) {
+	switch(cond) {
+		case A_COND_AL: break;
+		case A_COND_EQ: MIPS_BNEZ(MIPS_s5,2);MIPS_NOP();break;
+		case A_COND_NE: MIPS_BEQZ(MIPS_s5,2);MIPS_NOP();break;
+		case A_COND_MI: MIPS_BGEZ(MIPS_s5,2);MIPS_NOP();break;
+		case A_COND_PL: MIPS_BLTZ(MIPS_s5,2);MIPS_NOP();break;
+		default: break;    // TODO: completar condições
+	}
+
+	int imm_;
+
+	imm_ = _rotr(imm,ror2/2);
+	__MIPS_INSN_IMM_(op, (rn), (rd), (imm_));
+}
+
+static void emith_op_imm2(int cond, int s, int op, int rd, int rn, unsigned int imm)
+{
+	int ror2;
+	u32 v;
+
+	switch (op) {
+	case A_OP_MOV:
+		rn = 0;
+		if (~imm < 0x10000) {
+			imm = ~imm;
+			op = A_OP_MVN;
+		}
+		break;
+
+	case __SP_XOR:
+	case __SP_SUBU:
+	case __SP_ADDU:
+	case __SP_OR:
+		if (s == 0 && imm == 0)
+			return;
+		break;
+	}
+
+	for (v = imm, ror2 = 0; ; ror2 -= 8/2) {
+		/* shift down to get 'best' rot2 */
+		for (; v && !(v & 3); v >>= 2)
+			ror2--;
+
+		EOP_C_DOP_IMM(cond, op, s, rn, rd, ror2 & 0x0f, v & 0xff);
+
+		v >>= 8;
+		if (v == 0)
+			break;
+		if (op == A_OP_MOV)
+			op = __SP_OR;
+		if (op == A_OP_MVN)
+			op = A_OP_BIC;
+		rn = rd;
+	}
+}
+
 /*
  * Local variables:
  *   c-file-style: "stroustrup"
