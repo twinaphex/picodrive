@@ -348,6 +348,8 @@ static int emith_xjump(void *target, int is_call)
 #define A_COND_LT 0xb
 #define A_COND_GT 0xc
 #define A_COND_LE 0xd
+#define A_COND_CS A_COND_HS
+#define A_COND_CC A_COND_LO
 
 /* unified conditions */
 #define DCOND_EQ A_COND_EQ
@@ -381,12 +383,28 @@ static int emith_xjump(void *target, int is_call)
 	*ptr_ = (*ptr_ & 0xff000000) | (val_ & 0x00ffffff); \
 } while (0)
 
-#define emith_move_r_imm(r, imm) \
+#define emith_move_r_imm_c(cond, r, imm) {\
+	switch(cond) {						\
+		case A_COND_AL: break;			\
+		case A_COND_EQ: MIPS_BNEZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_NE: MIPS_BEQZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_MI: MIPS_BGEZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_PL: MIPS_BLTZ(MIPS_s5,2);MIPS_NOP();break;	\
+		default: break;    										\
+	}															\
+	emith_move_r_imm(r, imm);									\
+}
+
+#define emith_move_r_imm(r, imm) {\
 	MIPS_LUI(r, imm>>16);  \
-	MIPS_ORI(r,r,imm);
+	MIPS_ORI(r,r,imm);		\
+}
 
 #define emith_move_r_r(d, s) \
 	MIPS_MOVE(d,s);
+
+#define emith_mvn_r_r(d, s) \
+	MIPS_NOT(d,s);
 
 #define emith_neg_r_r(d, s) \
 	MIPS_SUBU(d,0,s);
@@ -399,6 +417,70 @@ static int emith_xjump(void *target, int is_call)
 
 #define emith_asr(d, s, cnt) \
 	MIPS_SRA(d,s,cnt);
+
+#define emith_lslf(d, s, cnt) { \
+	MIPS_SLL(d,s,cnt);			\
+	MIPS_MOVE(MIPS_s5,d);			\
+}
+
+#define emith_lsrf(d, s, cnt) { \
+	MIPS_SRL(d,s,cnt);			\
+	MIPS_MOVE(MIPS_s5,d);			\
+}
+
+#define emith_asrf(d, s, cnt) { \
+	MIPS_SRA(d,s,cnt);			\
+	MIPS_MOVE(MIPS_s5,d);			\
+}
+
+#define emith_rorf(d, s, cnt) { \
+	MIPS_ROTR(d,s,cnt);			\
+	MIPS_MOVE(MIPS_s5,d);			\
+}
+
+#define emith_rolcf(d) \
+	emith_adcf_r_r(d, d)
+
+#define emith_rorcf(d) \
+	MIPS_AND(MIPS_s5,d,d); /* ROR #0 -> RRX */
+
+// note: only C flag updated correctly
+#define emith_rolf(d, s, cnt) { \
+	MIPS_ROTR(d,s,32-(cnt));			\
+	/* we don't have ROL so we shift to get the right carry */ \
+	MIPS_SRL(MIPS_s6,d,1);				\
+	MIPS_AND(MIPS_s5,d,MIPS_s5);		\
+}
+
+#define emith_adcf_r_r(d, s) {\
+	emith_add_r_r_r(d, d, s);		\
+	MIPS_MOVE(MIPS_s5,d);			\
+} //TODO: verificar se adc é addu
+
+#define emith_addf_r_r(d, s) {\
+	emith_add_r_r_r(d, d, s);		\
+	MIPS_MOVE(MIPS_s5,d);			\
+}
+
+#define emith_subf_r_r(d, s) {\
+	MIPS_SUBU(d, d, s);		\
+	MIPS_MOVE(MIPS_s5,d);			\
+}
+
+#define emith_negcf_r_r(d, s) {\
+	MIPS_SUBU(d, 0, s);		\
+	MIPS_MOVE(MIPS_s5,d);			\
+}
+
+#define emith_sbcf_r_r(d, s) {\
+	MIPS_SUBU(d, d, s);		\
+	MIPS_MOVE(MIPS_s5,d);			\
+}
+
+#define emith_eorf_r_r(d, s) {\
+	MIPS_XOR(d, d, s);		\
+	MIPS_MOVE(MIPS_s5,d);			\
+}
 
 #define emith_ror_c(cond, d, s, cnt) { \
 	switch(cond) {						\
@@ -414,6 +496,25 @@ static int emith_xjump(void *target, int is_call)
 
 #define emith_ror(d, s, cnt) \
 	emith_ror_c(A_COND_AL, d, s, cnt)
+
+#define emith_rol(d, s, cnt) \
+	emith_ror_c(A_COND_AL, d, s, 32-(cnt))
+
+#define emith_and_r_r_imm(d, s, imm) \
+	emith_op_imm2(A_COND_AL, 0, __SP_AND, d, s, imm)
+
+#define emith_add_r_r_imm(d, s, imm) \
+	emith_op_imm2(A_COND_AL, 0, __SP_ADDU, d, s, imm)
+
+#define emith_sub_r_r_imm(d, s, imm) \
+	emith_op_imm2(A_COND_AL, 0, __SP_SUBU, d, s, imm)
+
+#define emith_move_r_imm_s8(r, imm) { \
+	if ((imm) & 0x80) \
+		MIPS_NOT(r,((imm) ^ 0xff)); \
+	else \
+		MIPS_ADDIU(r, 0, imm); \
+}
 
 #define emith_add_r_imm(r, imm) \
 	emith_op_imm(A_COND_AL, 0, __SP_ADDU, r, imm)
@@ -477,14 +578,24 @@ static int emith_xjump(void *target, int is_call)
 #define emith_eor_r_r_r(d, s1, s2) \
 	MIPS_XOR(d,s1,s2);
 
+#define emith_mul(d, s1, s2) { \
+	MIPS_MULT(s1,s2);     \
+	MIPS_MFLO(d);             \
+}
+
+// TODO: verificar diferenças entre add e adc; sub e sbc
+
 #define emith_add_r_r(d, s) \
 	emith_add_r_r_r(d, d, s)
 
 #define emith_sub_r_r(d, s) \
 	MIPS_SUBU(d,d,s);
 
-//#define emith_adc_r_r(d, s) \
-//	EOP_ADC_REG(A_COND_AL,0,d,d,s,A_AM1_LSL,0)
+#define emith_adc_r_r(d, s) \
+	emith_add_r_r_r(d, d, s)
+
+#define emith_sbc_r_r(d, s) \
+	MIPS_SUBU(d,d,s);
 
 #define emith_and_r_r(d, s) \
 	MIPS_AND(d,d,s);
@@ -500,6 +611,9 @@ static int emith_xjump(void *target, int is_call)
 
 #define emith_teq_r_r(d, s) \
 	MIPS_XOR(MIPS_s5,d,s);
+
+#define emith_cmp_r_r(d, s) \
+	MIPS_SUBU(MIPS_s5,d,s);
 
 #define emith_add_r_imm_c(cond, r, imm) \
 	emith_op_imm(cond, 0, __SP_ADDU, r, imm)
@@ -518,6 +632,11 @@ static int emith_xjump(void *target, int is_call)
 	MIPS_NOT(imm_,imm);			\
 	emith_op_imm(cond, 0, __SP_AND, r, imm_)
 
+#define emith_subf_r_imm(r, imm) { \
+	MIPS_ADDIU(r, r, -imm);		\
+	MIPS_MOVE(MIPS_s5,r);			\
+}
+
 #define emith_ctx_write(r, offs) \
 	MIPS_SW(r,offs,CONTEXT_REG);
 
@@ -526,6 +645,55 @@ static int emith_xjump(void *target, int is_call)
 
 #define host_arg2reg(rd, arg) \
 	rd = arg
+
+#define emith_cmp_r_imm(r, imm) { \
+	MIPS_SUBU(MIPS_s5,r,imm);		\
+}
+//	u32 op = A_OP_CMP, imm_ = imm; \
+//	if (~imm_ < 0x100) { \
+//		imm_ = ~imm_; \
+//		op = A_OP_CMN; \
+//	} \
+//	emith_top_imm(A_COND_AL, op, r, imm); \
+//}
+
+#define emith_call_ctx(offs) { \
+	emith_move_r_r(14, 15); \
+	emith_jump_ctx(offs); \
+}
+
+#define emith_jump_ctx(offs) \
+	emith_jump_ctx_c(A_COND_AL, offs)
+
+#define emith_jump_ctx_c(cond, offs) {\
+	switch(cond) {						\
+		case A_COND_AL: break;			\
+		case A_COND_EQ: MIPS_BNEZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_NE: MIPS_BEQZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_MI: MIPS_BGEZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_PL: MIPS_BLTZ(MIPS_s5,2);MIPS_NOP();break;	\
+		default: break;    										\
+	}															\
+	MIPS_LW(16,offs,CONTEXT_REG);								\
+}
+
+#define emith_jump_patchable(target) \
+	emith_jump(target)
+
+#define emith_jump_cond_patchable(cond, target) \
+	emith_jump_cond(cond, target)
+
+#define emith_jump_cond(cond, target) { \
+	switch(cond) {						\
+		case A_COND_AL: break;			\
+		case A_COND_EQ: MIPS_BNEZ(MIPS_s5,3);MIPS_NOP();break;	\
+		case A_COND_NE: MIPS_BEQZ(MIPS_s5,3);MIPS_NOP();break;	\
+		case A_COND_MI: MIPS_BGEZ(MIPS_s5,3);MIPS_NOP();break;	\
+		case A_COND_PL: MIPS_BLTZ(MIPS_s5,3);MIPS_NOP();break;	\
+		default: break;    										\
+	}															\
+	emith_xjump(target, 0);										\
+}
 
 #define emith_op_imm(cond, s, op, r, imm) \
 	emith_op_imm2(cond, s, op, r, r, imm)
@@ -550,6 +718,9 @@ static int emith_xjump(void *target, int is_call)
 
 #define emith_jump_reg(r) \
 	emith_jump_reg_c(A_COND_AL, r)
+
+#define emith_ret_c(cond) \
+	emith_jump_reg_c(cond, 14)
 
 #define emith_ctx_do_multiple(op, r, offs, count, tmpr) do { \
 	int v_, r_ = r, c_ = count, b_ = CONTEXT_REG;        \
@@ -583,6 +754,26 @@ static int emith_xjump(void *target, int is_call)
 
 #define emith_ctx_write_multiple(r, offs, count, tmpr) \
 	emith_ctx_do_multiple(EOP_STMIA, r, offs, count, tmpr)
+
+//TODO: verificar diferentes tipos de multiplicação em MIPS
+
+#define emith_mul_u64(dlo, dhi, s1, s2) { \
+	MIPS_MULT(s1,s2);     \
+	MIPS_MFLO(dlo);             \
+	MIPS_MFHI(dhi);             \
+}
+
+#define emith_mul_s64(dlo, dhi, s1, s2) { \
+	MIPS_MULT(s1,s2);     \
+	MIPS_MFLO(dlo);             \
+	MIPS_MFHI(dhi);             \
+}
+
+#define emith_mula_s64(dlo, dhi, s1, s2) { \
+	MIPS_MULT(s1,s2);     \
+	MIPS_MFLO(dlo);             \
+	MIPS_MFHI(dhi);             \
+}
 
 // misc
 #define emith_read_r_r_offs_c(cond, r, rs, offs) {\
@@ -700,6 +891,184 @@ static void emith_op_imm2(int cond, int s, int op, int rd, int rn, unsigned int 
 			op = A_OP_BIC;
 		rn = rd;
 	}
+}
+
+#define emith_write_sr(sr, srcr) { \
+	emith_lsr(sr, sr, 10); \
+	emith_or_r_r_r_lsl(sr, sr, srcr, 22); \
+	emith_ror(sr, sr, 22); \
+}
+
+#define emith_clear_msb_c(cond, d, s, count) { \
+	u32 t; \
+	if ((count) <= 8) { \
+		t = (count) - 8; \
+		t = (0xff << t) & 0xff; \
+		emith_move_r_imm(MIPS_s6,t); \
+		MIPS_ROTR(MIPS_s6,MIPS_s6,8);	\
+		MIPS_NOT(MIPS_s6,MIPS_s6);		\
+		MIPS_AND(d,s,MIPS_s6);			\
+		switch(cond) {						\
+			case A_COND_AL: break;			\
+			case A_COND_EQ: MIPS_BNEZ(MIPS_s5,6);MIPS_NOP();break;	\
+			case A_COND_NE: MIPS_BEQZ(MIPS_s5,6);MIPS_NOP();break;	\
+			case A_COND_MI: MIPS_BGEZ(MIPS_s5,6);MIPS_NOP();break;	\
+			case A_COND_PL: MIPS_BLTZ(MIPS_s5,6);MIPS_NOP();break;	\
+			default: break;    										\
+		}															\
+		emith_move_r_imm(MIPS_s6,t); \
+		MIPS_ROTR(MIPS_s6,MIPS_s6,8);	\
+		MIPS_NOT(MIPS_s6,MIPS_s6);		\
+		MIPS_AND(d,s,MIPS_s6);			\
+	} else if ((count) >= 24) { \
+		t = (count) - 24; \
+		t = 0xff >> t; \
+		MIPS_ANDI(d,s,t); \
+		switch(cond) {						\
+			case A_COND_AL: break;			\
+			case A_COND_EQ: MIPS_BNEZ(MIPS_s5,2);MIPS_NOP();break;	\
+			case A_COND_NE: MIPS_BEQZ(MIPS_s5,2);MIPS_NOP();break;	\
+			case A_COND_MI: MIPS_BGEZ(MIPS_s5,2);MIPS_NOP();break;	\
+			case A_COND_PL: MIPS_BLTZ(MIPS_s5,2);MIPS_NOP();break;	\
+			default: break;    										\
+		}															\
+		MIPS_ANDI(d,s,t); \
+	} else { \
+		switch(cond) {						\
+			case A_COND_AL: break;			\
+			case A_COND_EQ: MIPS_BNEZ(MIPS_s5,3);MIPS_NOP();break;	\
+			case A_COND_NE: MIPS_BEQZ(MIPS_s5,3);MIPS_NOP();break;	\
+			case A_COND_MI: MIPS_BGEZ(MIPS_s5,3);MIPS_NOP();break;	\
+			case A_COND_PL: MIPS_BLTZ(MIPS_s5,3);MIPS_NOP();break;	\
+			default: break;    										\
+		}															\
+		MIPS_SLL(d,s,count); \
+		MIPS_SRL(d,s,count); \
+	} \
+}
+
+#define emith_clear_msb(d, s, count) \
+	emith_clear_msb_c(A_COND_AL, d, s, count)
+
+#define JMP_POS(ptr) \
+	ptr = tcache_ptr; \
+	tcache_ptr += sizeof(u32)
+
+#define JMP_EMIT(cond, ptr) { \
+	u32 val_ = (u32 *)tcache_ptr - (u32 *)(ptr) - 2; \
+	EOP_C_B_PTR(ptr, cond, 0, val_ & 0xffffff); \
+}
+
+#define EMITH_JMP_START(cond) { \
+	void *cond_ptr; \
+	JMP_POS(cond_ptr)
+
+#define EMITH_JMP_END(cond) \
+	JMP_EMIT(cond, cond_ptr); \
+}
+
+#define EOP_C_B_PTR(ptr,cond,l,signed_immed_24) \
+	EMIT_PTR(ptr,__OP_BEQ<<26 | ((MIPS_zero)&0x1F)<<21 | ((MIPS_zero)&0x1F)<<16 | ((signed_immed_24)&0xFFFF))
+
+#define emith_tpop_carry(sr, is_sub) {  \
+	if (is_sub)                     \
+		emith_eor_r_imm(sr, 1); \
+	emith_lsrf(sr, sr, 1);          \
+}
+
+#define emith_tpush_carry(sr, is_sub) { \
+	emith_adc_r_r(sr, sr);          \
+	if (is_sub)                     \
+		emith_eor_r_imm(sr, 1); \
+}
+
+
+/* SH2 drc specific */
+/* pushes r12 for eabi alignment */
+
+void emit_save_registers_(void) {
+	MIPS_ADDIU(MIPS_sp, MIPS_sp, -88);
+	MIPS_SW(MIPS_ra, 84,MIPS_sp);
+	MIPS_SW(MIPS_s7, 80,MIPS_sp);
+	MIPS_SW(MIPS_s6, 76,MIPS_sp);
+	MIPS_SW(MIPS_s5, 72,MIPS_sp);
+	MIPS_SW(MIPS_s4, 68,MIPS_sp);
+	MIPS_SW(MIPS_s3, 64,MIPS_sp);
+	MIPS_SW(MIPS_s2, 60,MIPS_sp);
+	MIPS_SW(MIPS_s1, 56,MIPS_sp);
+	MIPS_SW(MIPS_t9, 52,MIPS_sp);
+	MIPS_SW(MIPS_t8, 48,MIPS_sp);
+	MIPS_SW(MIPS_t7, 44,MIPS_sp);
+	MIPS_SW(MIPS_t6, 40,MIPS_sp);
+	MIPS_SW(MIPS_t5, 36,MIPS_sp);
+	MIPS_SW(MIPS_t4, 32,MIPS_sp);
+	MIPS_SW(MIPS_t3, 28,MIPS_sp);
+	MIPS_SW(MIPS_t2, 24,MIPS_sp);
+	MIPS_SW(MIPS_t1, 20,MIPS_sp);
+	MIPS_SW(MIPS_t0, 16,MIPS_sp);
+	MIPS_SW(MIPS_a3, 12,MIPS_sp);
+	MIPS_SW(MIPS_a2, 8,MIPS_sp);
+	MIPS_SW(MIPS_a1, 4,MIPS_sp);
+	MIPS_SW(MIPS_a0, 0,MIPS_sp);
+}
+
+void emit_restore_registers_(void) {
+	MIPS_LW(MIPS_a0, 0,MIPS_sp);
+	MIPS_LW(MIPS_a1, 4,MIPS_sp);
+	MIPS_LW(MIPS_a2, 8,MIPS_sp);
+	MIPS_LW(MIPS_a3, 12,MIPS_sp);
+	MIPS_LW(MIPS_t0, 16,MIPS_sp);
+	MIPS_LW(MIPS_t1, 20,MIPS_sp);
+	MIPS_LW(MIPS_t2, 24,MIPS_sp);
+	MIPS_LW(MIPS_t3, 28,MIPS_sp);
+	MIPS_LW(MIPS_t4, 32,MIPS_sp);
+	MIPS_LW(MIPS_t5, 36,MIPS_sp);
+	MIPS_LW(MIPS_t6, 40,MIPS_sp);
+	MIPS_LW(MIPS_t7, 44,MIPS_sp);
+	MIPS_LW(MIPS_t8, 48,MIPS_sp);
+	MIPS_LW(MIPS_t9, 52,MIPS_sp);
+	MIPS_LW(MIPS_s1, 56,MIPS_sp);
+	MIPS_LW(MIPS_s2, 60,MIPS_sp);
+	MIPS_LW(MIPS_s3, 64,MIPS_sp);
+	MIPS_LW(MIPS_s4, 68,MIPS_sp);
+	MIPS_LW(MIPS_s5, 72,MIPS_sp);
+	MIPS_LW(MIPS_s6, 76,MIPS_sp);
+	MIPS_LW(MIPS_s7, 80,MIPS_sp);
+	MIPS_LW(MIPS_ra, 84,MIPS_sp);
+	MIPS_ADDIU(MIPS_sp, MIPS_sp, 88);
+}
+
+#define emith_sh2_drc_entry() {\
+	emit_save_registers_(); \
+}
+
+#define emith_sh2_drc_exit() {\
+	emit_restore_registers_(); \
+}
+
+#define host_instructions_updated(base, end) \
+	cache_flush_d_inval_i(base, end)
+
+#define emith_sh2_wcall(a, tab) { \
+	MIPS_SRL(12, a, SH2_WRITE_SHIFT); \
+	MIPS_SLL(MIPS_s6,12,2);				\
+	MIPS_ADDU(MIPS_s6,tab,MIPS_s6);		\
+	MIPS_LW(12,0,MIPS_s6);				\
+	emith_move_r_r(2, CONTEXT_REG); \
+	emith_jump_reg(12); \
+}
+
+#define emith_sh2_div1_step(rn, rm, sr) {         \
+	void *jmp0, *jmp1;                        \
+	emith_tst_r_imm(sr, Q);  /* if (Q ^ M) */ \
+	JMP_POS(jmp0);           /* beq do_sub */ \
+	emith_addf_r_r(rn, rm);                   \
+	emith_eor_r_imm_c(A_COND_CS, sr, T);      \
+	JMP_POS(jmp1);           /* b done */     \
+	JMP_EMIT(A_COND_EQ, jmp0); /* do_sub: */  \
+	emith_subf_r_r(rn, rm);                   \
+	emith_eor_r_imm_c(A_COND_CC, sr, T);      \
+	JMP_EMIT(A_COND_AL, jmp1); /* done: */    \
 }
 
 /*
