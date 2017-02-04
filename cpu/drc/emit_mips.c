@@ -730,6 +730,15 @@ static int emith_xjump(void *target, int is_call)
 		MIPS_ADDI(tmpr,CONTEXT_REG,offs);				\
 		b_ = tmpr;                                   \
 	}                                                    \
+	int i;												\
+	for(i = 0; i < count; i++) {						\
+		if( op == EOP_LDMIA) {                          \
+			MIPS_LW(r+i,i*4,b_);				\
+		}												\
+		else {											\
+			MIPS_SW(r+i,i*4,b_);				\
+		}												\
+	}													\
 } while(0)
 	//op(b_,v_);                                           \ //	TODO: não terminado
 //} while(0)
@@ -830,7 +839,7 @@ static int emith_xjump(void *target, int is_call)
 #define __MIPS_INSN_IMM_(op,rs,rt,imm) \
 	EMIT(op<<26 | ((rs)&0x1F)<<21 | ((rt)&0x1F)<<16 | ((imm)&0xFFFF))
 
-unsigned int _rotr(const unsigned int value, int shift) {
+static unsigned int _rotr(const unsigned int value, int shift) {
     if ((shift &= sizeof(value)*8 - 1) == 0)
       return value;
     return (value >> shift) | (value << (sizeof(value)*8 - shift));
@@ -983,10 +992,33 @@ static void emith_op_imm2(int cond, int s, int op, int rd, int rn, unsigned int 
 }
 
 
+static unsigned short arm_reg_to_mips( unsigned short arm_reg ) {
+	unsigned short mips_reg = MIPS_zero;
+
+	if( arm_reg <= 4 ) {
+		mips_reg = arm_reg + 4;
+	}
+
+	else if( arm_reg <= 7 ) {
+		mips_reg = arm_reg + 8;
+	}
+
+	else if( arm_reg <= 9 ) {
+		mips_reg = arm_reg + 16;
+	}
+
+	else if( ( arm_reg >= 10 ) && ( arm_reg <= 12 ) ) {
+		mips_reg = arm_reg + 7;
+	}
+
+	return mips_reg;
+}
+
+
 /* SH2 drc specific */
 /* pushes r12 for eabi alignment */
 
-void emit_save_registers_(void) {
+static void emit_save_registers_(void) {
 	MIPS_ADDIU(MIPS_sp, MIPS_sp, -88);
 	MIPS_SW(MIPS_ra, 84,MIPS_sp);
 	MIPS_SW(MIPS_s7, 80,MIPS_sp);
@@ -1012,7 +1044,7 @@ void emit_save_registers_(void) {
 	MIPS_SW(MIPS_a0, 0,MIPS_sp);
 }
 
-void emit_restore_registers_(void) {
+static void emit_restore_registers_(void) {
 	MIPS_LW(MIPS_a0, 0,MIPS_sp);
 	MIPS_LW(MIPS_a1, 4,MIPS_sp);
 	MIPS_LW(MIPS_a2, 8,MIPS_sp);

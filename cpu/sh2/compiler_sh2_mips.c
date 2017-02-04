@@ -2716,8 +2716,9 @@ end_op:
           return NULL;
       }
 
-      if (cond != -1)
+      if (cond != -1) {
         emith_jump_cond_patchable(cond, target);
+      }
       else {
         emith_jump_patchable(target);
         rcache_invalidate();
@@ -2943,7 +2944,7 @@ static void sh2_generate_utils(void)
   // sh2_drc_entry(SH2 *sh2)
   sh2_drc_entry = (void *)tcache_ptr;
   emith_sh2_drc_entry();
-  emith_move_r_r(CONTEXT_REG, arg0); // move ctx, arg0
+  emith_move_r_r(arm_reg_to_mips(CONTEXT_REG), arm_reg_to_mips(arg0)); // move ctx, arg0
   emit_do_static_regs(0, arg2);
   emith_call(sh2_drc_test_irq);
   emith_jump(sh2_drc_dispatcher);

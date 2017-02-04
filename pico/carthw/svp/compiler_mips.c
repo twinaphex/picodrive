@@ -345,27 +345,27 @@ if(check_generate_v_flag)                                                   \
      MIPS_OR(MIPS_s7,MIPS_s7,MIPS_s6);											\
 }                                                                           \
 
-unsigned short arm_reg_to_mips( unsigned short arm_reg ) {
-	unsigned short mips_reg = MIPS_zero;
-
-	if( arm_reg <= 4 ) {
-		mips_reg = arm_reg + 4;
-	}
-
-	else if( arm_reg <= 7 ) {
-		mips_reg = arm_reg + 8;
-	}
-
-	else if( arm_reg <= 9 ) {
-		mips_reg = arm_reg + 16;
-	}
-
-	else if( ( arm_reg >= 10 ) && ( arm_reg <= 12 ) ) {
-		mips_reg = arm_reg + 7;
-	}
-
-	return mips_reg;
-}
+//unsigned short arm_reg_to_mips( unsigned short arm_reg ) {
+//	unsigned short mips_reg = MIPS_zero;
+//
+//	if( arm_reg <= 4 ) {
+//		mips_reg = arm_reg + 4;
+//	}
+//
+//	else if( arm_reg <= 7 ) {
+//		mips_reg = arm_reg + 8;
+//	}
+//
+//	else if( arm_reg <= 9 ) {
+//		mips_reg = arm_reg + 16;
+//	}
+//
+//	else if( ( arm_reg >= 10 ) && ( arm_reg <= 12 ) ) {
+//		mips_reg = arm_reg + 7;
+//	}
+//
+//	return mips_reg;
+//}
 
 /* bitfield of known register values */
 static u32 known_regb = 0;
