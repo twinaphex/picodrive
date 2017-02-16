@@ -2858,34 +2858,34 @@ static void sh2_generate_utils(void)
   host_arg2reg(arg0, 0);
   host_arg2reg(arg1, 1);
   host_arg2reg(arg2, 2);
-  emith_move_r_r(arg0, arg0); // nop
+  emith_move_r_r(arm_reg_to_mips(arg0),arm_reg_to_mips(arg0)); // nop
 
   // sh2_drc_exit(void)
   sh2_drc_exit = (void *)tcache_ptr;
-  emit_do_static_regs(1, arg2);
+  emit_do_static_regs(1, arm_reg_to_mips(arg2));
   emith_sh2_drc_exit();
 
   // sh2_drc_dispatcher(void)
   sh2_drc_dispatcher = (void *)tcache_ptr;
   sr = rcache_get_reg(SHR_SR, RC_GR_READ);
-  emith_cmp_r_imm(sr, 0);
+  emith_cmp_r_imm(arm_reg_to_mips(sr), 0);
   emith_jump_cond(DCOND_LT, sh2_drc_exit);
   rcache_invalidate();
-  emith_ctx_read(arg0, SHR_PC * 4);
-  emith_ctx_read(arg1, offsetof(SH2, is_slave));
-  emith_add_r_r_imm(arg2, CONTEXT_REG, offsetof(SH2, drc_tmp));
+  emith_ctx_read(arm_reg_to_mips(arg0), SHR_PC * 4);
+  emith_ctx_read(arm_reg_to_mips(arg1), offsetof(SH2, is_slave));
+  emith_add_r_r_imm(arm_reg_to_mips(arg2), CONTEXT_REG, offsetof(SH2, drc_tmp));
   emith_call(dr_lookup_block);
   emit_block_entry();
   // lookup failed, call sh2_translate()
-  emith_move_r_r(arg0, CONTEXT_REG);
-  emith_ctx_read(arg1, offsetof(SH2, drc_tmp)); // tcache_id
+  emith_move_r_r(arm_reg_to_mips(arg0), CONTEXT_REG);
+  emith_ctx_read(arm_reg_to_mips(arg1), offsetof(SH2, drc_tmp)); // tcache_id
   emith_call(sh2_translate);
   emit_block_entry();
   // sh2_translate() failed, flush cache and retry
-  emith_ctx_read(arg0, offsetof(SH2, drc_tmp));
+  emith_ctx_read(arm_reg_to_mips(arg0), offsetof(SH2, drc_tmp));
   emith_call(flush_tcache);
-  emith_move_r_r(arg0, CONTEXT_REG);
-  emith_ctx_read(arg1, offsetof(SH2, drc_tmp));
+  emith_move_r_r(arm_reg_to_mips(arg0), CONTEXT_REG);
+  emith_ctx_read(arm_reg_to_mips(arg1), offsetof(SH2, drc_tmp));
   emith_call(sh2_translate);
   emit_block_entry();
   // XXX: can't translate, fail
@@ -2894,11 +2894,11 @@ static void sh2_generate_utils(void)
   // sh2_drc_test_irq(void)
   // assumes it's called from main function (may jump to dispatcher)
   sh2_drc_test_irq = (void *)tcache_ptr;
-  emith_ctx_read(arg1, offsetof(SH2, pending_level));
+  emith_ctx_read(arm_reg_to_mips(arg1), offsetof(SH2, pending_level));
   sr = rcache_get_reg(SHR_SR, RC_GR_READ);
-  emith_lsr(arg0, sr, I_SHIFT);
-  emith_and_r_imm(arg0, 0x0f);
-  emith_cmp_r_r(arg1, arg0); // pending_level > ((sr >> 4) & 0x0f)?
+  emith_lsr(arm_reg_to_mips(arg0), arm_reg_to_mips(sr), I_SHIFT);
+  emith_and_r_imm(arm_reg_to_mips(arg0), 0x0f);
+  emith_cmp_r_r(arm_reg_to_mips(arg1), arm_reg_to_mips(arg0)); // pending_level > ((sr >> 4) & 0x0f)?
   EMITH_SJMP_START(DCOND_GT);
   emith_ret_c(DCOND_LE);     // nope, return
   EMITH_SJMP_END(DCOND_GT);
@@ -2945,19 +2945,19 @@ static void sh2_generate_utils(void)
   sh2_drc_entry = (void *)tcache_ptr;
   emith_sh2_drc_entry();
   emith_move_r_r(arm_reg_to_mips(CONTEXT_REG), arm_reg_to_mips(arg0)); // move ctx, arg0
-  emit_do_static_regs(0, arg2);
+  emit_do_static_regs(0, arm_reg_to_mips(arg2));
   emith_call(sh2_drc_test_irq);
   emith_jump(sh2_drc_dispatcher);
 
   // sh2_drc_write8(u32 a, u32 d)
   sh2_drc_write8 = (void *)tcache_ptr;
   emith_ctx_read(arg2, offsetof(SH2, write8_tab));
-  emith_sh2_wcall(arg0, arg2);
+  emith_sh2_wcall(arm_reg_to_mips(arg0), arm_reg_to_mips(arg2));
 
   // sh2_drc_write16(u32 a, u32 d)
   sh2_drc_write16 = (void *)tcache_ptr;
   emith_ctx_read(arg2, offsetof(SH2, write16_tab));
-  emith_sh2_wcall(arg0, arg2);
+  emith_sh2_wcall(arm_reg_to_mips(arg0), arm_reg_to_mips(arg2));
 
 #ifdef PDB_NET
   // debug
