@@ -1144,7 +1144,7 @@ static int emit_memhandler_read_(int size, int ram_check)
   // must writeback cycles for poll detection stuff
   // FIXME: rm
   if (reg_map_g2h[SHR_SR] != -1)
-    emith_ctx_write(reg_map_g2h[SHR_SR], SHR_SR * 4);
+    emith_ctx_write(arm_reg_to_mips(reg_map_g2h[SHR_SR]), SHR_SR * 4);
 
   arg1 = rcache_get_tmp_arg(1);
   emith_move_r_r(arg1, CONTEXT_REG);
@@ -1186,20 +1186,20 @@ static int emit_memhandler_read_(int size, int ram_check)
   {
     switch (size) {
     case 0: // 8
-      emith_call(sh2_drc_read8);
+      emith_call_s(sh2_drc_read8);
       break;
     case 1: // 16
-      emith_call(sh2_drc_read16);
+      emith_call_s(sh2_drc_read16);
       break;
     case 2: // 32
-      emith_call(sh2_drc_read32);
+      emith_call_s(sh2_drc_read32);
       break;
     }
   }
   rcache_invalidate();
 
   if (reg_map_g2h[SHR_SR] != -1)
-    emith_ctx_read(reg_map_g2h[SHR_SR], SHR_SR * 4);
+    emith_ctx_read(arm_reg_to_mips(reg_map_g2h[SHR_SR]), SHR_SR * 4);
 
   // assuming arg0 and retval reg matches
   return rcache_get_tmp_arg(0);
@@ -1259,27 +1259,27 @@ static void emit_memhandler_write(int size)
   int ctxr;
   host_arg2reg(ctxr, 2);
   if (reg_map_g2h[SHR_SR] != -1)
-    emith_ctx_write(reg_map_g2h[SHR_SR], SHR_SR * 4);
+    emith_ctx_write(arm_reg_to_mips(reg_map_g2h[SHR_SR]), SHR_SR * 4);
 
   rcache_clean();
 
   switch (size) {
   case 0: // 8
     // XXX: consider inlining sh2_drc_write8
-    emith_call(sh2_drc_write8);
+    emith_call_s(sh2_drc_write8);
     break;
   case 1: // 16
-    emith_call(sh2_drc_write16);
+    emith_call_s(sh2_drc_write16);
     break;
   case 2: // 32
     emith_move_r_r(ctxr, CONTEXT_REG);
-    emith_call(sh2_drc_write32);
+    emith_call_s(sh2_drc_write32);
     break;
   }
 
   rcache_invalidate();
   if (reg_map_g2h[SHR_SR] != -1)
-    emith_ctx_read(reg_map_g2h[SHR_SR], SHR_SR * 4);
+    emith_ctx_read(arm_reg_to_mips(reg_map_g2h[SHR_SR]), SHR_SR * 4);
 }
 
 // @(Rx,Ry)
@@ -1331,16 +1331,18 @@ static void emit_do_static_regs(int is_write, int tmpr)
 
     if (count > 1) {
       // i, r point to last item
-      if (is_write)
-        emith_ctx_write_multiple(r - count + 1, (i - count + 1) * 4, count, tmpr);
-      else
-        emith_ctx_read_multiple(r - count + 1, (i - count + 1) * 4, count, tmpr);
-    } else {
       if (is_write) {
-        emith_ctx_write(r, i * 4);
+        emith_ctx_write_multiple( arm_reg_to_mips(r - count + 1), (i - count + 1) * 4, count, tmpr);
       }
       else {
-        emith_ctx_read(r, i * 4);
+        emith_ctx_read_multiple( arm_reg_to_mips(r - count + 1), (i - count + 1) * 4, count, tmpr);
+      }
+    } else {
+      if (is_write) {
+        emith_ctx_write(arm_reg_to_mips(r), i * 4);
+      }
+      else {
+        emith_ctx_read(arm_reg_to_mips(r), i * 4);
       }
     }
   }
@@ -2659,7 +2661,7 @@ end_op:
       if (!drcf.pending_branch_indirect)
         emit_move_r_imm32(SHR_PC, pc);
       rcache_flush();
-      emith_call(sh2_drc_test_irq);
+      emith_call_s(sh2_drc_test_irq);
       drcf.test_irq = 0;
     }
 
@@ -2874,22 +2876,22 @@ static void sh2_generate_utils(void)
   emith_ctx_read(arm_reg_to_mips(arg0), SHR_PC * 4);
   emith_ctx_read(arm_reg_to_mips(arg1), offsetof(SH2, is_slave));
   emith_add_r_r_imm(arm_reg_to_mips(arg2), CONTEXT_REG, offsetof(SH2, drc_tmp));
-  emith_call(dr_lookup_block);
+  emith_call_s(dr_lookup_block);
   emit_block_entry();
   // lookup failed, call sh2_translate()
   emith_move_r_r(arm_reg_to_mips(arg0), CONTEXT_REG);
   emith_ctx_read(arm_reg_to_mips(arg1), offsetof(SH2, drc_tmp)); // tcache_id
-  emith_call(sh2_translate);
+  emith_call_s(sh2_translate);
   emit_block_entry();
   // sh2_translate() failed, flush cache and retry
   emith_ctx_read(arm_reg_to_mips(arg0), offsetof(SH2, drc_tmp));
-  emith_call(flush_tcache);
+  emith_call_s(flush_tcache);
   emith_move_r_r(arm_reg_to_mips(arg0), CONTEXT_REG);
   emith_ctx_read(arm_reg_to_mips(arg1), offsetof(SH2, drc_tmp));
-  emith_call(sh2_translate);
+  emith_call_s(sh2_translate);
   emit_block_entry();
   // XXX: can't translate, fail
-  emith_call(dr_failure);
+  emith_call_s(dr_failure);
 
   // sh2_drc_test_irq(void)
   // assumes it's called from main function (may jump to dispatcher)
@@ -2912,13 +2914,13 @@ static void sh2_generate_utils(void)
   tmp = rcache_get_reg_arg(1, SHR_SR);
   emith_clear_msb(tmp, tmp, 22);
   emith_move_r_r(arg2, CONTEXT_REG);
-  emith_call(p32x_sh2_write32); // XXX: use sh2_drc_write32?
+  emith_call_s(p32x_sh2_write32); // XXX: use sh2_drc_write32?
   rcache_invalidate();
   // push PC
   rcache_get_reg_arg(0, SHR_SP);
   emith_ctx_read(arg1, SHR_PC * 4);
   emith_move_r_r(arg2, CONTEXT_REG);
-  emith_call(p32x_sh2_write32);
+  emith_call_s(p32x_sh2_write32);
   rcache_invalidate();
   // update I, cycles, do callback
   emith_ctx_read(arg1, offsetof(SH2, pending_level));
@@ -2944,9 +2946,9 @@ static void sh2_generate_utils(void)
   // sh2_drc_entry(SH2 *sh2)
   sh2_drc_entry = (void *)tcache_ptr;
   emith_sh2_drc_entry();
-  emith_move_r_r(arm_reg_to_mips(CONTEXT_REG), arm_reg_to_mips(arg0)); // move ctx, arg0
+  emith_move_r_r(CONTEXT_REG, arm_reg_to_mips(arg0)); // move ctx, arg0
   emit_do_static_regs(0, arm_reg_to_mips(arg2));
-  emith_call(sh2_drc_test_irq);
+  emith_call_s(sh2_drc_test_irq);
   emith_jump(sh2_drc_dispatcher);
 
   // sh2_drc_write8(u32 a, u32 d)

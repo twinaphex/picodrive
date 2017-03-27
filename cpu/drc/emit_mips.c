@@ -9,7 +9,7 @@
  * This work is licensed under the terms of MAME license.
  * See COPYING file in the top-level directory.
  */
-#define CONTEXT_REG 11
+#define CONTEXT_REG 20
 
 // XXX: tcache_ptr type for SVP and SH2 compilers differs..
 #define EMIT_PTR(ptr, x) \
@@ -298,6 +298,14 @@
 #define is_offset_24(val) \
 	((val) >= (int)0xff000000 && (val) <= 0x00ffffff)
 
+#define emith_call_s(target) {\
+	MIPS_ADDIU(MIPS_sp, MIPS_sp, -4); \
+	MIPS_SW(MIPS_ra, 0,MIPS_sp); \
+	emith_call(target); \
+	MIPS_LW(MIPS_ra, 0,MIPS_sp); \
+	MIPS_ADDIU(MIPS_sp, MIPS_sp, 4); \
+}
+
 #define emith_call(target) \
 	emith_xjump(target, 1)
 
@@ -390,6 +398,8 @@ static int emith_xjump(void *target, int is_call)
 		case A_COND_NE: MIPS_BEQZ(MIPS_s5,2);MIPS_NOP();break;	\
 		case A_COND_MI: MIPS_BGEZ(MIPS_s5,2);MIPS_NOP();break;	\
 		case A_COND_PL: MIPS_BLTZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_LE: MIPS_BGTZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_GT: MIPS_BLEZ(MIPS_s5,2);MIPS_NOP();break;	\
 		default: break;    										\
 	}															\
 	emith_move_r_imm(r, imm);									\
@@ -401,22 +411,22 @@ static int emith_xjump(void *target, int is_call)
 }
 
 #define emith_move_r_r(d, s) \
-	MIPS_MOVE(d,s);
+	MIPS_MOVE(d,s);				\
 
 #define emith_mvn_r_r(d, s) \
-	MIPS_NOT(d,s);
+	MIPS_NOT(d,s);				\
 
 #define emith_neg_r_r(d, s) \
-	MIPS_SUBU(d,0,s);
+	MIPS_SUBU(d,0,s);			\
 
 #define emith_lsl(d, s, cnt) \
-	MIPS_SLL(d,s,cnt);
+	MIPS_SLL(d,s,cnt);			\
 
 #define emith_lsr(d, s, cnt) \
-	MIPS_SRL(d,s,cnt);
+	MIPS_SRL(d,s,cnt);			\
 
 #define emith_asr(d, s, cnt) \
-	MIPS_SRA(d,s,cnt);
+	MIPS_SRA(d,s,cnt);			\
 
 #define emith_lslf(d, s, cnt) { \
 	MIPS_SLL(d,s,cnt);			\
@@ -442,7 +452,7 @@ static int emith_xjump(void *target, int is_call)
 	emith_adcf_r_r(d, d)
 
 #define emith_rorcf(d) \
-	MIPS_AND(MIPS_s5,d,d); /* ROR #0 -> RRX */
+	MIPS_AND(MIPS_s5,d,d); /* ROR #0 -> RRX */	\
 
 // note: only C flag updated correctly
 #define emith_rolf(d, s, cnt) { \
@@ -489,6 +499,8 @@ static int emith_xjump(void *target, int is_call)
 		case A_COND_NE: MIPS_BEQZ(MIPS_s5,2);MIPS_NOP();break;	\
 		case A_COND_MI: MIPS_BGEZ(MIPS_s5,2);MIPS_NOP();break;	\
 		case A_COND_PL: MIPS_BLTZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_LE: MIPS_BGTZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_GT: MIPS_BLEZ(MIPS_s5,2);MIPS_NOP();break;	\
 		default: break;    										\
 	}															\
 	MIPS_ROTR(d,s,cnt);											\
@@ -523,22 +535,22 @@ static int emith_xjump(void *target, int is_call)
 //	emith_op_imm(A_COND_AL, 0, A_OP_ADC, r, imm)
 
 #define emith_sub_r_imm(r, imm) \
-	emith_op_imm(A_COND_AL, 0, __SP_SUBU, r, imm)
+	emith_op_imm(A_COND_AL, 0, __OP_ADDIU, r, -imm)
 
 #define emith_bic_r_imm(r, imm) { \
 	int imm_;					\
 	MIPS_NOT(imm_,imm);			\
-	emith_op_imm(A_COND_AL, 0, __SP_AND, r, imm_);  \
+	emith_op_imm(A_COND_AL, 0, __OP_ANDI, r, imm_);  \
 }
 
 #define emith_and_r_imm(r, imm) \
-	emith_op_imm(A_COND_AL, 0, __SP_AND, r, imm)
+	emith_op_imm(A_COND_AL, 0, __OP_ANDI, r, imm)
 
 #define emith_or_r_imm(r, imm) \
-	emith_op_imm(A_COND_AL, 0, __SP_OR, r, imm)
+	emith_op_imm(A_COND_AL, 0, __OP_ORI, r, imm)
 
 #define emith_eor_r_imm(r, imm) \
-	emith_op_imm(A_COND_AL, 0, __SP_XOR, r, imm)
+	emith_op_imm(A_COND_AL, 0, __OP_XORI, r, imm)
 
 #define emith_tst_r_imm(r, imm) \
 	MIPS_ANDI(MIPS_s5,r,imm)
@@ -570,13 +582,13 @@ static int emith_xjump(void *target, int is_call)
 	emith_eor_r_r_r_lsr(d, d, s, lsrimm)
 
 #define emith_add_r_r_r(d, s1, s2) \
-	MIPS_ADDU(d,s1,s2);
+	MIPS_ADDU(d,s1,s2);				\
 
 #define emith_or_r_r_r(d, s1, s2) \
-	MIPS_OR(d,s1,s2);
+	MIPS_OR(d,s1,s2);				\
 
 #define emith_eor_r_r_r(d, s1, s2) \
-	MIPS_XOR(d,s1,s2);
+	MIPS_XOR(d,s1,s2);				\
 
 #define emith_mul(d, s1, s2) { \
 	MIPS_MULT(s1,s2);     \
@@ -589,31 +601,31 @@ static int emith_xjump(void *target, int is_call)
 	emith_add_r_r_r(d, d, s)
 
 #define emith_sub_r_r(d, s) \
-	MIPS_SUBU(d,d,s);
+	MIPS_SUBU(d,d,s);			\
 
 #define emith_adc_r_r(d, s) \
 	emith_add_r_r_r(d, d, s)
 
 #define emith_sbc_r_r(d, s) \
-	MIPS_SUBU(d,d,s);
+	MIPS_SUBU(d,d,s);			\
 
 #define emith_and_r_r(d, s) \
-	MIPS_AND(d,d,s);
+	MIPS_AND(d,d,s);			\
 
 #define emith_or_r_r(d, s) \
-	MIPS_OR(d,d,s);
+	MIPS_OR(d,d,s);				\
 
 #define emith_eor_r_r(d, s) \
-	MIPS_XOR(d,d,s);
+	MIPS_XOR(d,d,s);			\
 
 #define emith_tst_r_r(d, s) \
-	MIPS_AND(MIPS_s5,d,s);
+	MIPS_AND(MIPS_s5,d,s);		\
 
 #define emith_teq_r_r(d, s) \
-	MIPS_XOR(MIPS_s5,d,s);
+	MIPS_XOR(MIPS_s5,d,s);		\
 
 #define emith_cmp_r_r(d, s) \
-	MIPS_SUBU(MIPS_s5,d,s);
+	MIPS_SUBU(MIPS_s5,d,s);		\
 
 #define emith_add_r_imm_c(cond, r, imm) \
 	emith_op_imm(cond, 0, __SP_ADDU, r, imm)
@@ -638,17 +650,17 @@ static int emith_xjump(void *target, int is_call)
 }
 
 #define emith_ctx_write(r, offs) \
-	MIPS_SW(r,offs,CONTEXT_REG);
+	MIPS_SW(r,offs,CONTEXT_REG);	\
 
 #define emith_ctx_read(r, offs) \
-	MIPS_LW(r,offs,CONTEXT_REG);
+	MIPS_LW(r,offs,CONTEXT_REG);	\
 
 #define host_arg2reg(rd, arg) \
 	rd = arg
 
-#define emith_cmp_r_imm(r, imm) { \
-	MIPS_SUBU(MIPS_s5,r,imm);		\
-}
+#define emith_cmp_r_imm(r, imm) \
+	MIPS_ADDIU(MIPS_s5,r,-imm);	\
+
 //	u32 op = A_OP_CMP, imm_ = imm; \
 //	if (~imm_ < 0x100) { \
 //		imm_ = ~imm_; \
@@ -672,6 +684,8 @@ static int emith_xjump(void *target, int is_call)
 		case A_COND_NE: MIPS_BEQZ(MIPS_s5,2);MIPS_NOP();break;	\
 		case A_COND_MI: MIPS_BGEZ(MIPS_s5,2);MIPS_NOP();break;	\
 		case A_COND_PL: MIPS_BLTZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_LE: MIPS_BGTZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_GT: MIPS_BLEZ(MIPS_s5,2);MIPS_NOP();break;	\
 		default: break;    										\
 	}															\
 	MIPS_LW(16,offs,CONTEXT_REG);								\
@@ -690,6 +704,8 @@ static int emith_xjump(void *target, int is_call)
 		case A_COND_NE: MIPS_BEQZ(MIPS_s5,3);MIPS_NOP();break;	\
 		case A_COND_MI: MIPS_BGEZ(MIPS_s5,3);MIPS_NOP();break;	\
 		case A_COND_PL: MIPS_BLTZ(MIPS_s5,3);MIPS_NOP();break;	\
+		case A_COND_LE: MIPS_BGTZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_GT: MIPS_BLEZ(MIPS_s5,2);MIPS_NOP();break;	\
 		default: break;    										\
 	}															\
 	emith_xjump(target, 0);										\
@@ -710,6 +726,7 @@ static int emith_xjump(void *target, int is_call)
 		case A_COND_NE: MIPS_BEQZ(MIPS_s5,3);MIPS_NOP();break;	\
 		case A_COND_MI: MIPS_BGEZ(MIPS_s5,3);MIPS_NOP();break;	\
 		case A_COND_PL: MIPS_BLTZ(MIPS_s5,3);MIPS_NOP();break;	\
+		case A_COND_LE: MIPS_BGTZ(MIPS_s5,3);MIPS_NOP();break;	\
 		default: break;    										\
 	}															\
 	MIPS_JR(r);													\
@@ -720,9 +737,9 @@ static int emith_xjump(void *target, int is_call)
 	emith_jump_reg_c(A_COND_AL, r)
 
 #define emith_ret_c(cond) \
-	emith_jump_reg_c(cond, 14)
+	emith_jump_reg_c(cond, MIPS_ra)
 
-#define emith_ctx_do_multiple(op, r, offs, count, tmpr) do { \
+#define emith_ctx_do_multiple(op, r, offs, count, tmpr) { \
 	int v_, r_ = r, c_ = count, b_ = CONTEXT_REG;        \
 	for (v_ = 0; c_; c_--, r_++)                         \
 		v_ |= 1 << r_;                               \
@@ -739,7 +756,26 @@ static int emith_xjump(void *target, int is_call)
 			MIPS_SW(r+i,i*4,b_);				\
 		}												\
 	}													\
-} while(0)
+}
+
+//#define emith_ctx_do_multiple(op, r, offs, count, tmpr) do { \
+//	int v_, r_ = r, c_ = count, b_ = CONTEXT_REG;        \
+//	for (v_ = 0; c_; c_--, r_++)                         \
+//		v_ |= 1 << r_;                               \
+//	if ((offs) != 0) {                                   \
+//		MIPS_ADDI(tmpr,CONTEXT_REG,offs);				\
+//		b_ = tmpr;                                   \
+//	}                                                    \
+//	int i;												\
+//	for(i = 0; i < count; i++) {						\
+//		if( op == EOP_LDMIA) {                          \
+//			MIPS_LW(r+i,i*4,b_);				\
+//		}												\
+//		else {											\
+//			MIPS_SW(r+i,i*4,b_);				\
+//		}												\
+//	}													\
+//} while(0)
 	//op(b_,v_);                                           \ //	TODO: não terminado
 //} while(0)
 
@@ -792,6 +828,8 @@ static int emith_xjump(void *target, int is_call)
 		case A_COND_NE: MIPS_BEQZ(MIPS_s5,2);MIPS_NOP();break;	\
 		case A_COND_MI: MIPS_BGEZ(MIPS_s5,2);MIPS_NOP();break;	\
 		case A_COND_PL: MIPS_BLTZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_LE: MIPS_BGTZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_GT: MIPS_BLEZ(MIPS_s5,2);MIPS_NOP();break;	\
 		default: break;    										\
 	}															\
 	MIPS_LW(r,offs,rs);											\
@@ -804,6 +842,8 @@ static int emith_xjump(void *target, int is_call)
 		case A_COND_NE: MIPS_BEQZ(MIPS_s5,2);MIPS_NOP();break;	\
 		case A_COND_MI: MIPS_BGEZ(MIPS_s5,2);MIPS_NOP();break;	\
 		case A_COND_PL: MIPS_BLTZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_LE: MIPS_BGTZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_GT: MIPS_BLEZ(MIPS_s5,2);MIPS_NOP();break;	\
 		default: break;    										\
 	}															\
 	MIPS_LBU(r,offs,rs);										\
@@ -816,6 +856,8 @@ static int emith_xjump(void *target, int is_call)
 		case A_COND_NE: MIPS_BEQZ(MIPS_s5,2);MIPS_NOP();break;	\
 		case A_COND_MI: MIPS_BGEZ(MIPS_s5,2);MIPS_NOP();break;	\
 		case A_COND_PL: MIPS_BLTZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_LE: MIPS_BGTZ(MIPS_s5,2);MIPS_NOP();break;	\
+		case A_COND_GT: MIPS_BLEZ(MIPS_s5,2);MIPS_NOP();break;	\
 		default: break;    										\
 	}															\
 	MIPS_LHU(r,offs,rs);										\
@@ -834,7 +876,7 @@ static int emith_xjump(void *target, int is_call)
 #define A_OP_MVN 051
 #define A_OP_BIC 052
 #define EOP_STMIA 053
-#define EOP_LDMIA 053
+#define EOP_LDMIA 054
 
 #define __MIPS_INSN_IMM_(op,rs,rt,imm) \
 	EMIT(op<<26 | ((rs)&0x1F)<<21 | ((rt)&0x1F)<<16 | ((imm)&0xFFFF))
@@ -852,6 +894,8 @@ static void EOP_C_DOP_IMM(int cond, int op, int s, int rn, int rd, int ror2, uns
 		case A_COND_NE: MIPS_BEQZ(MIPS_s5,2);MIPS_NOP();break;
 		case A_COND_MI: MIPS_BGEZ(MIPS_s5,2);MIPS_NOP();break;
 		case A_COND_PL: MIPS_BLTZ(MIPS_s5,2);MIPS_NOP();break;
+		case A_COND_LE: MIPS_BGTZ(MIPS_s5,2);MIPS_NOP();break;
+		case A_COND_GT: MIPS_BLEZ(MIPS_s5,2);MIPS_NOP();break;
 		default: break;    // TODO: completar condições
 	}
 
@@ -923,6 +967,8 @@ static void emith_op_imm2(int cond, int s, int op, int rd, int rn, unsigned int 
 			case A_COND_NE: MIPS_BEQZ(MIPS_s5,6);MIPS_NOP();break;	\
 			case A_COND_MI: MIPS_BGEZ(MIPS_s5,6);MIPS_NOP();break;	\
 			case A_COND_PL: MIPS_BLTZ(MIPS_s5,6);MIPS_NOP();break;	\
+			case A_COND_LE: MIPS_BGTZ(MIPS_s5,6);MIPS_NOP();break;	\
+			case A_COND_GT: MIPS_BLEZ(MIPS_s5,6);MIPS_NOP();break;	\
 			default: break;    										\
 		}															\
 		emith_move_r_imm(MIPS_s6,t); \
@@ -939,6 +985,8 @@ static void emith_op_imm2(int cond, int s, int op, int rd, int rn, unsigned int 
 			case A_COND_NE: MIPS_BEQZ(MIPS_s5,2);MIPS_NOP();break;	\
 			case A_COND_MI: MIPS_BGEZ(MIPS_s5,2);MIPS_NOP();break;	\
 			case A_COND_PL: MIPS_BLTZ(MIPS_s5,2);MIPS_NOP();break;	\
+			case A_COND_LE: MIPS_BGTZ(MIPS_s5,2);MIPS_NOP();break;	\
+			case A_COND_GT: MIPS_BLEZ(MIPS_s5,2);MIPS_NOP();break;	\
 			default: break;    										\
 		}															\
 		MIPS_ANDI(d,s,t); \
@@ -949,6 +997,8 @@ static void emith_op_imm2(int cond, int s, int op, int rd, int rn, unsigned int 
 			case A_COND_NE: MIPS_BEQZ(MIPS_s5,3);MIPS_NOP();break;	\
 			case A_COND_MI: MIPS_BGEZ(MIPS_s5,3);MIPS_NOP();break;	\
 			case A_COND_PL: MIPS_BLTZ(MIPS_s5,3);MIPS_NOP();break;	\
+			case A_COND_LE: MIPS_BGTZ(MIPS_s5,3);MIPS_NOP();break;	\
+			case A_COND_GT: MIPS_BLEZ(MIPS_s5,3);MIPS_NOP();break;	\
 			default: break;    										\
 		}															\
 		MIPS_SLL(d,s,count); \
@@ -1076,6 +1126,8 @@ static void emit_restore_registers_(void) {
 
 #define emith_sh2_drc_exit() {\
 	emit_restore_registers_(); \
+	MIPS_JR(MIPS_ra);			\
+	MIPS_NOP();					\
 }
 
 #define host_instructions_updated(base, end) \
