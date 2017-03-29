@@ -739,7 +739,36 @@ static int emith_xjump(void *target, int is_call)
 #define emith_ret_c(cond) \
 	emith_jump_reg_c(cond, MIPS_ra)
 
-#define emith_ctx_do_multiple(op, r, offs, count, tmpr) { \
+#define A_OP_MOV 050
+#define A_OP_MVN 051
+#define A_OP_BIC 052
+#define EOP_STMIA 053
+#define EOP_LDMIA 054
+
+
+static unsigned short arm_reg_to_mips( unsigned short arm_reg ) {
+	unsigned short mips_reg = MIPS_zero;
+
+	if( arm_reg <= 3 ) {
+		mips_reg = arm_reg + 4;
+	}
+
+	else if( arm_reg <= 7 ) {
+		mips_reg = arm_reg + 8;
+	}
+
+	else if( arm_reg <= 9 ) {
+		mips_reg = arm_reg + 16;
+	}
+
+	else if( ( arm_reg >= 10 ) && ( arm_reg <= 12 ) ) {
+		mips_reg = arm_reg + 7;
+	}
+
+	return mips_reg;
+}
+
+#define emith_ctx_do_multiple(op, r, offs, count, tmpr) do { \
 	int v_, r_ = r, c_ = count, b_ = CONTEXT_REG;        \
 	for (v_ = 0; c_; c_--, r_++)                         \
 		v_ |= 1 << r_;                               \
@@ -750,33 +779,14 @@ static int emith_xjump(void *target, int is_call)
 	int i;												\
 	for(i = 0; i < count; i++) {						\
 		if( op == EOP_LDMIA) {                          \
-			MIPS_LW(r+i,i*4,b_);				\
+			MIPS_LW( arm_reg_to_mips(r+i),i*4,b_);		\
 		}												\
 		else {											\
-			MIPS_SW(r+i,i*4,b_);				\
+			MIPS_SW( arm_reg_to_mips(r+i),i*4,b_);		\
 		}												\
 	}													\
-}
-
-//#define emith_ctx_do_multiple(op, r, offs, count, tmpr) do { \
-//	int v_, r_ = r, c_ = count, b_ = CONTEXT_REG;        \
-//	for (v_ = 0; c_; c_--, r_++)                         \
-//		v_ |= 1 << r_;                               \
-//	if ((offs) != 0) {                                   \
-//		MIPS_ADDI(tmpr,CONTEXT_REG,offs);				\
-//		b_ = tmpr;                                   \
-//	}                                                    \
-//	int i;												\
-//	for(i = 0; i < count; i++) {						\
-//		if( op == EOP_LDMIA) {                          \
-//			MIPS_LW(r+i,i*4,b_);				\
-//		}												\
-//		else {											\
-//			MIPS_SW(r+i,i*4,b_);				\
-//		}												\
-//	}													\
-//} while(0)
-	//op(b_,v_);                                           \ //	TODO: não terminado
+} while(0)
+//	op(b_,v_);                                           \ //	TODO: não terminado
 //} while(0)
 
 //#define emith_ctx_do_multiple(op, r, offs, count, tmpr) do { \
@@ -871,12 +881,6 @@ static int emith_xjump(void *target, int is_call)
 
 #define emith_read16_r_r_offs(r, rs, offs) \
 	emith_read16_r_r_offs_c(A_COND_AL, r, rs, offs)
-
-#define A_OP_MOV 050
-#define A_OP_MVN 051
-#define A_OP_BIC 052
-#define EOP_STMIA 053
-#define EOP_LDMIA 054
 
 #define __MIPS_INSN_IMM_(op,rs,rt,imm) \
 	EMIT(op<<26 | ((rs)&0x1F)<<21 | ((rt)&0x1F)<<16 | ((imm)&0xFFFF))
@@ -1039,29 +1043,6 @@ static void emith_op_imm2(int cond, int s, int op, int rd, int rn, unsigned int 
 	emith_adc_r_r(sr, sr);          \
 	if (is_sub)                     \
 		emith_eor_r_imm(sr, 1); \
-}
-
-
-static unsigned short arm_reg_to_mips( unsigned short arm_reg ) {
-	unsigned short mips_reg = MIPS_zero;
-
-	if( arm_reg <= 4 ) {
-		mips_reg = arm_reg + 4;
-	}
-
-	else if( arm_reg <= 7 ) {
-		mips_reg = arm_reg + 8;
-	}
-
-	else if( arm_reg <= 9 ) {
-		mips_reg = arm_reg + 16;
-	}
-
-	else if( ( arm_reg >= 10 ) && ( arm_reg <= 12 ) ) {
-		mips_reg = arm_reg + 7;
-	}
-
-	return mips_reg;
 }
 
 

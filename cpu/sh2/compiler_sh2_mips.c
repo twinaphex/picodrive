@@ -1332,10 +1332,10 @@ static void emit_do_static_regs(int is_write, int tmpr)
     if (count > 1) {
       // i, r point to last item
       if (is_write) {
-        emith_ctx_write_multiple( arm_reg_to_mips(r - count + 1), (i - count + 1) * 4, count, tmpr);
+        emith_ctx_write_multiple( r - count + 1, (i - count + 1) * 4, count, tmpr);
       }
       else {
-        emith_ctx_read_multiple( arm_reg_to_mips(r - count + 1), (i - count + 1) * 4, count, tmpr);
+        emith_ctx_read_multiple( r - count + 1, (i - count + 1) * 4, count, tmpr);
       }
     } else {
       if (is_write) {
