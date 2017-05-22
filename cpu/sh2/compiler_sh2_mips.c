@@ -747,7 +747,7 @@ static int gconst_check(sh2_reg_e r)
 static int gconst_try_read(int hr, sh2_reg_e r)
 {
   if (dr_gcregs_dirty & (1 << r)) {
-    emith_move_r_imm(hr, dr_gcregs[r]);
+    emith_move_r_imm(arm_reg_to_mips(hr), dr_gcregs[r]);
     dr_gcregs_dirty &= ~(1 << r);
     return 1;
   }
@@ -879,7 +879,7 @@ do_alloc:
         tr->flags |= HRF_DIRTY;
     }
     else {
-      emith_ctx_read(tr->hreg, r * 4);
+      emith_ctx_read(arm_reg_to_mips(tr->hreg), r * 4);
     }
   }
 
@@ -1060,7 +1060,7 @@ static void rcache_clean(void)
   for (i = 0; i < ARRAY_SIZE(reg_temp); i++)
     if (reg_temp[i].type == HR_CACHED && (reg_temp[i].flags & HRF_DIRTY)) {
       // writeback
-      emith_ctx_write(reg_temp[i].hreg, reg_temp[i].greg * 4);
+      emith_ctx_write(arm_reg_to_mips(reg_temp[i].hreg), reg_temp[i].greg * 4);
       reg_temp[i].flags &= ~HRF_DIRTY;
     }
 }
@@ -1302,7 +1302,7 @@ static void emit_indirect_read_double(u32 *rnr, u32 *rmr, int rn, int rm, int si
   emith_ctx_write(tmp, offsetof(SH2, drc_tmp));
   rcache_free_tmp(tmp);
   tmp = rcache_get_reg(rn, RC_GR_RMW);
-  emith_add_r_imm(tmp, 1 << size);
+  emith_add_r_imm(arm_reg_to_mips(tmp), 1 << size);
   rcache_unlock(tmp);
 
   rcache_get_reg_arg(0, rm);
@@ -1310,7 +1310,7 @@ static void emit_indirect_read_double(u32 *rnr, u32 *rmr, int rn, int rm, int si
   *rnr = rcache_get_tmp();
   emith_ctx_read(*rnr, offsetof(SH2, drc_tmp));
   tmp = rcache_get_reg(rm, RC_GR_RMW);
-  emith_add_r_imm(tmp, 1 << size);
+  emith_add_r_imm(arm_reg_to_mips(tmp), 1 << size);
   rcache_unlock(tmp);
 }
 
@@ -1365,9 +1365,9 @@ static void emit_block_entry(void)
   emith_call(sh2_drc_log_entry);
   rcache_invalidate();
 #endif
-  emith_tst_r_r(arg0, arg0);
+  emith_tst_r_r(arm_reg_to_mips(arg0), arm_reg_to_mips(arg0) );
   EMITH_SJMP_START(DCOND_EQ);
-  emith_jump_reg_c(DCOND_NE, arg0);
+  emith_jump_reg_c(DCOND_NE, arm_reg_to_mips(arg0));
   EMITH_SJMP_END(DCOND_EQ);
 }
 
@@ -1541,7 +1541,7 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
 
       // check cycles
       sr = rcache_get_reg(SHR_SR, RC_GR_READ);
-      emith_cmp_r_imm(sr, 0);
+      emith_cmp_r_imm(arm_reg_to_mips(sr), 0);
       emith_jump_cond(DCOND_LE, sh2_drc_exit);
       do_host_disasm(tcache_id);
       rcache_unlock_all();
@@ -1596,10 +1596,10 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
           case OP_BRANCH_CF:
             tmp = rcache_get_reg(SHR_PC, RC_GR_WRITE);
             sr = rcache_get_reg(SHR_SR, RC_GR_READ);
-            emith_move_r_imm(tmp, pc);
+            emith_move_r_imm(arm_reg_to_mips(tmp), pc);
             emith_tst_r_imm(sr, T);
             tmp2 = ops[i-1].op == OP_BRANCH_CT ? DCOND_NE : DCOND_EQ;
-            emith_move_r_imm_c(tmp2, tmp, ops[i-1].imm);
+            emith_move_r_imm_c(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp), ops[i-1].imm);
             break;
           // case OP_BRANCH_R OP_BRANCH_RF - PC already loaded
           }
@@ -1633,12 +1633,12 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
       tmp2 = rcache_get_reg(GET_Rn(), RC_GR_READ);
       if (opd->dest & BITMASK1(SHR_PR)) {
         tmp3 = rcache_get_reg(SHR_PR, RC_GR_WRITE);
-        emith_move_r_imm(tmp3, pc + 2);
-        emith_add_r_r_r(tmp, tmp2, tmp3);
+        emith_move_r_imm(arm_reg_to_mips(tmp3), pc + 2);
+        emith_add_r_r_r(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp3));
       }
       else {
-        emith_move_r_r(tmp, tmp2);
-        emith_add_r_imm(tmp, pc + 2);
+        emith_move_r_r(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp2));
+        emith_add_r_imm(arm_reg_to_mips(tmp), pc + 2);
       }
       drcf.pending_branch_indirect = 1;
       goto end_op;
@@ -1652,13 +1652,13 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
       emit_memhandler_read_rr(SHR_PC, SHR_SP, 0, 2);
       // pop SR
       tmp = rcache_get_reg_arg(0, SHR_SP);
-      emith_add_r_imm(tmp, 4);
+      emith_add_r_imm(arm_reg_to_mips(tmp), 4);
       tmp = emit_memhandler_read(2);
       sr = rcache_get_reg(SHR_SR, RC_GR_RMW);
-      emith_write_sr(sr, tmp);
+      emith_write_sr(sr, arm_reg_to_mips(tmp));
       rcache_free_tmp(tmp);
       tmp = rcache_get_reg(SHR_SP, RC_GR_RMW);
-      emith_add_r_imm(tmp, 4*2);
+      emith_add_r_imm(arm_reg_to_mips(tmp), 4*2);
       drcf.test_irq = 1;
       drcf.pending_branch_indirect = 1;
       goto end_op;
@@ -1680,25 +1680,25 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
       {
         tmp = rcache_get_tmp_arg(0);
         if (opd->imm != 0) {
-          emith_move_r_imm(tmp, opd->imm);
+          emith_move_r_imm(arm_reg_to_mips(tmp), opd->imm);
         }
         else {
           // have to calculate read addr from PC
           tmp2 = rcache_get_reg(SHR_PC, RC_GR_READ);
           if (opd->size == 2) {
-            emith_add_r_r_imm(tmp, tmp2, 2 + (op & 0xff) * 4);
-            emith_bic_r_imm(tmp, 3);
+            emith_add_r_r_imm(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp2), 2 + (op & 0xff) * 4);
+            emith_bic_r_imm(arm_reg_to_mips(tmp), 3);
           }
           else
-            emith_add_r_r_imm(tmp, tmp2, 2 + (op & 0xff) * 2);
+            emith_add_r_r_imm(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp2), 2 + (op & 0xff) * 2);
         }
         tmp2 = emit_memhandler_read(opd->size);
         tmp3 = rcache_get_reg(GET_Rn(), RC_GR_WRITE);
         if (opd->size == 2) {
-          emith_move_r_r(tmp3, tmp2);
+          emith_move_r_r(arm_reg_to_mips(tmp3), arm_reg_to_mips(tmp2));
         }
         else {
-          emith_sext(tmp3, tmp2, 16);
+          emith_sext(arm_reg_to_mips(tmp3), arm_reg_to_mips(tmp2), 16);
         }
         rcache_free_tmp(tmp2);
       }
@@ -1710,8 +1710,8 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
       else {
         tmp = rcache_get_reg(SHR_R0, RC_GR_WRITE);
         tmp2 = rcache_get_reg(SHR_PC, RC_GR_READ);
-        emith_add_r_r_imm(tmp, tmp2, 2 + (op & 0xff) * 4);
-        emith_bic_r_imm(tmp, 3);
+        emith_add_r_r_imm(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp2), 2 + (op & 0xff) * 4);
+        emith_bic_r_imm(arm_reg_to_mips(tmp), 3);
       }
       goto end_op;
     }
@@ -1739,9 +1739,9 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
           goto default_;
         }
         tmp3 = rcache_get_reg(tmp2, RC_GR_READ);
-        emith_move_r_r(tmp, tmp3);
+        emith_move_r_r(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp3));
         if (tmp2 == SHR_SR)
-          emith_clear_msb(tmp, tmp, 22); // reserved bits defined by ISA as 0
+          emith_clear_msb(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp), 22); // reserved bits defined by ISA as 0
         goto end_op;
       case 0x04: // MOV.B Rm,@(R0,Rn)   0000nnnnmmmm0100
       case 0x05: // MOV.W Rm,@(R0,Rn)   0000nnnnmmmm0101
@@ -1750,7 +1750,7 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         tmp  = rcache_get_reg_arg(1, GET_Rm());
         tmp2 = rcache_get_reg_arg(0, SHR_R0);
         tmp3 = rcache_get_reg(GET_Rn(), RC_GR_READ);
-        emith_add_r_r(tmp2, tmp3);
+        emith_add_r_r(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp3));
         emit_memhandler_write(op & 3);
         goto end_op;
       case 0x07:
@@ -1758,7 +1758,7 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         tmp  = rcache_get_reg(GET_Rn(), RC_GR_READ);
         tmp2 = rcache_get_reg(GET_Rm(), RC_GR_READ);
         tmp3 = rcache_get_reg(SHR_MACL, RC_GR_WRITE);
-        emith_mul(tmp3, tmp2, tmp);
+        emith_mul(arm_reg_to_mips(tmp3), arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp));
         goto end_op;
       case 0x08:
         switch (GET_Fx())
@@ -1791,7 +1791,7 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         case 2: // MOVT Rn    0000nnnn00101001
           sr   = rcache_get_reg(SHR_SR, RC_GR_READ);
           tmp2 = rcache_get_reg(GET_Rn(), RC_GR_WRITE);
-          emith_clear_msb(tmp2, sr, 31);
+          emith_clear_msb(arm_reg_to_mips(tmp2), sr, 31);
           break;
         default:
           goto default_;
@@ -1814,7 +1814,7 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
           goto default_;
         }
         tmp2 = rcache_get_reg(tmp2, RC_GR_READ);
-        emith_move_r_r(tmp, tmp2);
+        emith_move_r_r(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp2));
         goto end_op;
       case 0x0c: // MOV.B    @(R0,Rm),Rn      0000nnnnmmmm1100
       case 0x0d: // MOV.W    @(R0,Rm),Rn      0000nnnnmmmm1101
@@ -1822,9 +1822,9 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         tmp = emit_indirect_indexed_read(SHR_R0, GET_Rm(), op & 3);
         tmp2 = rcache_get_reg(GET_Rn(), RC_GR_WRITE);
         if ((op & 3) != 2) {
-          emith_sext(tmp2, tmp, (op & 1) ? 16 : 8);
+          emith_sext(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp), (op & 1) ? 16 : 8);
         } else
-          emith_move_r_r(tmp2, tmp);
+          emith_move_r_r(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp));
         rcache_free_tmp(tmp);
         goto end_op;
       case 0x0f: // MAC.L   @Rm+,@Rn+  0000nnnnmmmm1111
@@ -1869,7 +1869,7 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
       tmp  = rcache_get_reg_arg(0, GET_Rn());
       tmp2 = rcache_get_reg_arg(1, GET_Rm());
       if (op & 0x0f)
-        emith_add_r_imm(tmp, (op & 0x0f) * 4);
+        emith_add_r_imm(arm_reg_to_mips(tmp), (op & 0x0f) * 4);
       emit_memhandler_write(2);
       goto end_op;
 
@@ -1889,7 +1889,7 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
       case 0x06: // MOV.L Rm,@-Rn       0010nnnnmmmm0110
         rcache_get_reg_arg(1, GET_Rm()); // for Rm == Rn
         tmp = rcache_get_reg(GET_Rn(), RC_GR_RMW);
-        emith_sub_r_imm(tmp, (1 << (op & 3)));
+        emith_sub_r_imm(arm_reg_to_mips(tmp), (1 << (op & 3)));
         rcache_clean();
         rcache_get_reg_arg(0, GET_Rn());
         emit_memhandler_write(op & 3);
@@ -1899,15 +1899,15 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         tmp2 = rcache_get_reg(GET_Rn(), RC_GR_READ);
         tmp3 = rcache_get_reg(GET_Rm(), RC_GR_READ);
         emith_bic_r_imm(sr, M|Q|T);
-        emith_tst_r_imm(tmp2, (1<<31));
+        emith_tst_r_imm(arm_reg_to_mips(tmp2), (1<<31));
         EMITH_SJMP_START(DCOND_EQ);
         emith_or_r_imm_c(DCOND_NE, sr, Q);
         EMITH_SJMP_END(DCOND_EQ);
-        emith_tst_r_imm(tmp3, (1<<31));
+        emith_tst_r_imm(arm_reg_to_mips(tmp3), (1<<31));
         EMITH_SJMP_START(DCOND_EQ);
         emith_or_r_imm_c(DCOND_NE, sr, M);
         EMITH_SJMP_END(DCOND_EQ);
-        emith_teq_r_r(tmp2, tmp3);
+        emith_teq_r_r(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp3));
         EMITH_SJMP_START(DCOND_PL);
         emith_or_r_imm_c(DCOND_MI, sr, T);
         EMITH_SJMP_END(DCOND_PL);
@@ -1917,62 +1917,62 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         tmp2 = rcache_get_reg(GET_Rn(), RC_GR_READ);
         tmp3 = rcache_get_reg(GET_Rm(), RC_GR_READ);
         emith_bic_r_imm(sr, T);
-        emith_tst_r_r(tmp2, tmp3);
+        emith_tst_r_r(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp3));
         emit_or_t_if_eq(sr);
         goto end_op;
       case 0x09: // AND Rm,Rn           0010nnnnmmmm1001
         tmp  = rcache_get_reg(GET_Rn(), RC_GR_RMW);
         tmp2 = rcache_get_reg(GET_Rm(), RC_GR_READ);
-        emith_and_r_r(tmp, tmp2);
+        emith_and_r_r(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp2));
         goto end_op;
       case 0x0a: // XOR Rm,Rn           0010nnnnmmmm1010
         tmp  = rcache_get_reg(GET_Rn(), RC_GR_RMW);
         tmp2 = rcache_get_reg(GET_Rm(), RC_GR_READ);
-        emith_eor_r_r(tmp, tmp2);
+        emith_eor_r_r(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp2));
         goto end_op;
       case 0x0b: // OR  Rm,Rn           0010nnnnmmmm1011
         tmp  = rcache_get_reg(GET_Rn(), RC_GR_RMW);
         tmp2 = rcache_get_reg(GET_Rm(), RC_GR_READ);
-        emith_or_r_r(tmp, tmp2);
+        emith_or_r_r(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp2));
         goto end_op;
       case 0x0c: // CMP/STR Rm,Rn       0010nnnnmmmm1100
         tmp  = rcache_get_tmp();
         tmp2 = rcache_get_reg(GET_Rn(), RC_GR_READ);
         tmp3 = rcache_get_reg(GET_Rm(), RC_GR_READ);
-        emith_eor_r_r_r(tmp, tmp2, tmp3);
+        emith_eor_r_r_r(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp3));
         sr   = rcache_get_reg(SHR_SR, RC_GR_RMW);
         emith_bic_r_imm(sr, T);
-        emith_tst_r_imm(tmp, 0x000000ff);
+        emith_tst_r_imm(arm_reg_to_mips(tmp), 0x000000ff);
         emit_or_t_if_eq(sr);
-        emith_tst_r_imm(tmp, 0x0000ff00);
+        emith_tst_r_imm(arm_reg_to_mips(tmp), 0x0000ff00);
         emit_or_t_if_eq(sr);
-        emith_tst_r_imm(tmp, 0x00ff0000);
+        emith_tst_r_imm(arm_reg_to_mips(tmp), 0x00ff0000);
         emit_or_t_if_eq(sr);
-        emith_tst_r_imm(tmp, 0xff000000);
+        emith_tst_r_imm(arm_reg_to_mips(tmp), 0xff000000);
         emit_or_t_if_eq(sr);
         rcache_free_tmp(tmp);
         goto end_op;
       case 0x0d: // XTRCT  Rm,Rn        0010nnnnmmmm1101
         tmp  = rcache_get_reg(GET_Rn(), RC_GR_RMW);
         tmp2 = rcache_get_reg(GET_Rm(), RC_GR_READ);
-        emith_lsr(tmp, tmp, 16);
-        emith_or_r_r_lsl(tmp, tmp2, 16);
+        emith_lsr(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp), 16);
+        emith_or_r_r_lsl(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp2), 16);
         goto end_op;
       case 0x0e: // MULU.W Rm,Rn        0010nnnnmmmm1110
       case 0x0f: // MULS.W Rm,Rn        0010nnnnmmmm1111
         tmp2 = rcache_get_reg(GET_Rn(), RC_GR_READ);
         tmp  = rcache_get_reg(SHR_MACL, RC_GR_WRITE);
         if (op & 1) {
-          emith_sext(tmp, tmp2, 16);
+          emith_sext(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp2), 16);
         } else
-          emith_clear_msb(tmp, tmp2, 16);
+          emith_clear_msb(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp2), 16);
         tmp3 = rcache_get_reg(GET_Rm(), RC_GR_READ);
         tmp2 = rcache_get_tmp();
         if (op & 1) {
-          emith_sext(tmp2, tmp3, 16);
+          emith_sext(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp3), 16);
         } else
-          emith_clear_msb(tmp2, tmp3, 16);
-        emith_mul(tmp, tmp, tmp2);
+          emith_clear_msb(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp3), 16);
+        emith_mul(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp), arm_reg_to_mips(tmp2));
         rcache_free_tmp(tmp2);
         goto end_op;
       }
@@ -1991,7 +1991,7 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         tmp2 = rcache_get_reg(GET_Rn(), RC_GR_READ);
         tmp3 = rcache_get_reg(GET_Rm(), RC_GR_READ);
         emith_bic_r_imm(sr, T);
-        emith_cmp_r_r(tmp2, tmp3);
+        emith_cmp_r_r(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp3));
         switch (op & 0x07)
         {
         case 0x00: // CMP/EQ
@@ -2031,11 +2031,11 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         tmp3 = rcache_get_reg(GET_Rm(), RC_GR_READ);
         sr   = rcache_get_reg(SHR_SR, RC_GR_RMW);
         emith_tpop_carry(sr, 0);
-        emith_adcf_r_r(tmp2, tmp2);
+        emith_adcf_r_r(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp2));
         emith_tpush_carry(sr, 0);            // keep Q1 in T for now
         tmp4 = rcache_get_tmp();
-        emith_and_r_r_imm(tmp4, sr, M);
-        emith_eor_r_r_lsr(sr, tmp4, M_SHIFT - Q_SHIFT); // Q ^= M
+        emith_and_r_r_imm(arm_reg_to_mips(tmp4), sr, M);
+        emith_eor_r_r_lsr(sr, arm_reg_to_mips(tmp4), M_SHIFT - Q_SHIFT); // Q ^= M
         rcache_free_tmp(tmp4);
         // add or sub, invert T if carry to get Q1 ^ Q2
         // in: (Q ^ M) passed in Q, Q1 in T
@@ -2056,16 +2056,16 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         tmp2 = rcache_get_reg(GET_Rm(), RC_GR_READ);
         tmp3 = rcache_get_reg(SHR_MACL, RC_GR_WRITE);
         tmp4 = rcache_get_reg(SHR_MACH, RC_GR_WRITE);
-        emith_mul_u64(tmp3, tmp4, tmp, tmp2);
+        emith_mul_u64(arm_reg_to_mips(tmp3), arm_reg_to_mips(tmp4), arm_reg_to_mips(tmp), arm_reg_to_mips(tmp2));
         goto end_op;
       case 0x08: // SUB     Rm,Rn       0011nnnnmmmm1000
       case 0x0c: // ADD     Rm,Rn       0011nnnnmmmm1100
         tmp  = rcache_get_reg(GET_Rn(), RC_GR_RMW);
         tmp2 = rcache_get_reg(GET_Rm(), RC_GR_READ);
         if (op & 4) {
-          emith_add_r_r(tmp, tmp2);
+          emith_add_r_r(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp2));
         } else
-          emith_sub_r_r(tmp, tmp2);
+          emith_sub_r_r(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp2));
         goto end_op;
       case 0x0a: // SUBC    Rm,Rn       0011nnnnmmmm1010
       case 0x0e: // ADDC    Rm,Rn       0011nnnnmmmm1110
@@ -2074,11 +2074,11 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         sr   = rcache_get_reg(SHR_SR, RC_GR_RMW);
         if (op & 4) { // adc
           emith_tpop_carry(sr, 0);
-          emith_adcf_r_r(tmp, tmp2);
+          emith_adcf_r_r(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp2));
           emith_tpush_carry(sr, 0);
         } else {
           emith_tpop_carry(sr, 1);
-          emith_sbcf_r_r(tmp, tmp2);
+          emith_sbcf_r_r(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp2));
           emith_tpush_carry(sr, 1);
         }
         goto end_op;
@@ -2089,9 +2089,9 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         sr   = rcache_get_reg(SHR_SR, RC_GR_RMW);
         emith_bic_r_imm(sr, T);
         if (op & 4) {
-          emith_addf_r_r(tmp, tmp2);
+          emith_addf_r_r(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp2));
         } else
-          emith_subf_r_r(tmp, tmp2);
+          emith_subf_r_r(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp2));
         EMITH_SJMP_START(DCOND_VC);
         emith_or_r_imm_c(DCOND_VS, sr, T);
         EMITH_SJMP_END(DCOND_VC);
@@ -2101,7 +2101,7 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         tmp2 = rcache_get_reg(GET_Rm(), RC_GR_READ);
         tmp3 = rcache_get_reg(SHR_MACL, RC_GR_WRITE);
         tmp4 = rcache_get_reg(SHR_MACH, RC_GR_WRITE);
-        emith_mul_s64(tmp3, tmp4, tmp, tmp2);
+        emith_mul_s64(arm_reg_to_mips(tmp3), arm_reg_to_mips(tmp4), arm_reg_to_mips(tmp), arm_reg_to_mips(tmp2));
         goto end_op;
       }
       goto default_;
@@ -2118,7 +2118,7 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
           tmp = rcache_get_reg(GET_Rn(), RC_GR_RMW);
           sr  = rcache_get_reg(SHR_SR, RC_GR_RMW);
           emith_tpop_carry(sr, 0); // dummy
-          emith_lslf(tmp, tmp, 1);
+          emith_lslf(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp), 1);
           emith_tpush_carry(sr, 0);
           goto end_op;
         case 1: // DT Rn      0100nnnn00010000
@@ -2139,7 +2139,7 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
 #endif
           tmp = rcache_get_reg(GET_Rn(), RC_GR_RMW);
           emith_bic_r_imm(sr, T);
-          emith_subf_r_imm(tmp, 1);
+          emith_subf_r_imm(arm_reg_to_mips(tmp), 1);
           emit_or_t_if_eq(sr);
           goto end_op;
         }
@@ -2153,16 +2153,16 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
           sr  = rcache_get_reg(SHR_SR, RC_GR_RMW);
           emith_tpop_carry(sr, 0); // dummy
           if (op & 0x20) {
-            emith_asrf(tmp, tmp, 1);
+            emith_asrf(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp), 1);
           } else
-            emith_lsrf(tmp, tmp, 1);
+            emith_lsrf(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp), 1);
           emith_tpush_carry(sr, 0);
           goto end_op;
         case 1: // CMP/PZ Rn  0100nnnn00010001
           tmp = rcache_get_reg(GET_Rn(), RC_GR_READ);
           sr  = rcache_get_reg(SHR_SR, RC_GR_RMW);
           emith_bic_r_imm(sr, T);
-          emith_cmp_r_imm(tmp, 0);
+          emith_cmp_r_imm(arm_reg_to_mips(tmp), 0);
           EMITH_SJMP_START(DCOND_LT);
           emith_or_r_imm_c(DCOND_GE, sr, T);
           EMITH_SJMP_END(DCOND_LT);
@@ -2195,12 +2195,12 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
           goto default_;
         }
         tmp2 = rcache_get_reg(GET_Rn(), RC_GR_RMW);
-        emith_sub_r_imm(tmp2, 4);
+        emith_sub_r_imm(arm_reg_to_mips(tmp2), 4);
         rcache_clean();
         rcache_get_reg_arg(0, GET_Rn());
         tmp3 = rcache_get_reg_arg(1, tmp);
         if (tmp == SHR_SR)
-          emith_clear_msb(tmp3, tmp3, 22); // reserved bits defined by ISA as 0
+          emith_clear_msb(arm_reg_to_mips(tmp3), arm_reg_to_mips(tmp3), 22); // reserved bits defined by ISA as 0
         emit_memhandler_write(2);
         goto end_op;
       case 0x04:
@@ -2213,9 +2213,9 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
           sr  = rcache_get_reg(SHR_SR, RC_GR_RMW);
           emith_tpop_carry(sr, 0); // dummy
           if (op & 1) {
-            emith_rorf(tmp, tmp, 1);
+            emith_rorf(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp), 1);
           } else
-            emith_rolf(tmp, tmp, 1);
+            emith_rolf(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp), 1);
           emith_tpush_carry(sr, 0);
           goto end_op;
         case 0x24: // ROTCL  Rn          0100nnnn00100100
@@ -2224,16 +2224,16 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
           sr  = rcache_get_reg(SHR_SR, RC_GR_RMW);
           emith_tpop_carry(sr, 0);
           if (op & 1) {
-            emith_rorcf(tmp);
+            emith_rorcf(arm_reg_to_mips(tmp));
           } else
-            emith_rolcf(tmp);
+            emith_rolcf(arm_reg_to_mips(tmp));
           emith_tpush_carry(sr, 0);
           goto end_op;
         case 0x15: // CMP/PL Rn          0100nnnn00010101
           tmp = rcache_get_reg(GET_Rn(), RC_GR_RMW);
           sr  = rcache_get_reg(SHR_SR, RC_GR_RMW);
           emith_bic_r_imm(sr, T);
-          emith_cmp_r_imm(tmp, 0);
+          emith_cmp_r_imm(arm_reg_to_mips(tmp), 0);
           EMITH_SJMP_START(DCOND_LE);
           emith_or_r_imm_c(DCOND_GT, sr, T);
           EMITH_SJMP_END(DCOND_LE);
@@ -2269,15 +2269,15 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         tmp2 = emit_memhandler_read(2);
         if (tmp == SHR_SR) {
           sr = rcache_get_reg(SHR_SR, RC_GR_RMW);
-          emith_write_sr(sr, tmp2);
+          emith_write_sr(sr, arm_reg_to_mips(tmp2));
           drcf.test_irq = 1;
         } else {
           tmp = rcache_get_reg(tmp, RC_GR_WRITE);
-          emith_move_r_r(tmp, tmp2);
+          emith_move_r_r(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp2));
         }
         rcache_free_tmp(tmp2);
         tmp = rcache_get_reg(GET_Rn(), RC_GR_RMW);
-        emith_add_r_imm(tmp, 4);
+        emith_add_r_imm(arm_reg_to_mips(tmp), 4);
         goto end_op;
       case 0x08:
       case 0x09:
@@ -2303,9 +2303,9 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         }
         tmp2 = rcache_get_reg(GET_Rn(), RC_GR_RMW);
         if (op & 1) {
-          emith_lsr(tmp2, tmp2, tmp);
+          emith_lsr(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp));
         } else
-          emith_lsl(tmp2, tmp2, tmp);
+          emith_lsl(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp));
         goto end_op;
       case 0x0a:
         switch (GET_Fx())
@@ -2322,7 +2322,7 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         default:
           goto default_;
         }
-        emit_move_r_r(tmp2, GET_Rn());
+        emit_move_r_r(arm_reg_to_mips(tmp2), GET_Rn());
         goto end_op;
       case 0x0b:
         switch (GET_Fx())
@@ -2333,12 +2333,12 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
           tmp = emit_memhandler_read(0);
           sr  = rcache_get_reg(SHR_SR, RC_GR_RMW);
           emith_bic_r_imm(sr, T);
-          emith_cmp_r_imm(tmp, 0);
+          emith_cmp_r_imm(arm_reg_to_mips(tmp), 0);
           emit_or_t_if_eq(sr);
           rcache_clean();
-          emith_or_r_imm(tmp, 0x80);
+          emith_or_r_imm(arm_reg_to_mips(tmp), 0x80);
           tmp2 = rcache_get_tmp_arg(1); // assuming it differs to tmp
-          emith_move_r_r(tmp2, tmp);
+          emith_move_r_r(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp));
           rcache_free_tmp(tmp);
           rcache_get_reg_arg(0, GET_Rn());
           emit_memhandler_write(0);
@@ -2365,34 +2365,34 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         }
         if (tmp2 == SHR_SR) {
           sr = rcache_get_reg(SHR_SR, RC_GR_RMW);
-          emith_write_sr(sr, tmp);
+          emith_write_sr(sr, arm_reg_to_mips(tmp));
           drcf.test_irq = 1;
         } else {
           tmp2 = rcache_get_reg(tmp2, RC_GR_WRITE);
-          emith_move_r_r(tmp2, tmp);
+          emith_move_r_r(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp));
         }
         goto end_op;
       case 0x0f:
         // MAC.W @Rm+,@Rn+  0100nnnnmmmm1111
         emit_indirect_read_double(&tmp, &tmp2, GET_Rn(), GET_Rm(), 1);
-        emith_sext(tmp, tmp, 16);
-        emith_sext(tmp2, tmp2, 16);
+        emith_sext(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp), 16);
+        emith_sext(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp2), 16);
         tmp3 = rcache_get_reg(SHR_MACL, RC_GR_RMW);
         tmp4 = rcache_get_reg(SHR_MACH, RC_GR_RMW);
-        emith_mula_s64(tmp3, tmp4, tmp, tmp2);
+        emith_mula_s64(arm_reg_to_mips(tmp3), arm_reg_to_mips(tmp4), arm_reg_to_mips(tmp), arm_reg_to_mips(tmp2));
         rcache_free_tmp(tmp2);
         // XXX: MACH should be untouched when S is set?
         sr = rcache_get_reg(SHR_SR, RC_GR_READ);
         emith_tst_r_imm(sr, S);
         EMITH_JMP_START(DCOND_EQ);
 
-        emith_asr(tmp, tmp3, 31);
-        emith_eorf_r_r(tmp, tmp4); // tmp = ((signed)macl >> 31) ^ mach
+        emith_asr(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp3), 31);
+        emith_eorf_r_r(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp4)); // tmp = ((signed)macl >> 31) ^ mach
         EMITH_JMP_START(DCOND_EQ);
-        emith_move_r_imm(tmp3, 0x80000000);
-        emith_tst_r_r(tmp4, tmp4);
+        emith_move_r_imm(arm_reg_to_mips(tmp3), 0x80000000);
+        emith_tst_r_r(arm_reg_to_mips(tmp4), arm_reg_to_mips(tmp4));
         EMITH_SJMP_START(DCOND_MI);
-        emith_sub_r_imm_c(DCOND_PL, tmp3, 1); // positive
+        emith_sub_r_imm_c(DCOND_PL, arm_reg_to_mips(tmp3), 1); // positive
         EMITH_SJMP_END(DCOND_MI);
         EMITH_JMP_END(DCOND_EQ);
 
@@ -2421,7 +2421,7 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         emit_memhandler_read_rr(GET_Rn(), GET_Rm(), 0, op & 3);
         if ((op & 7) >= 4 && GET_Rn() != GET_Rm()) {
           tmp = rcache_get_reg(GET_Rm(), RC_GR_RMW);
-          emith_add_r_imm(tmp, (1 << (op & 3)));
+          emith_add_r_imm(arm_reg_to_mips(tmp), (1 << (op & 3)));
         }
         goto end_op;
       case 0x03:
@@ -2431,48 +2431,48 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         switch (op & 0x0f)
         {
         case 0x03: // MOV    Rm,Rn        0110nnnnmmmm0011
-          emith_move_r_r(tmp2, tmp);
+          emith_move_r_r(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp));
           break;
         case 0x07: // NOT    Rm,Rn        0110nnnnmmmm0111
-          emith_mvn_r_r(tmp2, tmp);
+          emith_mvn_r_r(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp));
           break;
         case 0x08: // SWAP.B Rm,Rn        0110nnnnmmmm1000
           tmp3 = tmp2;
           if (tmp == tmp2)
             tmp3 = rcache_get_tmp();
           tmp4 = rcache_get_tmp();
-          emith_lsr(tmp3, tmp, 16);
-          emith_or_r_r_lsl(tmp3, tmp, 24);
-          emith_and_r_r_imm(tmp4, tmp, 0xff00);
-          emith_or_r_r_lsl(tmp3, tmp4, 8);
-          emith_rol(tmp2, tmp3, 16);
+          emith_lsr(arm_reg_to_mips(tmp3), arm_reg_to_mips(tmp), 16);
+          emith_or_r_r_lsl(arm_reg_to_mips(tmp3), arm_reg_to_mips(tmp), 24);
+          emith_and_r_r_imm(arm_reg_to_mips(tmp4), arm_reg_to_mips(tmp), 0xff00);
+          emith_or_r_r_lsl(arm_reg_to_mips(tmp3), arm_reg_to_mips(tmp4), 8);
+          emith_rol(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp3), 16);
           rcache_free_tmp(tmp4);
           if (tmp == tmp2)
             rcache_free_tmp(tmp3);
           break;
         case 0x09: // SWAP.W Rm,Rn        0110nnnnmmmm1001
-          emith_rol(tmp2, tmp, 16);
+          emith_rol(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp), 16);
           break;
         case 0x0a: // NEGC   Rm,Rn        0110nnnnmmmm1010
           sr = rcache_get_reg(SHR_SR, RC_GR_RMW);
           emith_tpop_carry(sr, 1);
-          emith_negcf_r_r(tmp2, tmp);
+          emith_negcf_r_r(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp));
           emith_tpush_carry(sr, 1);
           break;
         case 0x0b: // NEG    Rm,Rn        0110nnnnmmmm1011
-          emith_neg_r_r(tmp2, tmp);
+          emith_neg_r_r(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp));
           break;
         case 0x0c: // EXTU.B Rm,Rn        0110nnnnmmmm1100
-          emith_clear_msb(tmp2, tmp, 24);
+          emith_clear_msb(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp), 24);
           break;
         case 0x0d: // EXTU.W Rm,Rn        0110nnnnmmmm1101
-          emith_clear_msb(tmp2, tmp, 16);
+          emith_clear_msb(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp), 16);
           break;
         case 0x0e: // EXTS.B Rm,Rn        0110nnnnmmmm1110
-          emith_sext(tmp2, tmp, 8);
+          emith_sext(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp), 8);
           break;
         case 0x0f: // EXTS.W Rm,Rn        0110nnnnmmmm1111
-          emith_sext(tmp2, tmp, 16);
+          emith_sext(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp), 16);
           break;
         }
         goto end_op;
@@ -2484,9 +2484,9 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
       // ADD #imm,Rn  0111nnnniiiiiiii
       tmp = rcache_get_reg(GET_Rn(), RC_GR_RMW);
       if (op & 0x80) { // adding negative
-        emith_sub_r_imm(tmp, -op & 0xff);
+        emith_sub_r_imm(arm_reg_to_mips(tmp), -op & 0xff);
       } else
-        emith_add_r_imm(tmp, op & 0xff);
+        emith_add_r_imm(arm_reg_to_mips(tmp), op & 0xff);
       goto end_op;
 
     /////////////////////////////////////////////
@@ -2500,7 +2500,7 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         tmp2 = rcache_get_reg_arg(1, SHR_R0);
         tmp3 = (op & 0x100) >> 8;
         if (op & 0x0f)
-          emith_add_r_imm(tmp, (op & 0x0f) << tmp3);
+          emith_add_r_imm(arm_reg_to_mips(tmp), (op & 0x0f) << tmp3);
         emit_memhandler_write(tmp3);
         goto end_op;
       case 0x0400: // MOV.B @(disp,Rm),R0  10000100mmmmdddd
@@ -2513,9 +2513,9 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         tmp  = rcache_get_tmp();
         tmp2 = rcache_get_reg(0, RC_GR_READ);
         sr   = rcache_get_reg(SHR_SR, RC_GR_RMW);
-        emith_move_r_imm_s8(tmp, op & 0xff);
+        emith_move_r_imm_s8(arm_reg_to_mips(tmp), op & 0xff);
         emith_bic_r_imm(sr, T);
-        emith_cmp_r_r(tmp2, tmp);
+        emith_cmp_r_r(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp));
         emit_or_t_if_eq(sr);
         rcache_free_tmp(tmp);
         goto end_op;
@@ -2533,7 +2533,7 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         tmp  = rcache_get_reg_arg(0, SHR_GBR);
         tmp2 = rcache_get_reg_arg(1, SHR_R0);
         tmp3 = (op & 0x300) >> 8;
-        emith_add_r_imm(tmp, (op & 0xff) << tmp3);
+        emith_add_r_imm(arm_reg_to_mips(tmp), (op & 0xff) << tmp3);
         emit_memhandler_write(tmp3);
         goto end_op;
       case 0x0400: // MOV.B @(disp,GBR),R0   11000100dddddddd
@@ -2544,17 +2544,17 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         goto end_op;
       case 0x0300: // TRAPA #imm      11000011iiiiiiii
         tmp = rcache_get_reg(SHR_SP, RC_GR_RMW);
-        emith_sub_r_imm(tmp, 4*2);
+        emith_sub_r_imm(arm_reg_to_mips(tmp), 4*2);
         // push SR
         tmp = rcache_get_reg_arg(0, SHR_SP);
-        emith_add_r_imm(tmp, 4);
+        emith_add_r_imm(arm_reg_to_mips(tmp), 4);
         tmp = rcache_get_reg_arg(1, SHR_SR);
-        emith_clear_msb(tmp, tmp, 22);
+        emith_clear_msb(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp), 22);
         emit_memhandler_write(2);
         // push PC
         rcache_get_reg_arg(0, SHR_SP);
         tmp = rcache_get_tmp_arg(1);
-        emith_move_r_imm(tmp, pc);
+        emith_move_r_imm(arm_reg_to_mips(tmp), pc);
         emit_memhandler_write(2);
         // obtain new PC
         emit_memhandler_read_rr(SHR_PC, SHR_VBR, (op & 0xff) * 4, 2);
@@ -2566,47 +2566,47 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         tmp = rcache_get_reg(SHR_R0, RC_GR_READ);
         sr  = rcache_get_reg(SHR_SR, RC_GR_RMW);
         emith_bic_r_imm(sr, T);
-        emith_tst_r_imm(tmp, op & 0xff);
+        emith_tst_r_imm(arm_reg_to_mips(tmp), op & 0xff);
         emit_or_t_if_eq(sr);
         goto end_op;
       case 0x0900: // AND #imm,R0           11001001iiiiiiii
         tmp = rcache_get_reg(SHR_R0, RC_GR_RMW);
-        emith_and_r_imm(tmp, op & 0xff);
+        emith_and_r_imm(arm_reg_to_mips(tmp), op & 0xff);
         goto end_op;
       case 0x0a00: // XOR #imm,R0           11001010iiiiiiii
         tmp = rcache_get_reg(SHR_R0, RC_GR_RMW);
-        emith_eor_r_imm(tmp, op & 0xff);
+        emith_eor_r_imm(arm_reg_to_mips(tmp), op & 0xff);
         goto end_op;
       case 0x0b00: // OR  #imm,R0           11001011iiiiiiii
         tmp = rcache_get_reg(SHR_R0, RC_GR_RMW);
-        emith_or_r_imm(tmp, op & 0xff);
+        emith_or_r_imm(arm_reg_to_mips(tmp), op & 0xff);
         goto end_op;
       case 0x0c00: // TST.B #imm,@(R0,GBR)  11001100iiiiiiii
         tmp = emit_indirect_indexed_read(SHR_R0, SHR_GBR, 0);
         sr  = rcache_get_reg(SHR_SR, RC_GR_RMW);
         emith_bic_r_imm(sr, T);
-        emith_tst_r_imm(tmp, op & 0xff);
+        emith_tst_r_imm(arm_reg_to_mips(tmp), op & 0xff);
         emit_or_t_if_eq(sr);
         rcache_free_tmp(tmp);
         goto end_op;
       case 0x0d00: // AND.B #imm,@(R0,GBR)  11001101iiiiiiii
         tmp = emit_indirect_indexed_read(SHR_R0, SHR_GBR, 0);
-        emith_and_r_imm(tmp, op & 0xff);
+        emith_and_r_imm(arm_reg_to_mips(tmp), op & 0xff);
         goto end_rmw_op;
       case 0x0e00: // XOR.B #imm,@(R0,GBR)  11001110iiiiiiii
         tmp = emit_indirect_indexed_read(SHR_R0, SHR_GBR, 0);
-        emith_eor_r_imm(tmp, op & 0xff);
+        emith_eor_r_imm(arm_reg_to_mips(tmp), op & 0xff);
         goto end_rmw_op;
       case 0x0f00: // OR.B  #imm,@(R0,GBR)  11001111iiiiiiii
         tmp = emit_indirect_indexed_read(SHR_R0, SHR_GBR, 0);
-        emith_or_r_imm(tmp, op & 0xff);
+        emith_or_r_imm(arm_reg_to_mips(tmp), op & 0xff);
       end_rmw_op:
         tmp2 = rcache_get_tmp_arg(1);
-        emith_move_r_r(tmp2, tmp);
+        emith_move_r_r(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp));
         rcache_free_tmp(tmp);
         tmp3 = rcache_get_reg_arg(0, SHR_GBR);
         tmp4 = rcache_get_reg(SHR_R0, RC_GR_READ);
-        emith_add_r_r(tmp3, tmp4);
+        emith_add_r_r(arm_reg_to_mips(tmp3), arm_reg_to_mips(tmp4));
         emit_memhandler_write(0);
         goto end_op;
       }
@@ -2624,17 +2624,17 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         "drc: illegal op %04x @ %08x", op, pc - 2);
 
       tmp = rcache_get_reg(SHR_SP, RC_GR_RMW);
-      emith_sub_r_imm(tmp, 4*2);
+      emith_sub_r_imm(arm_reg_to_mips(tmp), 4*2);
       // push SR
       tmp = rcache_get_reg_arg(0, SHR_SP);
-      emith_add_r_imm(tmp, 4);
+      emith_add_r_imm(arm_reg_to_mips(tmp), 4);
       tmp = rcache_get_reg_arg(1, SHR_SR);
-      emith_clear_msb(tmp, tmp, 22);
+      emith_clear_msb(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp), 22);
       emit_memhandler_write(2);
       // push PC
       rcache_get_reg_arg(0, SHR_SP);
       tmp = rcache_get_tmp_arg(1);
-      emith_move_r_imm(tmp, pc - 2);
+      emith_move_r_imm(arm_reg_to_mips(tmp), pc - 2);
       emit_memhandler_write(2);
       // obtain new PC
       emit_memhandler_read_rr(SHR_PC, SHR_VBR, 4 * 4, 2);
@@ -2877,11 +2877,13 @@ static void sh2_generate_utils(void)
   emith_ctx_read(arm_reg_to_mips(arg1), offsetof(SH2, is_slave));
   emith_add_r_r_imm(arm_reg_to_mips(arg2), CONTEXT_REG, offsetof(SH2, drc_tmp));
   emith_call_s(dr_lookup_block);
+  emith_move_r_r(MIPS_a0,MIPS_v0);
   emit_block_entry();
   // lookup failed, call sh2_translate()
   emith_move_r_r(arm_reg_to_mips(arg0), CONTEXT_REG);
   emith_ctx_read(arm_reg_to_mips(arg1), offsetof(SH2, drc_tmp)); // tcache_id
   emith_call_s(sh2_translate);
+  emith_move_r_r(MIPS_a0,MIPS_v0);
   emit_block_entry();
   // sh2_translate() failed, flush cache and retry
   emith_ctx_read(arm_reg_to_mips(arg0), offsetof(SH2, drc_tmp));
@@ -2906,13 +2908,13 @@ static void sh2_generate_utils(void)
   EMITH_SJMP_END(DCOND_GT);
   // adjust SP
   tmp = rcache_get_reg(SHR_SP, RC_GR_RMW);
-  emith_sub_r_imm(tmp, 4*2);
+  emith_sub_r_imm(arm_reg_to_mips(tmp), 4*2);
   rcache_clean();
   // push SR
   tmp = rcache_get_reg_arg(0, SHR_SP);
-  emith_add_r_imm(tmp, 4);
+  emith_add_r_imm(arm_reg_to_mips(tmp), 4);
   tmp = rcache_get_reg_arg(1, SHR_SR);
-  emith_clear_msb(tmp, tmp, 22);
+  emith_clear_msb(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp), 22);
   emith_move_r_r(arg2, CONTEXT_REG);
   emith_call_s(p32x_sh2_write32); // XXX: use sh2_drc_write32?
   rcache_invalidate();

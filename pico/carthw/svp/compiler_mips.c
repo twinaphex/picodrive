@@ -646,7 +646,7 @@ static void tr_ptrr_mod(int r, int mod, int need_modulo, int count)
 			MIPS_ANDI(MIPS_a1,MIPS_t6,0x70);
 			MIPS_ADDIU(MIPS_a1,MIPS_a1,-0x10);
 			MIPS_ANDI(MIPS_a1,MIPS_a1,0x70);
-			MIPS_ADDI(MIPS_a1,MIPS_a1,0x10);
+			MIPS_ADDIU(MIPS_a1,MIPS_a1,0x10);
 		} else {
 			MIPS_ANDI(MIPS_a1,MIPS_t6,0x70); // andi  $a1, $t6, 0x70
 			MIPS_MOVE(MIPS_s5,MIPS_a1);
@@ -661,7 +661,7 @@ static void tr_ptrr_mod(int r, int mod, int need_modulo, int count)
 		MIPS_ADDIU(MIPS_s6,MIPS_zero,count);
 		MIPS_ROTR(MIPS_a3,MIPS_s6,8);    // li $a3, 0x01000000
 		if (r&3) {
-			MIPS_ADDI(MIPS_a1,MIPS_a1,(r&3)*8); // add $a1, $a1, (r&3)*8
+			MIPS_ADDIU(MIPS_a1,MIPS_a1,(r&3)*8); // add $a1, $a1, (r&3)*8
 		}
 		MIPS_ROTRV(arm_reg_to_mips(reg),arm_reg_to_mips(reg),MIPS_a1); // rotr $mreg, $mreg, $a1
 		if (mod == 2){
@@ -810,7 +810,7 @@ static void tr_rX_read2(int op)
 	MIPS_LW(MIPS_a2,0x48c,MIPS_t7);        // ptr_iram_rom
 	MIPS_SLL(MIPS_s6,MIPS_a0,1);            // sll $s6, $a0, 1
 	MIPS_ADDU(MIPS_a2,MIPS_a2,MIPS_s6);      // add $a2, $a2, $s6
-	MIPS_ADDI(MIPS_a0,MIPS_a0,1);			// addi $a0, $a0, 1
+	MIPS_ADDIU(MIPS_a0,MIPS_a0,1);			// addi $a0, $a0, 1
 	if ((r&3) == 3) {
 		tr_bank_write((op&0x100) | ((op>>2)&3));
 	} else if (known_regb & (1 << (r+8))) {
@@ -990,7 +990,7 @@ static void tr_STACK_to_r0(int op)
 	MIPS_SUBU(MIPS_t6,MIPS_t6,MIPS_s6);  // sub  $t6, $t6, 1<<29
 	MIPS_ADDIU(MIPS_s6,MIPS_zero,0x400);
 	MIPS_ADDU(MIPS_a1,MIPS_t7,MIPS_s6);   // add  $a1, $t7, 0x400
-	MIPS_ADDI(MIPS_a1,MIPS_a1,0x48);    // add  $a1, $a1, 0x048
+	MIPS_ADDIU(MIPS_a1,MIPS_a1,0x48);    // add  $a1, $a1, 0x048
 	MIPS_SRL(MIPS_s6,MIPS_t6,28);       // srl	$s5, $t6, 28
 	MIPS_ADDU(MIPS_a1,MIPS_a1,MIPS_s6);  // add  $a1, $a1, $s5
 	MIPS_LHU(MIPS_a0,0,MIPS_a1);		// lhu  $a0, ($a1)
@@ -1125,7 +1125,7 @@ static void tr_PM2_to_r0(int op)
 
 static void tr_XST_to_r0(int op)
 {
-	MIPS_ADDI(MIPS_a0,MIPS_t7,0x400); // add $a0, $t7, 0x400
+	MIPS_ADDIU(MIPS_a0,MIPS_t7,0x400); // add $a0, $t7, 0x400
 	MIPS_LHU(MIPS_a0,SSP_XST*4+2,MIPS_a0);
 }
 
@@ -1259,8 +1259,8 @@ static void tr_r0_to_ST(int const_val)
 static void tr_r0_to_STACK(int const_val)
 {
 	// 448
-	MIPS_ADDI(MIPS_a1,MIPS_t7,0x400);		// add $a1, $t7, 0x400
-	MIPS_ADDI(MIPS_a1,MIPS_a1,0x48);		// add $a1, $a1, 0x048
+	MIPS_ADDIU(MIPS_a1,MIPS_t7,0x400);		// add $a1, $t7, 0x400
+	MIPS_ADDIU(MIPS_a1,MIPS_a1,0x48);		// add $a1, $a1, 0x048
 	MIPS_SRL(MIPS_s6,MIPS_t6,28);			// srl $s6, $t6, 28
 	MIPS_ADDU(MIPS_a1,MIPS_a1,MIPS_s6);		// add $a1, $a1, $s6
 	MIPS_SH(MIPS_a0,0,MIPS_a1);				// sh  $a0, ($a1)
@@ -2125,8 +2125,9 @@ static void *emit_block_epilogue(int cycles, int cond, int pc, int end_pc)
 		else {
 			int ops = emith_jump(ssp_drc_next);
 			end_ptr = tcache_ptr;
-			// cause the next block to be emitted over jump instruction
-			tcache_ptr -= ops;
+			// freeze sometimes after 'load state'
+			//// cause the next block to be emitted over jump instruction
+			//tcache_ptr -= ops;
 		}
 	}
 	else {
