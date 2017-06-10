@@ -546,7 +546,7 @@ static int emith_xjump(void *target, int is_call)
 
 #define emith_bic_r_imm(r, imm) { \
 	int imm_;					\
-	MIPS_NOT(imm_,imm);			\
+	imm_ = ~imm;				\
 	emith_op_imm(A_COND_AL, 0, __OP_ANDI, r, imm_);  \
 }
 
@@ -648,7 +648,7 @@ static int emith_xjump(void *target, int is_call)
 
 #define emith_bic_r_imm_c(cond, r, imm) \
 	int imm_;					\
-	MIPS_NOT(imm_,imm);			\
+	imm_ = ~imm;				\
 	emith_op_imm(cond, 0, __OP_ANDI, r, imm_)
 
 #define emith_subf_r_imm(r, imm) { \
