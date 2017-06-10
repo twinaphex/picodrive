@@ -984,11 +984,11 @@ static int rcache_get_reg_arg(int arg, sh2_reg_e r)
       dirty = 1;
   }
   else
-    emith_ctx_read(arm_reg_to_mips(srcr), r * 4);
+    emith_ctx_read(srcr, r * 4);
 
 do_cache:
   if (dstr != srcr) {
-    emith_move_r_r(arm_reg_to_mips(dstr), arm_reg_to_mips(srcr));
+    emith_move_r_r(dstr, srcr);
   }
 #if 1
   else
@@ -1097,8 +1097,8 @@ static int emit_get_rbase_and_offs(u32 a, u32 *offs)
 
   // XXX: could use some related reg
   hr = rcache_get_tmp();
-  emith_ctx_read(arm_reg_to_mips(hr), poffs);
-  emith_add_r_imm(arm_reg_to_mips(hr), a & mask & ~0xff);
+  emith_ctx_read(hr, poffs);
+  emith_add_r_imm(hr, a & mask & ~0xff);
   *offs = a & 0xff; // XXX: ARM oriented..
   return hr;
 }
@@ -1147,7 +1147,7 @@ static int emit_memhandler_read_(int size, int ram_check)
     emith_ctx_write(arm_reg_to_mips(reg_map_g2h[SHR_SR]), SHR_SR * 4);
 
   arg1 = rcache_get_tmp_arg(1);
-  emith_move_r_r(arm_reg_to_mips(arg1), CONTEXT_REG);
+  emith_move_r_r(arg1, CONTEXT_REG);
 
 #if 0 // can't do this because of unmapped reads
  // ndef PDB_NET
@@ -1221,16 +1221,16 @@ static int emit_memhandler_read_rr(sh2_reg_e rd, sh2_reg_e rs, u32 offs, int siz
       hr2 = rcache_get_reg(rd, RC_GR_WRITE);
       switch (size) {
       case 0: // 8
-        emith_read8_r_r_offs(arm_reg_to_mips(hr2), arm_reg_to_mips(hr), offs2 ^ 1);
-        emith_sext(arm_reg_to_mips(hr2), arm_reg_to_mips(hr2), 8);
+        emith_read8_r_r_offs(hr2, hr, offs2 ^ 1);
+        emith_sext(hr2, hr2, 8);
         break;
       case 1: // 16
-        emith_read16_r_r_offs(arm_reg_to_mips(hr2), arm_reg_to_mips(hr), offs2);
-        emith_sext(arm_reg_to_mips(hr2), arm_reg_to_mips(hr2), 16);
+        emith_read16_r_r_offs(hr2, hr, offs2);
+        emith_sext(hr2, hr2, 16);
         break;
       case 2: // 32
-        emith_read_r_r_offs(arm_reg_to_mips(hr2), arm_reg_to_mips(hr), offs2);
-        emith_ror(arm_reg_to_mips(hr2), arm_reg_to_mips(hr2), 16);
+        emith_read_r_r_offs(hr2, hr, offs2);
+        emith_ror(hr2, hr2, 16);
         break;
       }
       rcache_free_tmp(hr);
@@ -1242,21 +1242,13 @@ static int emit_memhandler_read_rr(sh2_reg_e rd, sh2_reg_e rs, u32 offs, int siz
 
   hr = rcache_get_reg_arg(0, rs);
   if (offs != 0)
-    emith_add_r_imm(arm_reg_to_mips(hr), offs);
+    emith_add_r_imm(hr, offs);
   hr  = emit_memhandler_read_(size, ram_check);
-  int hr_;
-  if( hr == 0 ){
-	  hr_ = 2;
-  }
-
-  else {
-	  hr_ = arm_reg_to_mips(hr);
-  }
   hr2 = rcache_get_reg(rd, RC_GR_WRITE);
   if (size != 2) {
-    emith_sext(arm_reg_to_mips(hr2), hr_, (size == 1) ? 16 : 8);
+    emith_sext(hr2, hr, (size == 1) ? 16 : 8);
   } else
-    emith_move_r_r(arm_reg_to_mips(hr2), hr_);
+    emith_move_r_r(hr2, hr);
   rcache_free_tmp(hr);
 
   return hr2;
@@ -1998,12 +1990,12 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         sr   = rcache_get_reg(SHR_SR, RC_GR_RMW);
         tmp2 = rcache_get_reg(GET_Rn(), RC_GR_READ);
         tmp3 = rcache_get_reg(GET_Rm(), RC_GR_READ);
-        emith_bic_r_imm(arm_reg_to_mips(sr), T);
+        emith_bic_r_imm(sr, T);
         emith_cmp_r_r(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp3));
         switch (op & 0x07)
         {
         case 0x00: // CMP/EQ
-          emit_or_t_if_eq(arm_reg_to_mips(sr));
+          emit_or_t_if_eq(sr);
           break;
         case 0x02: // CMP/HS
           EMITH_SJMP_START(DCOND_LO);
@@ -2038,26 +2030,26 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         tmp2 = rcache_get_reg(GET_Rn(), RC_GR_RMW);
         tmp3 = rcache_get_reg(GET_Rm(), RC_GR_READ);
         sr   = rcache_get_reg(SHR_SR, RC_GR_RMW);
-        emith_tpop_carry(arm_reg_to_mips(sr), 0);
+        emith_tpop_carry(sr, 0);
         emith_adcf_r_r(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp2));
-        emith_tpush_carry(arm_reg_to_mips(sr), 0);            // keep Q1 in T for now
+        emith_tpush_carry(sr, 0);            // keep Q1 in T for now
         tmp4 = rcache_get_tmp();
         emith_and_r_r_imm(arm_reg_to_mips(tmp4), sr, M);
-        emith_eor_r_r_lsr(arm_reg_to_mips(sr), arm_reg_to_mips(tmp4), M_SHIFT - Q_SHIFT); // Q ^= M
+        emith_eor_r_r_lsr(sr, arm_reg_to_mips(tmp4), M_SHIFT - Q_SHIFT); // Q ^= M
         rcache_free_tmp(tmp4);
         // add or sub, invert T if carry to get Q1 ^ Q2
         // in: (Q ^ M) passed in Q, Q1 in T
-        emith_sh2_div1_step(arm_reg_to_mips(tmp2), arm_reg_to_mips(tmp3), arm_reg_to_mips(sr));
-        emith_bic_r_imm(arm_reg_to_mips(sr), Q);
-        emith_tst_r_imm(arm_reg_to_mips(sr), M);
+        emith_sh2_div1_step(tmp2, tmp3, sr);
+        emith_bic_r_imm(sr, Q);
+        emith_tst_r_imm(sr, M);
         EMITH_SJMP_START(DCOND_EQ);
-        emith_or_r_imm_c(DCOND_NE, arm_reg_to_mips(sr), Q);  // Q = M
+        emith_or_r_imm_c(DCOND_NE, sr, Q);  // Q = M
         EMITH_SJMP_END(DCOND_EQ);
-        emith_tst_r_imm(arm_reg_to_mips(sr), T);
+        emith_tst_r_imm(sr, T);
         EMITH_SJMP_START(DCOND_EQ);
-        emith_eor_r_imm_c(DCOND_NE, arm_reg_to_mips(sr), Q); // Q = M ^ Q1 ^ Q2
+        emith_eor_r_imm_c(DCOND_NE, sr, Q); // Q = M ^ Q1 ^ Q2
         EMITH_SJMP_END(DCOND_EQ);
-        emith_eor_r_imm(arm_reg_to_mips(sr), T);             // T = !(Q1 ^ Q2)
+        emith_eor_r_imm(sr, T);             // T = !(Q1 ^ Q2)
         goto end_op;
       case 0x05: // DMULU.L Rm,Rn       0011nnnnmmmm0101
         tmp  = rcache_get_reg(GET_Rn(), RC_GR_READ);
@@ -2890,9 +2882,7 @@ static void sh2_generate_utils(void)
   // lookup failed, call sh2_translate()
   emith_move_r_r(arm_reg_to_mips(arg0), CONTEXT_REG);
   emith_ctx_read(arm_reg_to_mips(arg1), offsetof(SH2, drc_tmp)); // tcache_id
-  emit_save_registers_();
-  emith_call(sh2_translate);
-  emit_restore_registers_();
+  emith_call_s(sh2_translate);
   emith_move_r_r(MIPS_a0,MIPS_v0);
   emit_block_entry();
   // sh2_translate() failed, flush cache and retry
@@ -2900,9 +2890,7 @@ static void sh2_generate_utils(void)
   emith_call_s(flush_tcache);
   emith_move_r_r(arm_reg_to_mips(arg0), CONTEXT_REG);
   emith_ctx_read(arm_reg_to_mips(arg1), offsetof(SH2, drc_tmp));
-  emit_save_registers_();
-  emith_call(sh2_translate);
-  emit_restore_registers_();
+  emith_call_s(sh2_translate);
   emit_block_entry();
   // XXX: can't translate, fail
   emith_call_s(dr_failure);
@@ -2927,30 +2915,30 @@ static void sh2_generate_utils(void)
   emith_add_r_imm(arm_reg_to_mips(tmp), 4);
   tmp = rcache_get_reg_arg(1, SHR_SR);
   emith_clear_msb(arm_reg_to_mips(tmp), arm_reg_to_mips(tmp), 22);
-  emith_move_r_r(arm_reg_to_mips(arg2), CONTEXT_REG);
+  emith_move_r_r(arg2, CONTEXT_REG);
   emith_call_s(p32x_sh2_write32); // XXX: use sh2_drc_write32?
   rcache_invalidate();
   // push PC
   rcache_get_reg_arg(0, SHR_SP);
-  emith_ctx_read(arm_reg_to_mips(arg1), SHR_PC * 4);
-  emith_move_r_r(arm_reg_to_mips(arg2), CONTEXT_REG);
+  emith_ctx_read(arg1, SHR_PC * 4);
+  emith_move_r_r(arg2, CONTEXT_REG);
   emith_call_s(p32x_sh2_write32);
   rcache_invalidate();
   // update I, cycles, do callback
-  emith_ctx_read(arm_reg_to_mips(arg1), offsetof(SH2, pending_level));
+  emith_ctx_read(arg1, offsetof(SH2, pending_level));
   sr = rcache_get_reg(SHR_SR, RC_GR_RMW);
   emith_bic_r_imm(sr, I);
-  emith_or_r_r_lsl(sr, arm_reg_to_mips(arg1), I_SHIFT);
+  emith_or_r_r_lsl(sr, arg1, I_SHIFT);
   emith_sub_r_imm(sr, 13 << 12); // at least 13 cycles
   rcache_flush();
-  emith_move_r_r(arm_reg_to_mips(arg0), CONTEXT_REG);
+  emith_move_r_r(arg0, CONTEXT_REG);
   emith_call_ctx(offsetof(SH2, irq_callback)); // vector = sh2->irq_callback(sh2, level);
   // obtain new PC
-  emith_lsl(arm_reg_to_mips(arg0), arm_reg_to_mips(arg0), 2);
-  emith_ctx_read(arm_reg_to_mips(arg1), SHR_VBR * 4);
-  emith_add_r_r(arm_reg_to_mips(arg0), arm_reg_to_mips(arg1));
+  emith_lsl(arg0, arg0, 2);
+  emith_ctx_read(arg1, SHR_VBR * 4);
+  emith_add_r_r(arg0, arg1);
   emit_memhandler_read(2);
-  emith_ctx_write(arm_reg_to_mips(arg0), SHR_PC * 4);
+  emith_ctx_write(arg0, SHR_PC * 4);
 #ifdef __i386__
   emith_add_r_imm(xSP, 4); // fix stack
 #endif
@@ -2962,27 +2950,17 @@ static void sh2_generate_utils(void)
   emith_sh2_drc_entry();
   emith_move_r_r(CONTEXT_REG, arm_reg_to_mips(arg0)); // move ctx, arg0
   emit_do_static_regs(0, arm_reg_to_mips(arg2));
-
-  MIPS_ADDIU(MIPS_sp, MIPS_sp, -12);
-  MIPS_SW(MIPS_a0, 8,MIPS_sp);
-  MIPS_SW(MIPS_a1, 4,MIPS_sp);
-  MIPS_SW(MIPS_ra, 0,MIPS_sp);
-  emith_call(sh2_drc_test_irq);
-  MIPS_LW(MIPS_ra, 0,MIPS_sp);
-  MIPS_LW(MIPS_a1, 4,MIPS_sp);
-  MIPS_LW(MIPS_a0, 8,MIPS_sp);
-  MIPS_ADDIU(MIPS_sp, MIPS_sp, 12);
-
+  emith_call_s(sh2_drc_test_irq);
   emith_jump(sh2_drc_dispatcher);
 
   // sh2_drc_write8(u32 a, u32 d)
   sh2_drc_write8 = (void *)tcache_ptr;
-  emith_ctx_read(arm_reg_to_mips(arg2), offsetof(SH2, write8_tab));
+  emith_ctx_read(arg2, offsetof(SH2, write8_tab));
   emith_sh2_wcall(arm_reg_to_mips(arg0), arm_reg_to_mips(arg2));
 
   // sh2_drc_write16(u32 a, u32 d)
   sh2_drc_write16 = (void *)tcache_ptr;
-  emith_ctx_read(arm_reg_to_mips(arg2), offsetof(SH2, write16_tab));
+  emith_ctx_read(arg2, offsetof(SH2, write16_tab));
   emith_sh2_wcall(arm_reg_to_mips(arg0), arm_reg_to_mips(arg2));
 
 #ifdef PDB_NET
