@@ -737,6 +737,7 @@ static int emith_xjump(void *target, int is_call)
 		case A_COND_MI: MIPS_BGEZ(MIPS_s5,3);MIPS_NOP();break;	\
 		case A_COND_PL: MIPS_BLTZ(MIPS_s5,3);MIPS_NOP();break;	\
 		case A_COND_LE: MIPS_BGTZ(MIPS_s5,3);MIPS_NOP();break;	\
+		case A_COND_GT: MIPS_BLEZ(MIPS_s5,3);MIPS_NOP();break;	\
 		default: break;    										\
 	}															\
 	MIPS_JR(r);													\

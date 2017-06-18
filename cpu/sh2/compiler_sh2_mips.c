@@ -1389,7 +1389,7 @@ static void emit_block_entry(void)
 
 #define FLUSH_CYCLES(sr) \
   if (cycles > 0) { \
-    emith_sub_r_imm(sr, cycles << 12); \
+    emith_sub_r_imm( arm_reg_to_mips(sr), cycles << 12); \
     cycles = 0; \
   }
 
@@ -2691,11 +2691,11 @@ end_op:
         int ctaken = (op_flags[i] & OF_DELAY_OP) ? 1 : 2;
 
         if (delay_dep_fw & BITMASK1(SHR_T))
-          emith_tst_r_imm(sr, T_save);
+          emith_tst_r_imm(arm_reg_to_mips(sr), T_save);
         else
-          emith_tst_r_imm(sr, T);
+          emith_tst_r_imm(arm_reg_to_mips(sr), T);
 
-        emith_sub_r_imm_c(cond, sr, ctaken<<12);
+        emith_sub_r_imm_c(cond, arm_reg_to_mips(sr), ctaken<<12);
       }
       rcache_clean();
 
