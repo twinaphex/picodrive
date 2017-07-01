@@ -385,6 +385,12 @@ static int emith_xjump(void *target, int is_call)
 #define EMITH_SJMP3_MID(cond)	EMITH_NOTHING1(cond)
 #define EMITH_SJMP3_END()
 
+#define A_OP_MOV 050
+#define A_OP_MVN 051
+#define A_OP_BIC 052
+#define EOP_STMIA 053
+#define EOP_LDMIA 054
+
 #define emith_jump_patch(ptr, target) do { \
 	u32 *ptr_ = ptr; \
 	u32 val_ = (u32 *)(target) - ptr_ - 2; \
@@ -513,6 +519,75 @@ static int emith_xjump(void *target, int is_call)
 	MIPS_ROTR(d,s,cnt);											\
 }
 
+static unsigned int _rotr(const unsigned int value, int shift) {
+    if ((shift &= sizeof(value)*8 - 1) == 0)
+      return value;
+    return (value >> shift) | (value << (sizeof(value)*8 - shift));
+}
+
+#define __MIPS_INSN_IMM_(op,rs,rt,imm) \
+	EMIT(op<<26 | ((rs)&0x1F)<<21 | ((rt)&0x1F)<<16 | ((imm)&0xFFFF))
+
+static void EOP_C_DOP_IMM(int cond, int op, int s, int rn, int rd, int ror2, unsigned int imm) {
+	switch(cond) {
+		case A_COND_AL: break;
+		case A_COND_EQ: MIPS_BNEZ(MIPS_s5,2);MIPS_NOP();break;
+		case A_COND_NE: MIPS_BEQZ(MIPS_s5,2);MIPS_NOP();break;
+		case A_COND_LT:
+		case A_COND_MI: MIPS_BGEZ(MIPS_s5,2);MIPS_NOP();break;
+		case A_COND_PL: MIPS_BLTZ(MIPS_s5,2);MIPS_NOP();break;
+		case A_COND_LE: MIPS_BGTZ(MIPS_s5,2);MIPS_NOP();break;
+		case A_COND_GT: MIPS_BLEZ(MIPS_s5,2);MIPS_NOP();break;
+		default: break;    // TODO: completar condições
+	}
+
+	int imm_;
+
+	imm_ = _rotr(imm,ror2/2);
+	__MIPS_INSN_IMM_(op, (rn), (rd), (imm_));
+}
+
+static void emith_op_imm2(int cond, int s, int op, int rd, int rn, int imm)
+{
+	int ror2;
+	u32 v;
+
+	switch (op) {
+	case A_OP_MOV:
+		rn = 0;
+		if (~imm < 0x10000) {
+			imm = ~imm;
+			op = A_OP_MVN;
+		}
+		break;
+
+	case __SP_XOR:
+	case __SP_SUBU:
+	case __SP_ADDU:
+	case __SP_OR:
+		if (s == 0 && imm == 0)
+			return;
+		break;
+	}
+
+	for (v = imm, ror2 = 0; ; ror2 -= 8/2) {
+		/* shift down to get 'best' rot2 */
+		for (; v && !(v & 3); v >>= 2)
+			ror2--;
+
+		EOP_C_DOP_IMM(cond, op, s, rn, rd, ror2 & 0x0f, v & 0xff);
+
+		v >>= 8;
+		if (v == 0)
+			break;
+		if (op == A_OP_MOV)
+			op = __SP_OR;
+		if (op == A_OP_MVN)
+			op = A_OP_BIC;
+		rn = rd;
+	}
+}
+
 #define emith_ror(d, s, cnt) \
 	emith_ror_c(A_COND_AL, d, s, cnt)
 
@@ -637,8 +712,12 @@ static int emith_xjump(void *target, int is_call)
 #define emith_add_r_imm_c(cond, r, imm) \
 	emith_op_imm(cond, 0, __OP_ADDIU, r, imm)
 
-#define emith_sub_r_imm_c(cond, r, imm) \
-	emith_op_imm(cond, 0, __OP_ADDIU, r, -imm)
+static void emith_sub_r_imm_c( int cond, int r, int imm) {
+	emith_op_imm2( cond, 0, __OP_ADDIU, r, r, -imm);
+}
+
+//#define emith_sub_r_imm_c(cond, r, imm) \
+//	emith_op_imm(cond, 0, __OP_ADDIU, r, -imm)
 
 #define emith_or_r_imm_c(cond, r, imm) \
 	emith_op_imm(cond, 0, __OP_ORI, r, imm)
@@ -749,13 +828,6 @@ static int emith_xjump(void *target, int is_call)
 
 #define emith_ret_c(cond) \
 	emith_jump_reg_c(cond, MIPS_ra)
-
-#define A_OP_MOV 050
-#define A_OP_MVN 051
-#define A_OP_BIC 052
-#define EOP_STMIA 053
-#define EOP_LDMIA 054
-
 
 static unsigned short arm_reg_to_mips( unsigned short arm_reg ) {
 	unsigned short mips_reg = MIPS_zero;
@@ -895,75 +967,6 @@ static unsigned short arm_reg_to_mips( unsigned short arm_reg ) {
 
 #define emith_read16_r_r_offs(r, rs, offs) \
 	emith_read16_r_r_offs_c(A_COND_AL, r, rs, offs)
-
-#define __MIPS_INSN_IMM_(op,rs,rt,imm) \
-	EMIT(op<<26 | ((rs)&0x1F)<<21 | ((rt)&0x1F)<<16 | ((imm)&0xFFFF))
-
-static unsigned int _rotr(const unsigned int value, int shift) {
-    if ((shift &= sizeof(value)*8 - 1) == 0)
-      return value;
-    return (value >> shift) | (value << (sizeof(value)*8 - shift));
-}
-
-static void EOP_C_DOP_IMM(int cond, int op, int s, int rn, int rd, int ror2, unsigned int imm) {
-	switch(cond) {
-		case A_COND_AL: break;
-		case A_COND_EQ: MIPS_BNEZ(MIPS_s5,2);MIPS_NOP();break;
-		case A_COND_NE: MIPS_BEQZ(MIPS_s5,2);MIPS_NOP();break;
-		case A_COND_LT:
-		case A_COND_MI: MIPS_BGEZ(MIPS_s5,2);MIPS_NOP();break;
-		case A_COND_PL: MIPS_BLTZ(MIPS_s5,2);MIPS_NOP();break;
-		case A_COND_LE: MIPS_BGTZ(MIPS_s5,2);MIPS_NOP();break;
-		case A_COND_GT: MIPS_BLEZ(MIPS_s5,2);MIPS_NOP();break;
-		default: break;    // TODO: completar condições
-	}
-
-	int imm_;
-
-	imm_ = _rotr(imm,ror2/2);
-	__MIPS_INSN_IMM_(op, (rn), (rd), (imm_));
-}
-
-static void emith_op_imm2(int cond, int s, int op, int rd, int rn, unsigned int imm)
-{
-	int ror2;
-	u32 v;
-
-	switch (op) {
-	case A_OP_MOV:
-		rn = 0;
-		if (~imm < 0x10000) {
-			imm = ~imm;
-			op = A_OP_MVN;
-		}
-		break;
-
-	case __SP_XOR:
-	case __SP_SUBU:
-	case __SP_ADDU:
-	case __SP_OR:
-		if (s == 0 && imm == 0)
-			return;
-		break;
-	}
-
-	for (v = imm, ror2 = 0; ; ror2 -= 8/2) {
-		/* shift down to get 'best' rot2 */
-		for (; v && !(v & 3); v >>= 2)
-			ror2--;
-
-		EOP_C_DOP_IMM(cond, op, s, rn, rd, ror2 & 0x0f, v & 0xff);
-
-		v >>= 8;
-		if (v == 0)
-			break;
-		if (op == A_OP_MOV)
-			op = __SP_OR;
-		if (op == A_OP_MVN)
-			op = A_OP_BIC;
-		rn = rd;
-	}
-}
 
 #define emith_write_sr(sr, srcr) { \
 	emith_lsr(sr, sr, 10); \

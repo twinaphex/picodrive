@@ -36,7 +36,7 @@
 
 // features
 #define PROPAGATE_CONSTANTS     1
-#define LINK_BRANCHES           1
+#define LINK_BRANCHES           0
 
 // limits (per block)
 #define MAX_BLOCK_SIZE          (BLOCK_INSN_LIMIT * 6 * 6)
@@ -2240,10 +2240,10 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         case 0x15: // CMP/PL Rn          0100nnnn00010101
           tmp = rcache_get_reg(GET_Rn(), RC_GR_RMW);
           sr  = rcache_get_reg(SHR_SR, RC_GR_RMW);
-          emith_bic_r_imm(sr, T);
+          emith_bic_r_imm(arm_reg_to_mips(sr), T);
           emith_cmp_r_imm(arm_reg_to_mips(tmp), 0);
           EMITH_SJMP_START(DCOND_LE);
-          emith_or_r_imm_c(DCOND_GT, sr, T);
+          emith_or_r_imm_c(DCOND_GT, arm_reg_to_mips(sr), T);
           EMITH_SJMP_END(DCOND_LE);
           goto end_op;
         }
@@ -2573,9 +2573,9 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
       case 0x0800: // TST #imm,R0           11001000iiiiiiii
         tmp = rcache_get_reg(SHR_R0, RC_GR_READ);
         sr  = rcache_get_reg(SHR_SR, RC_GR_RMW);
-        emith_bic_r_imm(sr, T);
+        emith_bic_r_imm(arm_reg_to_mips(sr), T);
         emith_tst_r_imm(arm_reg_to_mips(tmp), op & 0xff);
-        emit_or_t_if_eq(sr);
+        emit_or_t_if_eq(arm_reg_to_mips(sr));
         goto end_op;
       case 0x0900: // AND #imm,R0           11001001iiiiiiii
         tmp = rcache_get_reg(SHR_R0, RC_GR_RMW);
