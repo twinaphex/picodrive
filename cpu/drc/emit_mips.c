@@ -848,6 +848,14 @@ static unsigned short arm_reg_to_mips( unsigned short arm_reg ) {
 		mips_reg = arm_reg + 7;
 	}
 
+	else if( ( arm_reg >= 14 ) && ( arm_reg <= 14 ) ) {
+		mips_reg = arm_reg - 6;
+	}
+
+	if( mips_reg == MIPS_zero ) {
+		mips_reg = -1;
+	}
+
 	return mips_reg;
 }
 

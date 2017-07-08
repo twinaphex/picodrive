@@ -996,7 +996,7 @@ do_cache:
 
   if (dirty)
     // must clean, callers might want to modify the arg before call
-    emith_ctx_write(dstr, r * 4);
+    emith_ctx_write(arm_reg_to_mips(dstr), r * 4);
 #else
   if (dirty)
     reg_temp[dstid].flags |= HRF_DIRTY;
