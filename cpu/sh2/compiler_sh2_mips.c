@@ -1280,7 +1280,7 @@ static void emit_memhandler_write(int size)
     emith_call_s(sh2_drc_write16);
     break;
   case 2: // 32
-    emith_move_r_r(ctxr, CONTEXT_REG);
+    emith_move_r_r(arm_reg_to_mips(ctxr), CONTEXT_REG);
     emith_call_s(sh2_drc_write32);
     break;
   }
@@ -1296,7 +1296,7 @@ static int emit_indirect_indexed_read(int rx, int ry, int size)
   int a0, t;
   a0 = rcache_get_reg_arg(0, rx);
   t  = rcache_get_reg(ry, RC_GR_READ);
-  emith_add_r_r(a0, t);
+  emith_add_r_r(arm_reg_to_mips(a0), arm_reg_to_mips(t));
   return emit_memhandler_read(size);
 }
 
