@@ -561,10 +561,10 @@ static void emith_op_imm2(int cond, int s, int op, int rd, int rn, int imm)
 		}
 		break;
 
-	case __SP_XOR:
+	case __OP_XORI:
 	case __SP_SUBU:
 	case __SP_ADDU:
-	case __SP_OR:
+	case __OP_ORI:
 		if (s == 0 && imm == 0)
 			return;
 		break;
@@ -581,7 +581,7 @@ static void emith_op_imm2(int cond, int s, int op, int rd, int rn, int imm)
 		if (v == 0)
 			break;
 		if (op == A_OP_MOV)
-			op = __SP_OR;
+			op = __OP_ORI;
 		if (op == A_OP_MVN)
 			op = A_OP_BIC;
 		rn = rd;
@@ -848,7 +848,7 @@ static unsigned short arm_reg_to_mips( unsigned short arm_reg ) {
 		mips_reg = arm_reg + 7;
 	}
 
-	else if( ( arm_reg >= 14 ) && ( arm_reg <= 14 ) ) {
+	else if( ( arm_reg >= 14 ) && ( arm_reg <= 16 ) ) {
 		mips_reg = arm_reg - 6;
 	}
 

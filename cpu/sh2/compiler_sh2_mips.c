@@ -1544,7 +1544,7 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         branch_target_ptr[v] = tcache_ptr;
 
       // must update PC
-      emit_move_r_imm32(SHR_PC, pc);
+      emit_move_r_imm32(arm_reg_to_mips(SHR_PC), pc);
       rcache_clean();
 
       // check cycles
@@ -1598,7 +1598,7 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
         else {
           switch (ops[i-1].op) {
           case OP_BRANCH:
-            emit_move_r_imm32(SHR_PC, ops[i-1].imm);
+            emit_move_r_imm32(arm_reg_to_mips(SHR_PC), ops[i-1].imm);
             break;
           case OP_BRANCH_CT:
           case OP_BRANCH_CF:
@@ -1625,14 +1625,14 @@ static void REGPARM(2) *sh2_translate(SH2 *sh2, int tcache_id)
     case OP_BRANCH_CT:
     case OP_BRANCH_CF:
       if (opd->dest & BITMASK1(SHR_PR))
-        emit_move_r_imm32(SHR_PR, pc + 2);
+        emit_move_r_imm32(arm_reg_to_mips(SHR_PR), pc + 2);
       drcf.pending_branch_direct = 1;
       goto end_op;
 
     case OP_BRANCH_R:
       if (opd->dest & BITMASK1(SHR_PR))
-        emit_move_r_imm32(SHR_PR, pc + 2);
-      emit_move_r_r(SHR_PC, opd->rm);
+        emit_move_r_imm32(arm_reg_to_mips(SHR_PR), pc + 2);
+      emit_move_r_r(arm_reg_to_mips(SHR_PC), arm_reg_to_mips(opd->rm));
       drcf.pending_branch_indirect = 1;
       goto end_op;
 
@@ -2667,7 +2667,7 @@ end_op:
       sr = rcache_get_reg(SHR_SR, RC_GR_RMW);
       FLUSH_CYCLES(sr);
       if (!drcf.pending_branch_indirect)
-        emit_move_r_imm32(SHR_PC, pc);
+        emit_move_r_imm32(arm_reg_to_mips(SHR_PC), pc);
       rcache_flush();
       emith_call_s(sh2_drc_test_irq);
       drcf.test_irq = 0;
@@ -2718,7 +2718,7 @@ end_op:
 #endif
       {
         // can't resolve branch locally, make a block exit
-        emit_move_r_imm32(SHR_PC, target_pc);
+        emit_move_r_imm32(arm_reg_to_mips(SHR_PC), target_pc);
         rcache_clean();
 
         target = dr_prepare_ext_branch(target_pc, sh2->is_slave, tcache_id);
@@ -2762,7 +2762,7 @@ end_op:
   {
     void *target;
 
-    emit_move_r_imm32(SHR_PC, pc);
+    emit_move_r_imm32(arm_reg_to_mips(SHR_PC), pc);
     rcache_flush();
 
     target = dr_prepare_ext_branch(pc, sh2->is_slave, tcache_id);
@@ -2781,7 +2781,7 @@ end_op:
       // flush pc and go back to dispatcher (this should no longer happen)
       dbg(1, "stray branch to %08x %p", branch_patch_pc[i], tcache_ptr);
       target = tcache_ptr;
-      emit_move_r_imm32(SHR_PC, branch_patch_pc[i]);
+      emit_move_r_imm32(arm_reg_to_mips(SHR_PC), branch_patch_pc[i]);
       rcache_flush();
       emith_jump(sh2_drc_dispatcher);
     }
@@ -3071,7 +3071,7 @@ static void sh2_smc_rm_block_entry(struct block_desc *bd, int tcache_id, u32 ram
     // since we never reuse tcache space of dead blocks,
     // insert jump to dispatcher for blocks that are linked to this
     tcache_ptr = bd->entryp[i].tcache_ptr;
-    emit_move_r_imm32(SHR_PC, bd->entryp[i].pc);
+    emit_move_r_imm32(arm_reg_to_mips(SHR_PC), bd->entryp[i].pc);
     rcache_flush();
     emith_jump(sh2_drc_dispatcher);
 
