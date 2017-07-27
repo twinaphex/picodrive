@@ -620,9 +620,11 @@ static void emith_op_imm2(int cond, int s, int op, int rd, int rn, int imm)
 	emith_op_imm(A_COND_AL, 0, __OP_ADDIU, r, -imm)
 
 #define emith_bic_r_imm(r, imm) { \
-	int imm_;					\
+	long imm_;					\
 	imm_ = ~imm;				\
-	emith_op_imm(A_COND_AL, 0, __OP_ANDI, r, imm_);  \
+	MIPS_LUI(MIPS_s6,imm_>>16);		\
+	MIPS_ORI(MIPS_s6,MIPS_s6,imm_);	\
+	MIPS_AND(r,r,MIPS_s6);        \
 }
 
 #define emith_and_r_imm(r, imm) \
