@@ -625,11 +625,29 @@ static int mh_opt_vsync(int id, int keys) {
 	return 0;
 }
 
+#ifndef PSP
 static const char h_gamma[] = "Gamma/brightness adjustment (default 1.00)";
 
 static const char *mgn_aopt_gamma(int id, int *offs)
 {
 	sprintf(static_buff, "%i.%02i", currentConfig.gamma / 100, currentConfig.gamma % 100);
+	return static_buff;
+}
+#else
+static const char h_gamma[] = "Gamma/brightness adjustment (default 0)";
+
+static const char *mgn_aopt_gamma(int id, int *offs)
+{
+	sprintf(static_buff, "%2i", currentConfig.gamma);
+	return static_buff;
+}
+#endif
+
+static const char h_gamma2[] = "Black level adjustment (default 0)";
+
+static const char *mgn_aopt_gamma2(int id, int *offs)
+{
+	sprintf(static_buff, "%i", currentConfig.gamma2);
 	return static_buff;
 }
 
@@ -660,7 +678,12 @@ static menu_entry e_menu_gfx_options[] =
 	mee_enum   ("Renderer",          MA_OPT_RENDERER, currentConfig.renderer, renderer_names),
 	mee_enum   ("Filter",            MA_OPT3_FILTERING, currentConfig.filter, men_dummy),
 	mee_cust   ("Wait for vsync",    MA_OPT3_VSYNC, mh_opt_vsync, mgn_opt_vsync),
+#ifndef PSP
 	mee_range_cust_h("Gamma correction", MA_OPT2_GAMMA, currentConfig.gamma, 1, 300, mgn_aopt_gamma, h_gamma),
+#else
+	mee_range_cust_h("Gamma correction", MA_OPT2_GAMMA, currentConfig.gamma, -4, 16, mgn_aopt_gamma, h_gamma),
+	mee_range_cust_h("Black level", MA_OPT2_GAMMA2, currentConfig.gamma2, 0, 2, mgn_aopt_gamma2, h_gamma2),
+#endif
 	mee_range_cust_h("Scale factor", MA_OPT3_SCALE, currentConfig.scale_int, 100, 200, mgn_aopt_scale, ""),
 	mee_range_cust_h("Hor. scale (for low res. games)", MA_OPT3_HSCALE32, currentConfig.hscale32_int, 100, 200, mgn_aopt_hscale32, ""),
 	mee_range_cust_h("Hor. scale (for hi res. games)", MA_OPT3_HSCALE40, currentConfig.hscale40_int, 100, 200, mgn_aopt_hscale40, ""),
@@ -1053,7 +1076,7 @@ static void draw_frame_credits(void)
 }
 
 static const char credits[] =
-	"PicoDrive v" VERSION " (c) notaz, 2006-2016\n\n\n"
+	"PicoDrive v" VERSION " (c) notaz, 2006-2017\n\n\n"
 	"Credits:\n"
 	"fDave: initial code\n"
 #ifdef EMU_C68K
@@ -1411,8 +1434,10 @@ void menu_init(void)
 	me_enable(e_menu_gfx_options, MA_OPT3_FILTERING,
 		plat_target.hwfilters != NULL);
 
+#ifndef PSP
 	me_enable(e_menu_gfx_options, MA_OPT2_GAMMA,
                 plat_target.gamma_set != NULL);
+#endif
 
 	i = me_id2offset(e_menu_options, MA_OPT_CPU_CLOCKS);
 	e_menu_options[i].enabled = 0;

@@ -605,12 +605,17 @@ void emu_prep_defconfig(void)
 	defaultConfig.input_dev0 = PICO_INPUT_PAD_6BTN;
 	defaultConfig.input_dev1 = PICO_INPUT_PAD_6BTN;
 	defaultConfig.volume = 50;
+#ifndef PSP
 	defaultConfig.gamma = 100;
+#else
+	defaultConfig.gamma = 0;
+#endif
 	defaultConfig.scaling = 0;
 	defaultConfig.turbo_rate = 15;
 	defaultConfig.msh2_khz = PICO_MSH2_HZ / 1000;
 	defaultConfig.ssh2_khz = PICO_SSH2_HZ / 1000;
 #ifdef PSP
+	defaultConfig.gamma2 = 0;
 	defaultConfig.svp_khz = 23000;  // 23 mhz
 #endif
 

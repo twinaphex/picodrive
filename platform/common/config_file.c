@@ -323,6 +323,9 @@ static int custom_read(menu_entry *me, const char *var, const char *val)
 			return 1;
 
 		/* PSP */
+		case MA_OPT2_GAMMA2:
+			currentConfig.gamma2 = atoi(val);
+			return 1;
 		case MA_OPT3_SCALE:
 			if (strcasecmp(var, "Scale factor") != 0) return 0;
 			currentConfig.scale = atof(val) / 100.0f;
@@ -370,7 +373,7 @@ static int parse_bind_val(const char *val, int *type)
 	*type = IN_BINDTYPE_NONE;
 	if (val[0] == 0)
 		return 0;
-	
+
 	if (strncasecmp(val, "player", 6) == 0)
 	{
 		int player, shift = 0;
