@@ -161,6 +161,15 @@ int plat_mem_set_exec(void *ptr, size_t size)
 #endif
 }
 
+void plat_wait_suspend(void) {
+	psp_wait_suspend();
+}
+
+void plat_resume_suspend(void) {
+	psp_resume_suspend();
+	emu_HandleResume();
+}
+
 int scandir(const char *dir, struct my_dirent **namelist_out,
 		int(*filter)(const struct my_dirent *),
 		int(*compar)(const void *, const void *))

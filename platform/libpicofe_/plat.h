@@ -111,6 +111,11 @@ int  plat_is_dir(const char *path);
 int  plat_wait_event(int *fds_hnds, int count, int timeout_ms);
 void plat_sleep_ms(int ms);
 
+#ifdef PSP
+void plat_wait_suspend(void);
+void plat_resume_suspend(void);
+#endif
+
 void *plat_mmap(unsigned long addr, size_t size, int need_exec, int is_fixed);
 void *plat_mremap(void *ptr, size_t oldsize, size_t newsize);
 void  plat_munmap(void *ptr, size_t size);

@@ -39,7 +39,9 @@ int sceAudioOutput2GetRestSample();
 #endif
 
 char romFileName[PATH_MAX];
+#if 0
 int engineStateSuspend;
+#endif
 
 #if 0
 unsigned char *PicoDraw2FB = (unsigned char *)VRAM_CACHED_STUFF + 8; // +8 to be able to skip border with 1 quadword..

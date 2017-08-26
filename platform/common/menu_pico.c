@@ -1107,15 +1107,26 @@ static const char credits[] =
 	" Lordus, Exophase, Rokas,\n"
 	" Eke, Nemesis, Tasco Deluxe";
 
+#ifdef PSP
+#include <psprtc.h>
+#endif
+
 static void menu_main_draw_status(void)
 {
-	static time_t last_bat_read = 0;
 	static int last_bat_val = -1;
 	unsigned short *bp = g_screen_ptr;
 	int bat_h = me_mfont_h * 2 / 3;
 	int i, u, w, wfill, batt_val;
 	struct tm *tmp;
+#ifndef PSP
+	static time_t last_bat_read = 0;
 	time_t ltime;
+#else
+	static long last_bat_read_hour = 0;
+	static long last_bat_read_minutes = 0;
+	pspTime time;
+	int ret;
+#endif
 	char time_s[16];
 
 	if (!(currentConfig.EmuOpt & EOPT_SHOW_RTC))
@@ -1125,21 +1136,37 @@ static void menu_main_draw_status(void)
 	g_screen_width = 480;
 #endif
 
+#ifndef PSP
 	ltime = time(NULL);
-#ifdef PSP
-	ltime += 21*60*60;   // add 21 hours
-#endif
 	tmp = gmtime(&ltime);
 	strftime(time_s, sizeof(time_s), "%H:%M", tmp);
+#else
+	ret = sceRtcGetCurrentClockLocalTime(&time);
+
+	if( ret >= 0 ) {
+		snprintf(time_s, sizeof(time_s), "%02i:%02i", time.hour, time.minutes);
+	}
+#endif
 
 	text_out16(g_screen_width - me_mfont_w * 6, me_mfont_h + 2, time_s);
 
+#ifndef PSP
 	if (ltime - last_bat_read > 10) {
 		last_bat_read = ltime;
 		last_bat_val = batt_val = plat_target_bat_capacity_get();
 	}
 	else
 		batt_val = last_bat_val;
+#else
+	if (((time.hour*60)+time.minutes) - ((last_bat_read_hour*60)+last_bat_read_minutes) > 10) {
+		last_bat_read_hour = (long) time.hour;
+		last_bat_read_minutes = (long) time.minutes;
+		last_bat_val = batt_val = plat_target_bat_capacity_get();
+	}
+	else
+		batt_val = last_bat_val;
+#endif
+
 
 #ifdef PSP
 	g_screen_width = 512;

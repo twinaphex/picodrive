@@ -56,6 +56,8 @@ PSP_MODULE_INFO("PicoDrive", 0, 1, 91);
 PSP_HEAP_SIZE_MAX();
 
 int main() { return pico_main(); }	/* just a wrapper */
+
+int psp_unhandled_suspend = 0;
 #endif
 
 #else
@@ -84,8 +86,6 @@ int main()
 }
 
 #endif
-
-int psp_unhandled_suspend = 0;
 
 unsigned int __attribute__((aligned(16))) guCmdList[GU_CMDLIST_SIZE];
 
@@ -532,10 +532,15 @@ static int bat_capacity_get(void)
 	return scePowerGetBatteryLifePercent();
 }
 
+int gamma_set(int val, int black_level){
+	return 0;
+}
+
 struct plat_target plat_target = {
 	cpu_clock_get,
 	cpu_clock_set,
 	bat_capacity_get,
+	gamma_set,
 };
 
 void plat_early_init(void)

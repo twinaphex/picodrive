@@ -75,8 +75,10 @@ void parse_cmd_line(int argc, char *argv[])
 
 #ifdef PSP
 PSP_MODULE_INFO("PicoDrive", 0, 1, 91);
-PSP_MAIN_THREAD_ATTR(THREAD_ATTR_USER);
+//PSP_MAIN_THREAD_ATTR(THREAD_ATTR_USER);
 PSP_HEAP_SIZE_MAX();
+
+int psp_unhandled_suspend = 0;
 #endif
 
 int main(int argc, char *argv[])
@@ -139,6 +141,19 @@ int main(int argc, char *argv[])
 					engineState = PGS_Menu;
 				}
 				break;
+
+#ifdef PSP
+			case PGS_Suspending:
+				while (engineState == PGS_Suspending)
+					plat_wait_suspend();
+				break;
+
+			case PGS_SuspendWake:
+				psp_unhandled_suspend = 0;
+				plat_resume_suspend();
+				engineState = engineStateSuspend;
+				break;
+#endif
 
 			case PGS_RestartRun:
 				engineState = PGS_Running;

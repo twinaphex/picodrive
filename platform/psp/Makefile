@@ -20,7 +20,8 @@ CFLAGS += -Wall -Winline -G0
 
 #SVP dynarec
 ifeq "$(dynarecs)" "1"
-CFLAGS += -D_SVP_DRC 
+#CFLAGS += -D_SVP_DRC -DDRC_SH2
+CFLAGS += -D_SVP_DRC
 endif
 
 #CFLAGS += -DLPRINTF_STDIO

@@ -111,6 +111,9 @@ extern char rom_fname_loaded[512];		// currently loaded ROM filename
 
 // engine states
 extern int engineState;
+#ifdef PSP
+extern int engineStateSuspend;
+#endif
 enum TPicoGameState {
 	PGS_Paused = 1,
 	PGS_Running,

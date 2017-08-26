@@ -63,6 +63,9 @@ int pico_pen_x = 320/2, pico_pen_y = 240/2;
 int pico_inp_mode;
 int flip_after_sync;
 int engineState = PGS_Menu;
+#ifdef PSP
+int engineStateSuspend;
+#endif
 
 static short __attribute__((aligned(4))) sndBuffer[2*44100/50];
 
