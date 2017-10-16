@@ -1,3 +1,15 @@
+1.91.16 (2017-10-15) (PSP)
+  * Fix and reuse of the assembly memory manager (the best in speed and compatibility)
+  * Changes in the lower limits of the screen ratio
+
+1.91 (2017-09-28) (PSP)
+  - Revert to C code for memory handler (SRam don't work with asm MIPS version)
+
+1.91 (2017-08-26) (PSP)
+  * Fixed bug in clock time
+  * Better support for suspension and wakeup (still having problems for sega cd games)
+  + This file included in pack
+
 1.91 (2017-08-12) (PSP)
   * Re-added gamma and black level adjust festures
 

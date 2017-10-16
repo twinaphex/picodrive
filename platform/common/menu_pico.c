@@ -684,9 +684,9 @@ static menu_entry e_menu_gfx_options[] =
 	mee_range_cust_h("Gamma correction", MA_OPT2_GAMMA, currentConfig.gamma, -4, 16, mgn_aopt_gamma, h_gamma),
 	mee_range_cust_h("Black level", MA_OPT2_GAMMA2, currentConfig.gamma2, 0, 2, mgn_aopt_gamma2, h_gamma2),
 #endif
-	mee_range_cust_h("Scale factor", MA_OPT3_SCALE, currentConfig.scale_int, 100, 200, mgn_aopt_scale, ""),
-	mee_range_cust_h("Hor. scale (for low res. games)", MA_OPT3_HSCALE32, currentConfig.hscale32_int, 100, 200, mgn_aopt_hscale32, ""),
-	mee_range_cust_h("Hor. scale (for hi res. games)", MA_OPT3_HSCALE40, currentConfig.hscale40_int, 100, 200, mgn_aopt_hscale40, ""),
+	mee_range_cust_h("Scale factor", MA_OPT3_SCALE, currentConfig.scale_int, 50, 200, mgn_aopt_scale, ""),
+	mee_range_cust_h("Hor. scale (for low res. games)", MA_OPT3_HSCALE32, currentConfig.hscale32_int, 50, 200, mgn_aopt_hscale32, ""),
+	mee_range_cust_h("Hor. scale (for hi res. games)", MA_OPT3_HSCALE40, currentConfig.hscale40_int, 50, 200, mgn_aopt_hscale40, ""),
 	mee_handler   ("Set to unscaled centered",         mh_set_scale_unscaled_centered),
 	mee_handler   ("Set to 4:3 scaled",         mh_set_scale_4_3),
 	mee_handler   ("Set to fullscreen",         mh_set_scale_fullscreen),

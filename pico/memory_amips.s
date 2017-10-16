@@ -97,13 +97,15 @@ PicoRead8_io: # u32 a, u32 d
 	not		$t0, $t0
 	and		$a2, $a0, $t0     # most commonly we get i/o port read,
 	li		$t0, 0xa10000
-    beq     $a2, $t0, io_ports_read_     # so check for it first
+	sub		$t0, $a2, $t0
+    beqz    $t0, io_ports_read_     # so check for it first
     nop
 
 m_read8_not_io:
     and     $a2, $a0, 0xfc00
     li		$t0, 0x1000
-    bne		$a2, $t0, m_read8_not_brq
+    sub		$t0, $a2, $t0
+    bnez	$t0, m_read8_not_brq
     nop
 
     lui     $a3, %hi(Pico+0x22200)
@@ -116,14 +118,15 @@ m_read8_not_io:
 	sll     $t0, $v0, 6
 	xor     $v0, $v0, $t0
 
-	li		$t0, 1
-	beq		$a1, $t0, m_read8_not_io_ra      # odd addr -> open bus
+	and		$t0, $a1, 1
+	bnez	$t0, m_read8_not_io_ra      # odd addr -> open bus
 	nop
 	li		$t0, 1
 	not		$t0, $t0
 	and		$v0, $v0, $t0     # bit0 defined in this area
 	li		$t0, 0x1100
-    beq		$a1, $t0, m_read8_not_io_ra      # not busreq
+	sub		$t0, $a1, $t0
+    beqz	$t0, m_read8_not_io_ra      # not busreq
     nop
 
     lbu     $a1, 8+0x01($a3)  # Pico.m.z80Run
@@ -138,13 +141,14 @@ m_read8_not_io_ra:
     nop
 
 m_read8_not_brq:
-    lui     $t2, %hi(PicoOpt)
-    li		$t0, %lo(PicoOpt)
-    add     $t2, $t2, $t0
-    lw      $t2, ($t2)
+    #lui     $t2, %hi(PicoOpt)
+    #li		$t0, %lo(PicoOpt)
+    #add     $t2, $t2, $t0
+    #lw      $t2, ($t2)
+    lw      $t2, (PicoOpt)
     li		$t0, POPT_EN_32X
-    and		$t1, $t0, $t2
-    bnez	$t1, PicoRead8_32x_
+    and		$t0, $t2, $t0
+    bnez	$t0, PicoRead8_32x_
     nop
     li      $v0, 0
 	jr $ra                    # return
@@ -173,7 +177,7 @@ PicoRead16_sram: # u32 a, u32 d
     nop
     lw	    $a1, 4($a2)     # SRam.start
     sub		$t0, $a0, $a1
-    bltz    $a0, m_read16_nosram
+    bltz    $t0, m_read16_nosram
     nop
     lbu	    $a1, 0x11($a3)  # Pico.m.sram_reg
     li		$t0, SRR_MAPPED
@@ -193,7 +197,7 @@ PicoRead16_sram: # u32 a, u32 d
     addi	$a0, $a0, 1
     lbu	    $t0, ($a0)
     sll		$t0, $a1, 8
-    or      $a0, $a0, $t0
+    or      $v0, $a0, $t0
     jr      $ra
     nop
 
@@ -226,7 +230,8 @@ PicoRead16_io: # u32 a, u32 d
 	not		$t0, $t0
 	and		$a2, $a0, $t0    # most commonly we get i/o port read,
 	li		$t0, 0xa10000
-    bne     $a2, $t0, m_read16_not_io     # so check for it first
+	sub		$t0, $a2, $t0
+    bnez    $t0, m_read16_not_io     # so check for it first
     nop
 
 	addiu   $sp, $sp, -4     # allocate 2 words on the stack
@@ -237,52 +242,57 @@ PicoRead16_io: # u32 a, u32 d
 	or      $v0, $v0, $t0    # only has bytes mirrored
 	lw      $ra, ($sp)
 	addiu   $sp, $sp, 4      # restore $sp, freeing the allocated space
-	jr $ra
+	jr 		$ra
 	nop
 
 m_read16_not_io:
     andi    $a2, $a0, 0xfc00
     li		$t0, 0x1000
-    bne     $a2, $t0, m_read16_not_brq
+    sub		$t0, $a2, $t0
+    bnez    $t0, m_read16_not_brq
     nop
 
     lui     $a3, %hi(Pico+0x22200)
     li		$t0, %lo(Pico+0x22200)
     add     $a3, $a3, $t0
     andi    $a2, $a0, 0xff00
-    lbu     $v0, 8($a3)       # Pico.m.rotate
-    addi    $t0, $v0, 1
-    sb    	$t0, 8($a3)
+    lw      $v0, 8($a3)       # Pico.m.rotate
+    addi    $v0, $v0, 1
+    sb    	$v0, 8($a3)
 	sll     $t0, $v0, 5
 	xor     $v0, $v0, $t0
 	sll     $t0, $v0, 8
 	xor     $v0, $v0, $t0
-
 	li		$t0, 0x100        # bit8 defined in this area
 	not		$t0, $t0
 	and		$v0, $v0, $t0
-	li		$t0, 0xa1100
-    bne     $a2, $t0, m_read16_not_io_ra     # not busreq
+	li		$t0, 0x1100
+	sub		$t0, $a2, $t0
+    bnez    $t0, m_read16_not_io_ra     # not busreq
     nop
 
     lbu     $a1, 8+0x01($a3)  # Pico.m.z80Run
     lbu     $a2, 8+0x0f($a3)  # Pico.m.z80_reset
-    or      $v0, $v0, $a1
-    or      $v0, $v0, $a2
-	jr $ra                    # return
+    sll		$t0, $a1, 8
+    or      $v0, $v0, $t0
+    sll		$t0, $a2, 8
+    or      $v0, $v0, $t0
+	jr 		$ra                    # return
     nop
 
 m_read16_not_io_ra:
-	jr $ra                    # return
+	jr 		$ra                    # return
     nop
 
 m_read16_not_brq:
-    lui     $t2, %hi(PicoOpt)
-    li		$t0, %lo(PicoOpt)
-    add     $t2, $t2, $t0
-    lw      $t2, ($t2)
+    #lui     $a2, %hi(PicoOpt)
+    #li		$t0, %lo(PicoOpt)
+    #add     $a2, $a2, $t0
+    #lw      $a2, ($a2)
+    lw      $a2, (PicoOpt)
+    #lw      $a2, ($a2)
     li		$t0, POPT_EN_32X
-    and		$t0, $t0, $t2
+    and		$t0, $a2, $t0
     bnez	$t0, PicoRead16_32x_
     nop
     li      $v0, 0
@@ -292,7 +302,6 @@ m_read16_not_brq:
 PicoRead16_32x_:
     j	    PicoRead16_32x
     nop
-
 # ######################################################################
 
 PicoWrite8_io: # u32 a, u32 d
@@ -310,14 +319,16 @@ m_write8_not_io:
     nop
     and     $a2, $a0, 0xff00
     li      $t0, 0x1100
-    bne     $a2, $t0, m_write8_not_io_1
+    sub		$t0, $a2, $t0
+    bnez    $t0, m_write8_not_io_1
     nop
     move    $a0, $a1
     j       ctl_write_z80busreq
     nop
 m_write8_not_io_1:
     li      $t0, 0x1200
-    bne     $a2, $t0, m_write8_not_z80ctl
+    sub		$t0, $a2, $t0
+    bnez    $t0, m_write8_not_z80ctl
     nop
     move    $a0, $a1
     j       ctl_write_z80reset
@@ -327,10 +338,9 @@ m_write8_not_z80ctl:
     # unlikely
     li		$t0, 0xa10000
     xor     $a2, $a0, $t0
-    xor     $a2, $a2, 0x003000
-    move	$t0, $a2
+    xori    $a2, $a2, 0x003000
     xor     $a2, $a2, 0x0000f1
-    bne     $t0, $a2, m_write8_not_sreg
+    bnez    $a2, m_write8_not_sreg
     nop
 
     lui     $a3, %hi(Pico+0x22200)
@@ -373,25 +383,26 @@ PicoWrite16_io: # u32 a, u32 d
 	li		$t0, 0xffffe1
 	and		$a2, $a0, $t0     # most commonly we get i/o port read,
 	li		$t0, 0xa10000
-    beq     $a2, $t0, io_ports_write_     # so check for it first
+	sub		$t0, $a2, $t0
+    beqz    $t0, io_ports_write_     # so check for it first
     nop
 
 m_write16_not_io:
     and     $a2, $a0, 0xff00
     li      $t0, 0x1100
-    bne     $a2, $t0, m_write16_not_io_1
+    sub		$t0, $a2, $t0
+    bnez    $t0, m_write16_not_io_1
     nop
-    srl     $a1, $a1, 8
-    move    $a0, $a1
+    srl     $a0, $a1, 8
     j       ctl_write_z80busreq
     nop
 
 m_write16_not_io_1:
     li      $t0, 0x1200
-    bne     $a2, $t0, m_write16_not_z80ctl
+    sub		$t0, $a2, $t0
+    bnez    $t0, m_write16_not_z80ctl
     nop
-    srl     $a1, $a1, 8
-    move    $a0, $a1
+    srl     $a0, $a1, 8
     j       ctl_write_z80reset
     nop
 
@@ -402,7 +413,7 @@ m_write16_not_z80ctl:
     xor     $a2, $a0, $t0
     xor     $a2, $a2, 0x003000
     xor     $a2, $a2, 0x0000f0
-    beqz    $a2, m_write8_not_sreg
+    bnez    $a2, m_write8_not_sreg
     nop
 
     lui     $a3, %hi(Pico+0x22200)
