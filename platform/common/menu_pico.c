@@ -59,7 +59,7 @@ static unsigned short fname2color(const char *fname)
 	return 0xffff;
 }
 
-#include "../libpicofe/menu.c"
+#include "../libpicofe_/menu.c"
 
 static const char *men_dummy[] = { NULL };
 

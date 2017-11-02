@@ -29,7 +29,7 @@
 #include <sys/dirent.h>
 #include <sys/select.h>
 #include <sys/types.h>
-#include "../libpicofe/plat.h"
+#include "../libpicofe_/plat.h"
 
 extern int pico_main(void);
 

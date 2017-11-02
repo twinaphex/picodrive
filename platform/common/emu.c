@@ -18,15 +18,15 @@
 #endif
 
 #ifndef PSP
-#include "../libpicofe/posix.h"
+#include "../libpicofe_/posix.h"
 #endif
-#include "../libpicofe/input.h"
-#include "../libpicofe/fonts.h"
+#include "../libpicofe_/input.h"
+#include "../libpicofe_/fonts.h"
 #ifndef PSP
-#include "../libpicofe/sndout.h"
+#include "../libpicofe_/sndout.h"
 #endif
-#include "../libpicofe/lprintf.h"
-#include "../libpicofe/plat.h"
+#include "../libpicofe_/lprintf.h"
+#include "../libpicofe_/plat.h"
 #include "emu.h"
 #include "input_pico.h"
 #include "menu_pico.h"

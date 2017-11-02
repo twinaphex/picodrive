@@ -48,9 +48,9 @@ endif
 OBJS += emu_psp.o mp3_psp.o psp.o asm_utils.o plat_psp.o
 
 # libpicofe
-OBJS += ../../platform/libpicofe/fonts.o  \
-		../../platform/libpicofe/readpng.o ../../platform/libpicofe/input.o \
-		../../platform/libpicofe/psp/in_psp.o 		  
+OBJS += ../../platform/libpicofe_/fonts.o  \
+		../../platform/libpicofe_/readpng.o ../../platform/libpicofe_/input.o \
+		../../platform/libpicofe_/psp/in_psp.o 		  
 
 # common
 OBJS += ../../platform/common/main.o ../../platform/common/emu.o ../../platform/common/menu_pico.o \
@@ -69,8 +69,8 @@ OBJS += ../../pico/cd/cd_memory.o ../../pico/cd/cd_sek.o \
 		../../pico/cd/cue.o ../../pico/cd/gfx.o \
 		../../pico/cd/cd_misc.o ../../pico/cd/pcm.o ../../pico/cd/mcd.o \
 		../../pico/cd/gfx_dma.o ../../pico/cd/cdd.o \
-		../../pico/cd/cdc.o ../../pico/cd/cd_image.o ../../pico/cd/cell_map.o ../../pico/cd/memory_amips.o		
-#		../../pico/cd/cdc.o ../../pico/cd/cd_image.o ../../pico/cd/cell_map.o		
+		../../pico/cd/cdc.o ../../pico/cd/cd_image.o ../../pico/cd/cell_map.o		
+#		../../pico/cd/cdc.o ../../pico/cd/cd_image.o ../../pico/cd/cell_map.o  ../../pico/cd/memory_amips.o		
 		
 # Pico - 32x
 OBJS += ../../pico/32x/32x.o ../../pico/32x/32x_draw.o \

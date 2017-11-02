@@ -9,11 +9,11 @@
 #include <pspsdk.h>
 
 #include "psp.h"
-#include "../libpicofe/menu.h"
-#include "../libpicofe/plat.h"
-#include "../libpicofe/input.h"
-#include "../libpicofe/psp/in_psp.h"
-#include "../libpicofe/linux/in_evdev.h"
+#include "../libpicofe_/menu.h"
+#include "../libpicofe_/plat.h"
+#include "../libpicofe_/input.h"
+#include "../libpicofe_/psp/in_psp.h"
+//#include "../libpicofe_/linux/in_evdev.h"
 #include "../common/input_pico.h"
 #include "../common/emu.h"
 

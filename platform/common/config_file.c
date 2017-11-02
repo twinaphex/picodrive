@@ -13,9 +13,9 @@
 #include <unistd.h>
 #endif
 
-#include "../libpicofe/input.h"
-#include "../libpicofe/plat.h"
-#include "../libpicofe/lprintf.h"
+#include "../libpicofe_/input.h"
+#include "../libpicofe_/plat.h"
+#include "../libpicofe_/lprintf.h"
 #include "config_file.h"
 
 static char *mystrip(char *str);

@@ -1,7 +1,7 @@
 #ifndef __MENU_PICO_H__
 #define __MENU_PICO_H__
 
-#include "../libpicofe/menu.h"
+#include "../libpicofe_/menu.h"
 
 typedef enum
 {

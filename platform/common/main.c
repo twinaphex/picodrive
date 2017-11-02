@@ -13,8 +13,8 @@
 #include <strings.h>
 #endif
 
-#include "../libpicofe/input.h"
-#include "../libpicofe/plat.h"
+#include "../libpicofe_/input.h"
+#include "../libpicofe_/plat.h"
 #include "menu_pico.h"
 #include "emu.h"
 #include "version.h"
