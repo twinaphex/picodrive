@@ -1,3 +1,6 @@
+1.91.16 (2017-11-02) (PSP)
+  * Fix some bugs in SMS games (e.g.: Star Wars collision dections fails)
+
 1.91.16 (2017-10-15) (PSP)
   * Fix and reuse of the assembly memory manager (the best in speed and compatibility)
   * Changes in the lower limits of the screen ratio
