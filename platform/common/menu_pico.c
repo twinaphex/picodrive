@@ -14,7 +14,7 @@
 #include "input_pico.h"
 #include "version.h"
 
-#include <pico/pico.h>
+#include <pico/pico_int.h>
 #include <pico/patch.h>
 
 #ifdef PANDORA
@@ -316,6 +316,7 @@ me_bind_action emuctrl_actions[] =
 	{ "Volume Down      ", PEV_VOL_DOWN },
 	{ "Volume Up        ", PEV_VOL_UP },
 	{ "Fast forward     ", PEV_FF },
+	{ "Reset Game       ", PEV_RESET },
 	{ "Enter Menu       ", PEV_MENU },
 	{ "Pico Next page   ", PEV_PICO_PNEXT },
 	{ "Pico Prev page   ", PEV_PICO_PPREV },
@@ -966,11 +967,13 @@ static void draw_text_debug(const char *str, int skip, int from)
 static void draw_frame_debug(void)
 {
 	char layer_str[48] = "layers:                   ";
-	if (PicoDrawMask & PDRAW_LAYERB_ON)      memcpy(layer_str +  8, "B", 1);
-	if (PicoDrawMask & PDRAW_LAYERA_ON)      memcpy(layer_str + 10, "A", 1);
-	if (PicoDrawMask & PDRAW_SPRITES_LOW_ON) memcpy(layer_str + 12, "spr_lo", 6);
-	if (PicoDrawMask & PDRAW_SPRITES_HI_ON)  memcpy(layer_str + 19, "spr_hi", 6);
-	if (PicoDrawMask & PDRAW_32X_ON)         memcpy(layer_str + 26, "32x", 4);
+	struct PicoVideo *pv = &Pico.video;
+
+	if (!(pv->debug_p & PVD_KILL_B))    memcpy(layer_str +  8, "B", 1);
+	if (!(pv->debug_p & PVD_KILL_A))    memcpy(layer_str + 10, "A", 1);
+	if (!(pv->debug_p & PVD_KILL_S_LO)) memcpy(layer_str + 12, "spr_lo", 6);
+	if (!(pv->debug_p & PVD_KILL_S_HI)) memcpy(layer_str + 19, "spr_hi", 6);
+	if (!(pv->debug_p & PVD_KILL_32X))  memcpy(layer_str + 26, "32x", 4);
 
 	int renderer_old = currentConfig.renderer;
 	pemu_forced_frame(1, 0);
@@ -983,6 +986,7 @@ static void draw_frame_debug(void)
 
 static void debug_menu_loop(void)
 {
+	struct PicoVideo *pv = &Pico.video;
 	int inp, mode = 0;
 	int spr_offs = 0, dumped = 0;
 	char *tmp;
@@ -1046,11 +1050,11 @@ static void debug_menu_loop(void)
 				}
 				break;
 			case 1:
-				if (inp & PBTN_LEFT)  PicoDrawMask ^= PDRAW_LAYERB_ON;
-				if (inp & PBTN_RIGHT) PicoDrawMask ^= PDRAW_LAYERA_ON;
-				if (inp & PBTN_DOWN)  PicoDrawMask ^= PDRAW_SPRITES_LOW_ON;
-				if (inp & PBTN_UP)    PicoDrawMask ^= PDRAW_SPRITES_HI_ON;
-				if (inp & PBTN_MA2)   PicoDrawMask ^= PDRAW_32X_ON;
+				if (inp & PBTN_LEFT)  pv->debug_p ^= PVD_KILL_B;
+				if (inp & PBTN_RIGHT) pv->debug_p ^= PVD_KILL_A;
+				if (inp & PBTN_DOWN)  pv->debug_p ^= PVD_KILL_S_LO;
+				if (inp & PBTN_UP)    pv->debug_p ^= PVD_KILL_S_HI;
+				if (inp & PBTN_MA2)   pv->debug_p ^= PVD_KILL_32X;
 				if (inp & PBTN_MOK) {
 					PsndOut = NULL; // just in case
 					PicoSkipFrame = 1;
@@ -1093,7 +1097,7 @@ static const char credits[] =
 	"Eke, Stef: some Sega CD code\n"
 	"Inder, ketchupgun: graphics\n"
 #ifdef PSP
-	"Robson Santana: PSP port revive\n"
+	"Robson Santana: PSP port\n"
 	"                PSP SVP dynarec\n"
 #endif
 #ifdef __GP2X__
@@ -1113,13 +1117,13 @@ static const char credits[] =
 
 static void menu_main_draw_status(void)
 {
+	static time_t last_bat_read = 0;
 	static int last_bat_val = -1;
 	unsigned short *bp = g_screen_ptr;
 	int bat_h = me_mfont_h * 2 / 3;
 	int i, u, w, wfill, batt_val;
 	struct tm *tmp;
 #ifndef PSP
-	static time_t last_bat_read = 0;
 	time_t ltime;
 #else
 	static long last_bat_read_hour = 0;

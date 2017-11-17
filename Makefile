@@ -42,7 +42,6 @@ asm_memory ?= 1
 asm_render ?= 1
 asm_ym2612 ?= 1
 asm_misc ?= 1
-asm_cdpico ?= 1
 asm_cdmemory ?= 1
 asm_mix ?= 1
 else # if not arm
@@ -54,7 +53,6 @@ endif
 
 ifneq "$(use_cyclone)" "1"
 # due to CPU stop flag access
-asm_cdpico = 0
 asm_cdmemory = 0
 endif
 
@@ -164,11 +162,14 @@ else
 OBJS += platform/common/mp3_dummy.o
 endif
 
+ifeq "$(PLATFORM)" "libretro"
 # zlib
 OBJS += zlib/gzio.o zlib/inffast.o zlib/inflate.o zlib/inftrees.o zlib/trees.o \
 	zlib/deflate.o zlib/crc32.o zlib/adler32.o zlib/zutil.o zlib/compress.o zlib/uncompr.o
+CFLAGS += -Izlib
+endif
 # unzip
-OBJS += unzip/unzip.o unzip/unzip_stream.o
+OBJS += unzip/unzip.o
 
 
 include platform/common/common.mak
@@ -199,6 +200,9 @@ tools/textfilter: tools/textfilter.c
 .s.o:
 	$(CC) $(CFLAGS) -c $< -o $@
 
+.S.o:
+	$(CC) $(CFLAGS) -c $< -o $@
+
 # special flags - perhaps fix this someday instead?
 pico/draw.o: CFLAGS += -fno-strict-aliasing
 pico/draw2.o: CFLAGS += -fno-strict-aliasing
@@ -213,7 +217,12 @@ pico/cd/gfx_cd.o: CFLAGS += -fno-strict-aliasing
 # on x86, this is reduced by ~300MB when debug info is off (but not on ARM)
 # not using O3 and -fno-expensive-optimizations seems to also help, but you may
 # want to remove this stuff for better performance if your compiler can handle it
+ifndef DEBUG
 cpu/fame/famec.o: CFLAGS += -g0 -O2 -fno-expensive-optimizations
+endif
+
+pico/carthw_cfg.c: pico/carthw.cfg
+	tools/make_carthw_c $< $@
 
 # random deps
 pico/carthw/svp/compiler.o : cpu/drc/emit_$(ARCH).c

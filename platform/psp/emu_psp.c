@@ -128,7 +128,7 @@ void pemu_prep_defconfig(void)
 	defaultConfig.scaling = 1;     // bilinear filtering for psp
 	defaultConfig.scale = 1.0;
 	defaultConfig.hscale40 = 1.0;
-	defaultConfig.hscale32 = 1.0;
+	defaultConfig.hscale32 = 1.25;
 	defaultConfig.scale_int = (int)(defaultConfig.scale * 100.0f);
 	defaultConfig.hscale40_int = (int)(defaultConfig.hscale40 * 100.0f);
 	defaultConfig.hscale32_int = (int)(defaultConfig.hscale32 * 100.0f);
@@ -252,7 +252,7 @@ static void do_pal_update(int allow_sh, int allow_as)
 
 	//for (i = 0x3f/2; i >= 0; i--)
 	//	dpal[i] = ((spal[i]&0x000f000f)<< 1)|((spal[i]&0x00f000f0)<<3)|((spal[i]&0x0f000f00)<<4);
-	do_pal_convert(localPal, Pico.cram, currentConfig.gamma, currentConfig.gamma2);
+	do_pal_convert(localPal, PicoMem.cram, currentConfig.gamma, currentConfig.gamma2);
 
 	Pico.m.dirtyPal = 0;
 	need_pal_upload = 1;
@@ -274,7 +274,7 @@ static void do_pal_update(int allow_sh, int allow_as)
 		localPal[0xe0] = 0;
 		localPal[0xf0] = 0x001f;
 	}
-	else if (allow_as && (rendstatus & PDRAW_SPR_LO_ON_HI))
+	else if (allow_as && (Pico.est.rendstatus & PDRAW_SPR_LO_ON_HI))
 	{
 		memcpy32((int *)dpal+0x80/2, (void *)localPal, 0x40*2/4);
 	}
@@ -291,6 +291,26 @@ static void do_slowmode_lines(int line_to)
 		amips_clut_f(dst, src, localPal, line_len);
 }
 
+#ifndef _ASM_DRAW_C_AMIPS
+
+void amips_clut_6bit(unsigned short *dst, unsigned char *src, unsigned short *pal, int count) {
+
+	int i, mask=0x3f;
+
+    for (i = 0; i < count; i++)
+      dst[i] = pal[src[i] & mask];
+}
+
+void amips_clut(unsigned short *dst, unsigned char *src, unsigned short *pal, int count) {
+
+	int i, mask=0xff;
+
+    for (i = 0; i < count; i++)
+      dst[i] = pal[src[i] & mask];
+}
+
+#endif
+
 static void EmuScanPrepare(void)
 {
 #if 0
@@ -303,7 +323,7 @@ static void EmuScanPrepare(void)
 
 	if (Pico.m.dirtyPal)
 		do_pal_update(1, 1);
-	if ((rendstatus & PDRAW_SPR_LO_ON_HI) && !(Pico.video.reg[0xC]&8))
+	if ((Pico.est.rendstatus & PDRAW_SPR_LO_ON_HI) && !(Pico.video.reg[0xC]&8))
 	     amips_clut_f = amips_clut_6bit;
 	else amips_clut_f = amips_clut;
 }
@@ -311,11 +331,11 @@ static void EmuScanPrepare(void)
 static int EmuScanSlowBegin8(unsigned int num)
 {
 	if( Pico.video.reg[12]&1 ) {
-		DrawLineDest = (unsigned char *) VRAM_CACHED_STUFF + num * 512 + 16;
+		Pico.est.DrawLineDest = (unsigned char *) VRAM_CACHED_STUFF + num * 512 + 16;
 	}
 
 	else {
-		DrawLineDest = (unsigned char *) VRAM_CACHED_STUFF + num * 512 - 16;
+		Pico.est.DrawLineDest = (unsigned char *) VRAM_CACHED_STUFF + num * 512 - 16;
 	}
 
 #if 0
@@ -331,11 +351,11 @@ static int EmuScanSlowBegin16(unsigned int num)
 	int line_len = (Pico.video.reg[12]&1) ? 320 : 256;
 
 	if(line_len == 320) {
-		DrawLineDest = (unsigned short *) VRAM_CACHED_STUFF + num * 512 + 8;
+		Pico.est.DrawLineDest = (unsigned short *) VRAM_CACHED_STUFF + num * 512 + 8;
 	}
 
 	else {
-		DrawLineDest = (unsigned short *) VRAM_CACHED_STUFF + num * 512 + 8 - ((320 - (line_len - 8))/2);
+		Pico.est.DrawLineDest = (unsigned short *) VRAM_CACHED_STUFF + num * 512 + 8 - ((320 - (line_len - 8))/2);
 	}
 
 	return 0;
@@ -355,7 +375,7 @@ static int EmuScanSlowEnd8(unsigned int num)
 		if (dynamic_palette) {
 			int line_len = (Pico.video.reg[12]&1) ? 320 : 256;
 			void *dst = (char *)VRAM_STUFF + 512*240 + 512*2*num;
-			amips_clut_f(dst, HighCol + 8, localPal, line_len);
+			amips_clut_f(dst, Pico.est.HighCol + 8, localPal, line_len);
 		}
 	}
 
@@ -452,7 +472,7 @@ static void blitscreen_clut(void)
 	sceGuFinish();
 }
 
-// TODO: não testado
+// TODO: nÃ£o testado
 static void cd_leds(void)
 {
 	unsigned int reg, col_g, col_r, *p;
@@ -524,9 +544,9 @@ void blit1(void)
 			int i;
 			unsigned char *pd;
 			// clear top and bottom trash
-			for (pd = PicoDraw2FB + 8, i = 8; i > 0; i--, pd += 512)
+			for (pd = Pico.est.Draw2FB + 8, i = 8; i > 0; i--, pd += 512)
 				memset32((int *)pd, 0xe0e0e0e0, 320/4);
-			for (pd = PicoDraw2FB + 512*232+8, i = 8; i > 0; i--, pd += 512)
+			for (pd = Pico.est.Draw2FB + 512*232+8, i = 8; i > 0; i--, pd += 512)
 				memset32((int *)pd, 0xe0e0e0e0, 320/4);
 		}
 	}
@@ -1315,10 +1335,10 @@ void pemu_loop(void)
 	}
 
 	// save SRAM
-	if ((currentConfig.EmuOpt & 1) && SRam.changed) {
+	if ((currentConfig.EmuOpt & 1) && Pico.sv.changed) {
 		emu_msg_cb("Writing SRAM/BRAM..");
 		emu_save_load_game(0, 1);
-		SRam.changed = 0;
+		Pico.sv.changed = 0;
 	}
 
 	// clear fps counters and stuff
@@ -1532,4 +1552,19 @@ void plat_wait_till_us(unsigned int us_to)
 void pemu_loop_end(void)
 {
 	pemu_sound_stop();
+}
+
+void emu_video_mode_change(int start_line, int line_count, int is_32cols)
+{
+	clearArea(1);
+	set_scaling_params();
+
+	vidResetMode();
+
+#if 0 // enable to see when the video mode change
+	if (PicoAHW & PAHW_32X)
+		emu_status_msg(renderer_names32x[get_renderer()]);
+	else
+		emu_status_msg(renderer_names[get_renderer()]);
+#endif
 }

@@ -1102,7 +1102,8 @@ static void tr_PMX_to_r0(int reg)
 	//tr_flush_dirty_pmcrs();
 	tr_mov16(0, reg);
 	emit_save_registers();
-	emith_call(ssp_pm_read_asm);
+	//emith_call(ssp_pm_read_asm);
+	emith_call(ssp_pm_read);
 	emit_restore_registers();
   	MIPS_MOVE(MIPS_a0,MIPS_v0);
 	hostreg_clear();
@@ -1367,6 +1368,7 @@ static void tr_r0_to_PMX(int reg)
 	tr_mov16(1, reg);
 	emit_save_registers();
 	emith_call(ssp_pm_write_asm);
+	//emith_call(ssp_pm_write);
 	emit_restore_registers();
 	hostreg_clear();
 }

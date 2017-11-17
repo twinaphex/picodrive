@@ -8,7 +8,18 @@
 
 #include "../pico_int.h"
 #include "../memory.h"
+#include "eeprom_spi.h"
 
+
+static int have_bank(u32 base)
+{
+  // the loader allocs in 512K quantities
+  if (base >= Pico.romsize) {
+    elprintf(EL_ANOMALY|EL_STATUS, "carthw: missing bank @ %06x", base);
+    return 0;
+  }
+  return 1;
+}
 
 /* The SSFII mapper */
 static unsigned char ssf2_banks[8];
@@ -35,10 +46,8 @@ static void carthw_ssf2_write8(u32 a, u32 d)
 	ssf2_banks[a >> 1] = d;
 	base = d << 19;
 	target = a << 18;
-	if (base + 0x80000 > Pico.romsize) {
-		elprintf(EL_ANOMALY|EL_STATUS, "ssf2: missing bank @ %06x", base);
+	if (!have_bank(base))
 		return;
-	}
 
 	cpu68k_map_set(m68k_read8_map,  target, target + 0x80000 - 1, Pico.rom + base, 0);
 	cpu68k_map_set(m68k_read16_map, target, target + 0x80000 - 1, Pico.rom + base, 0);
@@ -270,6 +279,7 @@ static carthw_state_chunk carthw_pier_state[] =
 {
   { CHUNK_CARTHW,     sizeof(pier_regs),      pier_regs },
   { CHUNK_CARTHW + 1, sizeof(pier_dump_prot), &pier_dump_prot },
+  { CHUNK_CARTHW + 2, 0,                      NULL }, // filled later
   { 0,                0,                      NULL }
 };
 
@@ -308,7 +318,8 @@ static void carthw_pier_write8(u32 a, u32 d)
       base = d << 19;
       goto do_map;
     case 0x09:
-      // TODO
+      Pico.sv.changed = 1;
+      eeprom_spi_write(d);
       break;
     case 0x0b:
       // eeprom read
@@ -321,10 +332,9 @@ static void carthw_pier_write8(u32 a, u32 d)
   return;
 
 do_map:
-  if (base + 0x80000 > Pico.romsize) {
-    elprintf(EL_ANOMALY|EL_STATUS, "pier: missing bank @ %06x", base);
+  if (!have_bank(base))
     return;
-  }
+
   cpu68k_map_set(m68k_read8_map,  target, target + 0x80000 - 1, Pico.rom + base, 0);
   cpu68k_map_set(m68k_read16_map, target, target + 0x80000 - 1, Pico.rom + base, 0);
 }
@@ -346,7 +356,7 @@ static u32 carthw_pier_read8(u32 a)
     return PicoRead8_io(a);
 
   if (a == 0xa1300b)
-    return 0; // TODO
+    return eeprom_spi_read(a);
 
   elprintf(EL_UIO, "pier r8  [%06x] @%06x", a, SekPc);
   return 0;
@@ -413,31 +423,13 @@ static void carthw_pier_reset(void)
 {
   pier_regs[0] = 1;
   pier_regs[1] = pier_regs[2] = pier_regs[3] = 0;
-  pier_dump_prot = 3;
   carthw_pier_statef();
+  eeprom_spi_init(NULL);
 }
 
 void carthw_pier_startup(void)
 {
-  int i;
-
-  elprintf(EL_STATUS, "Pier Solar mapper startup");
-
-  // mostly same as for realtec..
-  i = PicoCartResize(Pico.romsize + M68K_BANK_SIZE);
-  if (i != 0) {
-    elprintf(EL_STATUS, "OOM");
-    return;
-  }
-
-  // create dump protection bank
-  for (i = 0; i < M68K_BANK_SIZE; i += 0x8000)
-    memcpy(Pico.rom + Pico.romsize + i, Pico.rom, 0x8000);
-
-  PicoCartMemSetup  = carthw_pier_mem_setup;
-  PicoResetHook     = carthw_pier_reset;
-  PicoLoadStateHook = carthw_pier_statef;
-  carthw_chunks     = carthw_pier_state;
+	return;
 }
 
 /* Simple unlicensed ROM protection emulation */
@@ -679,3 +671,4 @@ void carthw_prot_lk3_startup(void)
   PicoCartMemSetup = carthw_prot_lk3_mem_setup;
 }
 
+// vim:ts=2:sw=2:expandtab

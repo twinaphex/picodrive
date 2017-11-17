@@ -99,6 +99,8 @@ typedef enum { PI_ROM, PI_ISPAL, PI_IS40_CELL, PI_IS240_LINES } pint_t;
 typedef union { int vint; void *vptr; } pint_ret_t;
 void PicoGetInternal(pint_t which, pint_ret_t *ret);
 
+struct PicoEState;
+
 // cd/mcd.c
 extern void (*PicoMCDopenTray)(void);
 extern void (*PicoMCDcloseTray)(void);
@@ -169,19 +171,11 @@ typedef enum
 void PicoDrawSetOutFormat(pdso_t which, int use_32x_line_mode);
 void PicoDrawSetOutBuf(void *dest, int increment);
 void PicoDrawSetCallbacks(int (*begin)(unsigned int num), int (*end)(unsigned int num));
-extern void *DrawLineDest;
-extern unsigned char *HighCol;
 // utility
 #ifdef _ASM_DRAW_C
 void vidConvCpyRGB565(void *to, void *from, int pixels);
 #endif
-void PicoDoHighPal555(int sh);
-extern int PicoDrawMask;
-#define PDRAW_LAYERB_ON      (1<<2)
-#define PDRAW_LAYERA_ON      (1<<3)
-#define PDRAW_SPRITES_LOW_ON (1<<4)
-#define PDRAW_SPRITES_HI_ON  (1<<7)
-#define PDRAW_32X_ON         (1<<8)
+void PicoDoHighPal555(int sh, int line, struct PicoEState *est);
 // internals
 #define PDRAW_SPRITES_MOVED (1<<0) // (asm)
 #define PDRAW_WND_DIFF_PRIO (1<<1) // not all window tiles use same priority
@@ -192,9 +186,8 @@ extern int PicoDrawMask;
 #define PDRAW_PLANE_HI_PRIO (1<<6) // have layer with all hi prio tiles (mk3)
 #define PDRAW_SHHI_DONE     (1<<7) // layer sh/hi already processed
 #define PDRAW_32_COLS       (1<<8) // 32 column mode
-extern int rendstatus, rendstatus_old;
+extern int rendstatus_old;
 extern int rendlines;
-extern unsigned short HighPal[0x100];
 
 // draw.c
 void PicoDrawUpdateHighPal(void);
@@ -202,7 +195,6 @@ void PicoDrawSetInternalBuf(void *dest, int line_increment);
 
 // draw2.c
 // stuff below is optional
-extern unsigned char  *PicoDraw2FB;  // buffer for fast renderer in format (8+320)x(8+224+8) (eights for borders)
 extern unsigned short *PicoCramHigh; // pointer to CRAM buff (0x40 shorts), converted to native device color (works only with 16bit for now)
 extern void (*PicoPrepareCram)();    // prepares PicoCramHigh for renderer to use
 

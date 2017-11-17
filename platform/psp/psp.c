@@ -52,7 +52,7 @@ void dummy(void)
 #ifndef FW15
 
 #if 0
-PSP_MODULE_INFO("PicoDrive", 0, 1, 91);
+PSP_MODULE_INFO("PicoDrive", 0, 1, 92);
 PSP_HEAP_SIZE_MAX();
 
 int main() { return pico_main(); }	/* just a wrapper */
@@ -62,7 +62,7 @@ int psp_unhandled_suspend = 0;
 
 #else
 
-PSP_MODULE_INFO("PicoDrive", 0x1000, 1, 91);
+PSP_MODULE_INFO("PicoDrive", 0x1000, 1, 92);
 PSP_MAIN_THREAD_ATTR(0);
 
 int main()

@@ -15,9 +15,6 @@
  */
 #include "pico_int.h"
 
-#define SR_C          (1 << 5)
-#define SR_SOVR       (1 << 6)
-
 static void (*FinalizeLineM4)(int line);
 static int skip_next_line;
 static int screen_offset;
@@ -31,10 +28,10 @@ static int screen_offset;
 
 static int TileNormM4(int sx, int addr, int pal)
 {
-  unsigned char *pd = HighCol + sx;
+  unsigned char *pd = Pico.est.HighCol + sx;
   unsigned int pack, t;
 
-  pack = *(unsigned int *)(Pico.vram + addr); /* Get 4 bitplanes / 8 pixels */
+  pack = *(unsigned int *)(PicoMem.vram + addr); /* Get 4 bitplanes / 8 pixels */
   if (pack)
   {
     PLANAR_PIXEL(0, 0)
@@ -53,10 +50,10 @@ static int TileNormM4(int sx, int addr, int pal)
 
 static int TileFlipM4(int sx,int addr,int pal)
 {
-  unsigned char *pd = HighCol + sx;
+  unsigned char *pd = Pico.est.HighCol + sx;
   unsigned int pack, t;
 
-  pack = *(unsigned int *)(Pico.vram + addr); /* Get 4 bitplanes / 8 pixels */
+  pack = *(unsigned int *)(PicoMem.vram + addr); /* Get 4 bitplanes / 8 pixels */
   if (pack)
   {
     PLANAR_PIXEL(0, 7)
@@ -86,7 +83,7 @@ static void draw_sprites(int scanline)
   if (pv->reg[0] & 8)
     xoff = 0;
 
-  sat = (unsigned char *)Pico.vram + ((pv->reg[5] & 0x7e) << 7);
+  sat = (unsigned char *)PicoMem.vram + ((pv->reg[5] & 0x7e) << 7);
   if (pv->reg[1] & 2) {
     addr_mask = 0xfe; h = 16;
   } else {
@@ -172,7 +169,7 @@ static void DrawDisplayM4(int scanline)
     line -= 224;
 
   // Find name table:
-  nametab = Pico.vram;
+  nametab = PicoMem.vram;
   nametab += (pv->reg[2] & 0x0e) << (10-1);
   nametab += (line>>3) << (6-1);
 
@@ -190,20 +187,20 @@ static void DrawDisplayM4(int scanline)
   dx += cellskip << 3;
 
   // low priority tiles
-  if (PicoDrawMask & PDRAW_LAYERB_ON)
+  if (!(pv->debug_p & PVD_KILL_B))
     draw_strip(nametab, dx, cells, tilex | 0x0000 | (ty << 16));
 
   // sprites
-  if (PicoDrawMask & PDRAW_SPRITES_LOW_ON)
+  if (!(pv->debug_p & PVD_KILL_S_LO))
     draw_sprites(scanline);
 
   // high priority tiles (use virtual layer switch just for fun)
-  if (PicoDrawMask & PDRAW_LAYERA_ON)
+  if (!(pv->debug_p & PVD_KILL_A))
     draw_strip(nametab, dx, cells, tilex | 0x1000 | (ty << 16));
 
   if (pv->reg[0] & 0x20)
     // first column masked
-    ((int *)HighCol)[2] = ((int *)HighCol)[3] = 0xe0e0e0e0;
+    ((int *)Pico.est.HighCol)[2] = ((int *)Pico.est.HighCol)[3] = 0xe0e0e0e0;
 }
 
 void PicoFrameStartMode4(void)
@@ -211,7 +208,7 @@ void PicoFrameStartMode4(void)
   int lines = 192;
   skip_next_line = 0;
   screen_offset = 24;
-  rendstatus = PDRAW_32_COLS;
+  Pico.est.rendstatus = PDRAW_32_COLS;
 
   if ((Pico.video.reg[0] & 6) == 6 && (Pico.video.reg[1] & 0x18)) {
     if (Pico.video.reg[1] & 0x08) {
@@ -224,15 +221,13 @@ void PicoFrameStartMode4(void)
     }
   }
 
-#ifndef PSP  // emu_video_mode_change() is for libretro
-  if (rendstatus != rendstatus_old || lines != rendlines) {
+  if (Pico.est.rendstatus != rendstatus_old || lines != rendlines) {
     emu_video_mode_change(screen_offset, lines, 1);
-    rendstatus_old = rendstatus;
+    rendstatus_old = Pico.est.rendstatus;
     rendlines = lines;
   }
-#endif
 
-  DrawLineDest = (char *)DrawLineDestBase + screen_offset * DrawLineDestIncrement;
+  Pico.est.DrawLineDest = (char *)DrawLineDestBase + screen_offset * DrawLineDestIncrement;
 }
 
 void PicoLineMode4(int line)
@@ -246,7 +241,7 @@ void PicoLineMode4(int line)
     skip_next_line = PicoScanBegin(line + screen_offset);
 
   // Draw screen:
-  BackFill(Pico.video.reg[7] & 0x0f, 0);
+  BackFill(Pico.video.reg[7] & 0x0f, 0, &Pico.est);
   if (Pico.video.reg[1] & 0x40)
     DrawDisplayM4(line);
 
@@ -256,13 +251,13 @@ void PicoLineMode4(int line)
   if (PicoScanEnd != NULL)
     skip_next_line = PicoScanEnd(line + screen_offset);
 
-  DrawLineDest = (char *)DrawLineDest + DrawLineDestIncrement;
+  Pico.est.DrawLineDest = (char *)Pico.est.DrawLineDest + DrawLineDestIncrement;
 }
 
 void PicoDoHighPal555M4(void)
 {
-  unsigned int *spal=(void *)Pico.cram;
-  unsigned int *dpal=(void *)HighPal;
+  unsigned int *spal=(void *)PicoMem.cram;
+  unsigned int *dpal=(void *)Pico.est.HighPal;
   unsigned int t;
   int i;
 
@@ -280,7 +275,7 @@ void PicoDoHighPal555M4(void)
     t |= (t >> 4) & 0x08610861;
     *dpal = t;
   }
-  HighPal[0xe0] = 0;
+  Pico.est.HighPal[0xe0] = 0;
 }
 
 static void FinalizeLineRGB555M4(int line)
@@ -290,17 +285,17 @@ static void FinalizeLineRGB555M4(int line)
 
   // standard FinalizeLine can finish it for us,
   // with features like scaling and such
-  FinalizeLine555(0, line);
+  FinalizeLine555(0, line, &Pico.est);
 }
 
 static void FinalizeLine8bitM4(int line)
 {
-  unsigned char *pd = DrawLineDest;
+  unsigned char *pd = Pico.est.DrawLineDest;
 
   if (!(PicoOpt & POPT_DIS_32C_BORDER))
     pd += 32;
 
-  memcpy32((int *)pd, (int *)(HighCol+8), 256/4);
+  memcpy32((int *)pd, (int *)(Pico.est.HighCol+8), 256/4);
 }
 
 void PicoDrawSetOutputMode4(pdso_t which)

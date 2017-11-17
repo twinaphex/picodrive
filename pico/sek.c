@@ -10,11 +10,6 @@
 #include "pico_int.h"
 #include "memory.h"
 
-
-unsigned int SekCycleCnt;
-unsigned int SekCycleAim;
-
-
 /* context */
 // Cyclone 68000
 #ifdef EMU_C68K
@@ -30,15 +25,30 @@ M68K_CONTEXT PicoCpuFM68k;
 #endif
 
 
+static int do_ack(int level)
+{
+  struct PicoVideo *pv = &Pico.video;
+
+  elprintf(EL_INTS, "%cack: @ %06x [%u], p=%02x",
+    level == 6 ? 'v' : 'h', SekPc, SekCyclesDone(), pv->pending_ints);
+  // the VDP doesn't look at the 68k level
+  if (pv->pending_ints & pv->reg[1] & 0x20) {
+    pv->pending_ints &= ~0x20;
+    pv->status &= ~SR_F;
+    return (pv->reg[0] & pv->pending_ints & 0x10) >> 2;
+  }
+  else if (pv->pending_ints & pv->reg[0] & 0x10)
+    pv->pending_ints &= ~0x10;
+
+  return 0;
+}
+
 /* callbacks */
 #ifdef EMU_C68K
 // interrupt acknowledgment
 static int SekIntAck(int level)
 {
-  // try to emulate VDP's reaction to 68000 int ack
-  if     (level == 4) { Pico.video.pending_ints  =  0;    elprintf(EL_INTS, "hack: @ %06x [%i]", SekPc, SekCycleCnt); }
-  else if(level == 6) { Pico.video.pending_ints &= ~0x20; elprintf(EL_INTS, "vack: @ %06x [%i]", SekPc, SekCycleCnt); }
-  PicoCpuCM68k.irq = 0;
+  PicoCpuCM68k.irq = do_ack(level);
   return CYCLONE_INT_ACK_AUTOVECTOR;
 }
 
@@ -60,6 +70,8 @@ static int SekUnrecognizedOpcode()
     PicoCpuCM68k.state_flags |= 1;
     return 1;
   }
+  // happened once - may happen again
+  SekFinishIdleDet();
 #ifdef EMU_M68K // debugging cyclone
   {
     extern int have_illegal;
@@ -74,9 +86,7 @@ static int SekUnrecognizedOpcode()
 #ifdef EMU_M68K
 static int SekIntAckM68K(int level)
 {
-  if     (level == 4) { Pico.video.pending_ints  =  0;    elprintf(EL_INTS, "hack: @ %06x [%i]", SekPc, SekCycleCnt); }
-  else if(level == 6) { Pico.video.pending_ints &= ~0x20; elprintf(EL_INTS, "vack: @ %06x [%i]", SekPc, SekCycleCnt); }
-  CPU_INT_LEVEL = 0;
+  CPU_INT_LEVEL = do_ack(level) << 8;
   return M68K_INT_ACK_AUTOVECTOR;
 }
 
@@ -90,15 +100,7 @@ static int SekTasCallback(void)
 #ifdef EMU_F68K
 static void SekIntAckF68K(unsigned level)
 {
-  if     (level == 4) {
-    Pico.video.pending_ints = 0;
-    elprintf(EL_INTS, "hack: @ %06x [%i]", SekPc, SekCyclesDone());
-  }
-  else if(level == 6) {
-    Pico.video.pending_ints &= ~0x20;
-    elprintf(EL_INTS, "vack: @ %06x [%i]", SekPc, SekCyclesDone());
-  }
-  PicoCpuFM68k.interrupts[0] = 0;
+  PicoCpuFM68k.interrupts[0] = do_ack(level);
 }
 #endif
 
@@ -166,17 +168,17 @@ PICO_INTERNAL int SekReset(void)
 
 void SekStepM68k(void)
 {
-  SekCycleAim=SekCycleCnt+1;
+  Pico.t.m68c_aim = Pico.t.m68c_cnt + 1;
 #if defined(EMU_CORE_DEBUG)
-  SekCycleCnt+=CM_compareRun(1, 0);
+  Pico.t.m68c_cnt += CM_compareRun(1, 0);
 #elif defined(EMU_C68K)
   PicoCpuCM68k.cycles=1;
   CycloneRun(&PicoCpuCM68k);
-  SekCycleCnt+=1-PicoCpuCM68k.cycles;
+  Pico.t.m68c_cnt += 1 - PicoCpuCM68k.cycles;
 #elif defined(EMU_M68K)
-  SekCycleCnt+=m68k_execute(1);
+  Pico.t.m68c_cnt += m68k_execute(1);
 #elif defined(EMU_F68K)
-  SekCycleCnt+=fm68k_emulate(1, 0);
+  Pico.t.m68c_cnt += fm68k_emulate(1, 0);
 #endif
 }
 
@@ -226,7 +228,7 @@ PICO_INTERNAL void SekPackCpu(unsigned char *cpu, int is_sub)
 
   *(unsigned int *)(cpu+0x40) = pc;
   *(unsigned int *)(cpu+0x50) =
-    is_sub ? SekCycleCntS68k : SekCycleCnt;
+    is_sub ? SekCycleCntS68k : Pico.t.m68c_cnt;
 }
 
 PICO_INTERNAL void SekUnpackCpu(const unsigned char *cpu, int is_sub)
@@ -266,7 +268,7 @@ PICO_INTERNAL void SekUnpackCpu(const unsigned char *cpu, int is_sub)
   if (is_sub)
     SekCycleCntS68k = *(unsigned int *)(cpu+0x50);
   else
-    SekCycleCnt = *(unsigned int *)(cpu+0x50);
+    Pico.t.m68c_cnt = *(unsigned int *)(cpu+0x50);
 }
 
 
@@ -300,7 +302,8 @@ void SekRegisterIdleHit(unsigned int pc)
 
 void SekInitIdleDet(void)
 {
-  unsigned short **tmp = realloc(idledet_ptrs, 0x200*4);
+  unsigned short **tmp;
+  tmp = realloc(idledet_ptrs, 0x200 * sizeof(tmp[0]));
   if (tmp == NULL) {
     free(idledet_ptrs);
     idledet_ptrs = NULL;
@@ -408,7 +411,8 @@ int SekRegisterIdlePatch(unsigned int pc, int oldop, int newop, void *ctx)
   }
 
   if (idledet_count >= 0x200 && (idledet_count & 0x1ff) == 0) {
-    unsigned short **tmp = realloc(idledet_ptrs, (idledet_count+0x200)*4);
+    unsigned short **tmp;
+    tmp = realloc(idledet_ptrs, (idledet_count+0x200) * sizeof(tmp[0]));
     if (tmp == NULL)
       return 1;
     idledet_ptrs = tmp;
@@ -421,6 +425,8 @@ int SekRegisterIdlePatch(unsigned int pc, int oldop, int newop, void *ctx)
 
 void SekFinishIdleDet(void)
 {
+  if (idledet_count < 0)
+    return;
 #ifdef EMU_C68K
   CycloneFinishIdle();
 #endif
@@ -439,6 +445,7 @@ void SekFinishIdleDet(void)
     else
       elprintf(EL_STATUS|EL_IDLE, "idle: don't know how to restore %04x", *op);
   }
+  idledet_count = -1;
 }
 
 
@@ -460,7 +467,7 @@ void SekTrace(int is_s68k)
   struct ref_68k *x68k = &ref_68ks[is_s68k];
   u32 pc = is_s68k ? SekPcS68k : SekPc;
   u32 sr = is_s68k ? SekSrS68k : SekSr;
-  u32 cycles = is_s68k ? SekCycleCntS68k : SekCycleCnt;
+  u32 cycles = is_s68k ? SekCycleCntS68k : Pico.t.m68c_cnt;
   u32 r;
   u8 cmd;
 #ifdef CPU_CMP_W
@@ -549,6 +556,7 @@ breakloop:
 			printf("D%d: %08x  A%d: %08x\n", i, x68k->dar[i],
         i, x68k->dar[i + 8]);
 		printf("PC: %08x, %08x\n", x68k->pc, x68k->pc_prev);
+		printf("SR: %04x\n", x68k->sr);
 
     PDebugDumpMem();
     exit(1);

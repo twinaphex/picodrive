@@ -16936,18 +16936,20 @@ OPCODE(0x4800)
 	u32 adr, res;
 	u32 src, dst;
 
-	res = DREGu8((Opcode >> 0) & 7);
-	res = 0x9a - res - ((flag_X >> M68K_SR_X_SFT) & 1);
+	dst = DREGu8((Opcode >> 0) & 7);
+	res = -dst - ((flag_X >> M68K_SR_X_SFT) & 1);
 
-	if (res != 0x9a)
+	if (res != 0)
 	{
-		if ((res & 0x0f) == 0xa) res = (res & 0xf0) + 0x10;
-		res &= 0xFF;
-	DREGu8((Opcode >> 0) & 7) = res;
+		flag_V = res;
+		if (((res|dst) & 0x0f) == 0) res = (res & 0xf0) + 6;
+		res = (res + 0x9a) & 0xFF;
+		DREGu8((Opcode >> 0) & 7) = res;
+		flag_V &= ~res;
 		flag_NotZ |= res;
 		flag_X = flag_C = M68K_SR_C;
 	}
-	else flag_X = flag_C = 0;
+	else flag_V = flag_X = flag_C = 0;
 	flag_N = res;
 RET(6)
 }
@@ -16960,18 +16962,20 @@ OPCODE(0x4810)
 
 	adr = AREG((Opcode >> 0) & 7);
 	PRE_IO
-	READ_BYTE_F(adr, res)
-	res = 0x9a - res - ((flag_X >> M68K_SR_X_SFT) & 1);
+	READ_BYTE_F(adr, dst)
+	res = -dst - ((flag_X >> M68K_SR_X_SFT) & 1);
 
-	if (res != 0x9a)
+	if (res != 0)
 	{
-		if ((res & 0x0f) == 0xa) res = (res & 0xf0) + 0x10;
-		res &= 0xFF;
-	WRITE_BYTE_F(adr, res)
+		flag_V = res;
+		if (((res|dst) & 0x0f) == 0) res = (res & 0xf0) + 6;
+		res = (res + 0x9a) & 0xFF;
+		WRITE_BYTE_F(adr, res)
+		flag_V &= ~res;
 		flag_NotZ |= res;
 		flag_X = flag_C = M68K_SR_C;
 	}
-	else flag_X = flag_C = 0;
+	else flag_V = flag_X = flag_C = 0;
 	flag_N = res;
 	POST_IO
 RET(12)
@@ -16986,18 +16990,20 @@ OPCODE(0x4818)
 	adr = AREG((Opcode >> 0) & 7);
 	AREG((Opcode >> 0) & 7) += 1;
 	PRE_IO
-	READ_BYTE_F(adr, res)
-	res = 0x9a - res - ((flag_X >> M68K_SR_X_SFT) & 1);
+	READ_BYTE_F(adr, dst)
+	res = -dst - ((flag_X >> M68K_SR_X_SFT) & 1);
 
-	if (res != 0x9a)
+	if (res != 0)
 	{
-		if ((res & 0x0f) == 0xa) res = (res & 0xf0) + 0x10;
-		res &= 0xFF;
-	WRITE_BYTE_F(adr, res)
+		flag_V = res;
+		if (((res|dst) & 0x0f) == 0) res = (res & 0xf0) + 6;
+		res = (res + 0x9a) & 0xFF;
+		WRITE_BYTE_F(adr, res)
+		flag_V &= ~res;
 		flag_NotZ |= res;
 		flag_X = flag_C = M68K_SR_C;
 	}
-	else flag_X = flag_C = 0;
+	else flag_V = flag_X = flag_C = 0;
 	flag_N = res;
 	POST_IO
 RET(12)
@@ -17012,18 +17018,20 @@ OPCODE(0x4820)
 	adr = AREG((Opcode >> 0) & 7) - 1;
 	AREG((Opcode >> 0) & 7) = adr;
 	PRE_IO
-	READ_BYTE_F(adr, res)
-	res = 0x9a - res - ((flag_X >> M68K_SR_X_SFT) & 1);
+	READ_BYTE_F(adr, dst)
+	res = -dst - ((flag_X >> M68K_SR_X_SFT) & 1);
 
-	if (res != 0x9a)
+	if (res != 0)
 	{
-		if ((res & 0x0f) == 0xa) res = (res & 0xf0) + 0x10;
-		res &= 0xFF;
-	WRITE_BYTE_F(adr, res)
+		flag_V = res;
+		if (((res|dst) & 0x0f) == 0) res = (res & 0xf0) + 6;
+		res = (res + 0x9a) & 0xFF;
+		WRITE_BYTE_F(adr, res)
+		flag_V &= ~res;
 		flag_NotZ |= res;
 		flag_X = flag_C = M68K_SR_C;
 	}
-	else flag_X = flag_C = 0;
+	else flag_V = flag_X = flag_C = 0;
 	flag_N = res;
 	POST_IO
 RET(14)
@@ -17038,18 +17046,20 @@ OPCODE(0x4828)
 	FETCH_SWORD(adr);
 	adr += AREG((Opcode >> 0) & 7);
 	PRE_IO
-	READ_BYTE_F(adr, res)
-	res = 0x9a - res - ((flag_X >> M68K_SR_X_SFT) & 1);
+	READ_BYTE_F(adr, dst)
+	res = -dst - ((flag_X >> M68K_SR_X_SFT) & 1);
 
-	if (res != 0x9a)
+	if (res != 0)
 	{
-		if ((res & 0x0f) == 0xa) res = (res & 0xf0) + 0x10;
-		res &= 0xFF;
-	WRITE_BYTE_F(adr, res)
+		flag_V = res;
+		if (((res|dst) & 0x0f) == 0) res = (res & 0xf0) + 6;
+		res = (res + 0x9a) & 0xFF;
+		WRITE_BYTE_F(adr, res)
+		flag_V &= ~res;
 		flag_NotZ |= res;
 		flag_X = flag_C = M68K_SR_C;
 	}
-	else flag_X = flag_C = 0;
+	else flag_V = flag_X = flag_C = 0;
 	flag_N = res;
 	POST_IO
 RET(16)
@@ -17064,18 +17074,20 @@ OPCODE(0x4830)
 	adr = AREG((Opcode >> 0) & 7);
 	DECODE_EXT_WORD
 	PRE_IO
-	READ_BYTE_F(adr, res)
-	res = 0x9a - res - ((flag_X >> M68K_SR_X_SFT) & 1);
+	READ_BYTE_F(adr, dst)
+	res = -dst - ((flag_X >> M68K_SR_X_SFT) & 1);
 
-	if (res != 0x9a)
+	if (res != 0)
 	{
-		if ((res & 0x0f) == 0xa) res = (res & 0xf0) + 0x10;
-		res &= 0xFF;
-	WRITE_BYTE_F(adr, res)
+		flag_V = res;
+		if (((res|dst) & 0x0f) == 0) res = (res & 0xf0) + 6;
+		res = (res + 0x9a) & 0xFF;
+		WRITE_BYTE_F(adr, res)
+		flag_V &= ~res;
 		flag_NotZ |= res;
 		flag_X = flag_C = M68K_SR_C;
 	}
-	else flag_X = flag_C = 0;
+	else flag_V = flag_X = flag_C = 0;
 	flag_N = res;
 	POST_IO
 RET(18)
@@ -17089,18 +17101,20 @@ OPCODE(0x4838)
 
 	FETCH_SWORD(adr);
 	PRE_IO
-	READ_BYTE_F(adr, res)
-	res = 0x9a - res - ((flag_X >> M68K_SR_X_SFT) & 1);
+	READ_BYTE_F(adr, dst)
+	res = -dst - ((flag_X >> M68K_SR_X_SFT) & 1);
 
-	if (res != 0x9a)
+	if (res != 0)
 	{
-		if ((res & 0x0f) == 0xa) res = (res & 0xf0) + 0x10;
-		res &= 0xFF;
-	WRITE_BYTE_F(adr, res)
+		flag_V = res;
+		if (((res|dst) & 0x0f) == 0) res = (res & 0xf0) + 6;
+		res = (res + 0x9a) & 0xFF;
+		WRITE_BYTE_F(adr, res)
+		flag_V &= ~res;
 		flag_NotZ |= res;
 		flag_X = flag_C = M68K_SR_C;
 	}
-	else flag_X = flag_C = 0;
+	else flag_V = flag_X = flag_C = 0;
 	flag_N = res;
 	POST_IO
 RET(16)
@@ -17114,18 +17128,20 @@ OPCODE(0x4839)
 
 	FETCH_LONG(adr);
 	PRE_IO
-	READ_BYTE_F(adr, res)
-	res = 0x9a - res - ((flag_X >> M68K_SR_X_SFT) & 1);
+	READ_BYTE_F(adr, dst)
+	res = -dst - ((flag_X >> M68K_SR_X_SFT) & 1);
 
-	if (res != 0x9a)
+	if (res != 0)
 	{
-		if ((res & 0x0f) == 0xa) res = (res & 0xf0) + 0x10;
-		res &= 0xFF;
-	WRITE_BYTE_F(adr, res)
+		flag_V = res;
+		if (((res|dst) & 0x0f) == 0) res = (res & 0xf0) + 6;
+		res = (res + 0x9a) & 0xFF;
+		WRITE_BYTE_F(adr, res)
+		flag_V &= ~res;
 		flag_NotZ |= res;
 		flag_X = flag_C = M68K_SR_C;
 	}
-	else flag_X = flag_C = 0;
+	else flag_V = flag_X = flag_C = 0;
 	flag_N = res;
 	POST_IO
 RET(20)
@@ -17140,18 +17156,20 @@ OPCODE(0x481F)
 	adr = AREG(7);
 	AREG(7) += 2;
 	PRE_IO
-	READ_BYTE_F(adr, res)
-	res = 0x9a - res - ((flag_X >> M68K_SR_X_SFT) & 1);
+	READ_BYTE_F(adr, dst)
+	res = -dst - ((flag_X >> M68K_SR_X_SFT) & 1);
 
-	if (res != 0x9a)
+	if (res != 0)
 	{
-		if ((res & 0x0f) == 0xa) res = (res & 0xf0) + 0x10;
-		res &= 0xFF;
-	WRITE_BYTE_F(adr, res)
+		flag_V = res;
+		if (((res|dst) & 0x0f) == 0) res = (res & 0xf0) + 6;
+		res = (res + 0x9a) & 0xFF;
+		WRITE_BYTE_F(adr, res)
+		flag_V &= ~res;
 		flag_NotZ |= res;
 		flag_X = flag_C = M68K_SR_C;
 	}
-	else flag_X = flag_C = 0;
+	else flag_V = flag_X = flag_C = 0;
 	flag_N = res;
 	POST_IO
 RET(12)
@@ -17166,18 +17184,20 @@ OPCODE(0x4827)
 	adr = AREG(7) - 2;
 	AREG(7) = adr;
 	PRE_IO
-	READ_BYTE_F(adr, res)
-	res = 0x9a - res - ((flag_X >> M68K_SR_X_SFT) & 1);
+	READ_BYTE_F(adr, dst)
+	res = -dst - ((flag_X >> M68K_SR_X_SFT) & 1);
 
-	if (res != 0x9a)
+	if (res != 0)
 	{
-		if ((res & 0x0f) == 0xa) res = (res & 0xf0) + 0x10;
-		res &= 0xFF;
-	WRITE_BYTE_F(adr, res)
+		flag_V = res;
+		if (((res|dst) & 0x0f) == 0) res = (res & 0xf0) + 6;
+		res = (res + 0x9a) & 0xFF;
+		WRITE_BYTE_F(adr, res)
+		flag_V &= ~res;
 		flag_NotZ |= res;
 		flag_X = flag_C = M68K_SR_C;
 	}
-	else flag_X = flag_C = 0;
+	else flag_V = flag_X = flag_C = 0;
 	flag_N = res;
 	POST_IO
 RET(14)
@@ -18554,6 +18574,10 @@ RET(8)
 // ILLEGAL
 OPCODE(0x4AFC)
 {
+#ifdef PICODRIVE_HACK
+	extern void SekFinishIdleDet(void);
+	SekFinishIdleDet();
+#endif
 	SET_PC(execute_exception(M68K_ILLEGAL_INSTRUCTION_EX, GET_PC-2, GET_SR));
 RET(0)
 }
@@ -19573,12 +19597,11 @@ RET(14)
 // CHK
 OPCODE(0x4180)
 {
-	u32 adr, res;
-	u32 src, dst;
+	s32 src, res;
 
-	src = DREGu16((Opcode >> 0) & 7);
-	res = DREGu16((Opcode >> 9) & 7);
-	if (((s32)res < 0) || (res > src))
+	src = DREGs16((Opcode >> 0) & 7);
+	res = DREGs16((Opcode >> 9) & 7);
+	if ((res < 0) || (res > src))
 	{
 		flag_N = res >> 8;
 		SET_PC(execute_exception(M68K_CHK_EX, GET_PC, GET_SR));
@@ -19589,14 +19612,14 @@ RET(10)
 // CHK
 OPCODE(0x4190)
 {
-	u32 adr, res;
-	u32 src, dst;
+	s32 src, res;
+	u32 adr;
 
 	adr = AREG((Opcode >> 0) & 7);
 	PRE_IO
-	READ_WORD_F(adr, src)
-	res = DREGu16((Opcode >> 9) & 7);
-	if (((s32)res < 0) || (res > src))
+	READSX_WORD_F(adr, src)
+	res = DREGs16((Opcode >> 9) & 7);
+	if ((res < 0) || (res > src))
 	{
 		flag_N = res >> 8;
 		SET_PC(execute_exception(M68K_CHK_EX, GET_PC, GET_SR));
@@ -19608,15 +19631,15 @@ RET(14)
 // CHK
 OPCODE(0x4198)
 {
-	u32 adr, res;
-	u32 src, dst;
+	s32 src, res;
+	u32 adr;
 
 	adr = AREG((Opcode >> 0) & 7);
 	AREG((Opcode >> 0) & 7) += 2;
 	PRE_IO
-	READ_WORD_F(adr, src)
-	res = DREGu16((Opcode >> 9) & 7);
-	if (((s32)res < 0) || (res > src))
+	READSX_WORD_F(adr, src)
+	res = DREGs16((Opcode >> 9) & 7);
+	if ((res < 0) || (res > src))
 	{
 		flag_N = res >> 8;
 		SET_PC(execute_exception(M68K_CHK_EX, GET_PC, GET_SR));
@@ -19628,15 +19651,15 @@ RET(14)
 // CHK
 OPCODE(0x41A0)
 {
-	u32 adr, res;
-	u32 src, dst;
+	s32 src, res;
+	u32 adr;
 
 	adr = AREG((Opcode >> 0) & 7) - 2;
 	AREG((Opcode >> 0) & 7) = adr;
 	PRE_IO
-	READ_WORD_F(adr, src)
-	res = DREGu16((Opcode >> 9) & 7);
-	if (((s32)res < 0) || (res > src))
+	READSX_WORD_F(adr, src)
+	res = DREGs16((Opcode >> 9) & 7);
+	if ((res < 0) || (res > src))
 	{
 		flag_N = res >> 8;
 		SET_PC(execute_exception(M68K_CHK_EX, GET_PC, GET_SR));
@@ -19648,15 +19671,15 @@ RET(16)
 // CHK
 OPCODE(0x41A8)
 {
-	u32 adr, res;
-	u32 src, dst;
+	s32 src, res;
+	u32 adr;
 
 	FETCH_SWORD(adr);
 	adr += AREG((Opcode >> 0) & 7);
 	PRE_IO
-	READ_WORD_F(adr, src)
-	res = DREGu16((Opcode >> 9) & 7);
-	if (((s32)res < 0) || (res > src))
+	READSX_WORD_F(adr, src)
+	res = DREGs16((Opcode >> 9) & 7);
+	if ((res < 0) || (res > src))
 	{
 		flag_N = res >> 8;
 		SET_PC(execute_exception(M68K_CHK_EX, GET_PC, GET_SR));
@@ -19668,15 +19691,15 @@ RET(18)
 // CHK
 OPCODE(0x41B0)
 {
-	u32 adr, res;
-	u32 src, dst;
+	s32 src, res;
+	u32 adr;
 
 	adr = AREG((Opcode >> 0) & 7);
 	DECODE_EXT_WORD
 	PRE_IO
-	READ_WORD_F(adr, src)
-	res = DREGu16((Opcode >> 9) & 7);
-	if (((s32)res < 0) || (res > src))
+	READSX_WORD_F(adr, src)
+	res = DREGs16((Opcode >> 9) & 7);
+	if ((res < 0) || (res > src))
 	{
 		flag_N = res >> 8;
 		SET_PC(execute_exception(M68K_CHK_EX, GET_PC, GET_SR));
@@ -19688,14 +19711,14 @@ RET(20)
 // CHK
 OPCODE(0x41B8)
 {
-	u32 adr, res;
-	u32 src, dst;
+	s32 src, res;
+	u32 adr;
 
 	FETCH_SWORD(adr);
 	PRE_IO
-	READ_WORD_F(adr, src)
-	res = DREGu16((Opcode >> 9) & 7);
-	if (((s32)res < 0) || (res > src))
+	READSX_WORD_F(adr, src)
+	res = DREGs16((Opcode >> 9) & 7);
+	if ((res < 0) || (res > src))
 	{
 		flag_N = res >> 8;
 		SET_PC(execute_exception(M68K_CHK_EX, GET_PC, GET_SR));
@@ -19707,14 +19730,14 @@ RET(18)
 // CHK
 OPCODE(0x41B9)
 {
-	u32 adr, res;
-	u32 src, dst;
+	s32 src, res;
+	u32 adr;
 
 	FETCH_LONG(adr);
 	PRE_IO
-	READ_WORD_F(adr, src)
-	res = DREGu16((Opcode >> 9) & 7);
-	if (((s32)res < 0) || (res > src))
+	READSX_WORD_F(adr, src)
+	res = DREGs16((Opcode >> 9) & 7);
+	if ((res < 0) || (res > src))
 	{
 		flag_N = res >> 8;
 		SET_PC(execute_exception(M68K_CHK_EX, GET_PC, GET_SR));
@@ -19726,15 +19749,15 @@ RET(22)
 // CHK
 OPCODE(0x41BA)
 {
-	u32 adr, res;
-	u32 src, dst;
+	s32 src, res;
+	u32 adr;
 
 	adr = GET_SWORD + GET_PC;
 	PC++;
 	PRE_IO
-	READ_WORD_F(adr, src)
-	res = DREGu16((Opcode >> 9) & 7);
-	if (((s32)res < 0) || (res > src))
+	READSX_WORD_F(adr, src)
+	res = DREGs16((Opcode >> 9) & 7);
+	if ((res < 0) || (res > src))
 	{
 		flag_N = res >> 8;
 		SET_PC(execute_exception(M68K_CHK_EX, GET_PC, GET_SR));
@@ -19746,15 +19769,15 @@ RET(18)
 // CHK
 OPCODE(0x41BB)
 {
-	u32 adr, res;
-	u32 src, dst;
+	s32 src, res;
+	u32 adr;
 
 	adr = GET_PC;
 	DECODE_EXT_WORD
 	PRE_IO
-	READ_WORD_F(adr, src)
-	res = DREGu16((Opcode >> 9) & 7);
-	if (((s32)res < 0) || (res > src))
+	READSX_WORD_F(adr, src)
+	res = DREGs16((Opcode >> 9) & 7);
+	if ((res < 0) || (res > src))
 	{
 		flag_N = res >> 8;
 		SET_PC(execute_exception(M68K_CHK_EX, GET_PC, GET_SR));
@@ -19766,12 +19789,12 @@ RET(20)
 // CHK
 OPCODE(0x41BC)
 {
-	u32 adr, res;
-	u32 src, dst;
+	s32 src, res;
+	u32 adr;
 
-	FETCH_WORD(src);
-	res = DREGu16((Opcode >> 9) & 7);
-	if (((s32)res < 0) || (res > src))
+	FETCH_SWORD(src);
+	res = DREGs16((Opcode >> 9) & 7);
+	if ((res < 0) || (res > src))
 	{
 		flag_N = res >> 8;
 		SET_PC(execute_exception(M68K_CHK_EX, GET_PC, GET_SR));
@@ -19783,15 +19806,15 @@ RET(14)
 // CHK
 OPCODE(0x419F)
 {
-	u32 adr, res;
-	u32 src, dst;
+	s32 src, res;
+	u32 adr;
 
 	adr = AREG(7);
 	AREG(7) += 2;
 	PRE_IO
-	READ_WORD_F(adr, src)
-	res = DREGu16((Opcode >> 9) & 7);
-	if (((s32)res < 0) || (res > src))
+	READSX_WORD_F(adr, src)
+	res = DREGs16((Opcode >> 9) & 7);
+	if ((res < 0) || (res > src))
 	{
 		flag_N = res >> 8;
 		SET_PC(execute_exception(M68K_CHK_EX, GET_PC, GET_SR));
@@ -19803,15 +19826,15 @@ RET(14)
 // CHK
 OPCODE(0x41A7)
 {
-	u32 adr, res;
-	u32 src, dst;
+	s32 src, res;
+	u32 adr;
 
 	adr = AREG(7) - 2;
 	AREG(7) = adr;
 	PRE_IO
-	READ_WORD_F(adr, src)
-	res = DREGu16((Opcode >> 9) & 7);
-	if (((s32)res < 0) || (res > src))
+	READSX_WORD_F(adr, src)
+	res = DREGs16((Opcode >> 9) & 7);
+	if ((res < 0) || (res > src))
 	{
 		flag_N = res >> 8;
 		SET_PC(execute_exception(M68K_CHK_EX, GET_PC, GET_SR));
@@ -26934,19 +26957,19 @@ OPCODE(0x8100)
 {
 	u32 adr, res;
 	u32 src, dst;
+	u32 corf = 0;
 
 	src = DREGu8((Opcode >> 0) & 7);
 	dst = DREGu8((Opcode >> 9) & 7);
 	res = (dst & 0xF) - (src & 0xF) - ((flag_X >> M68K_SR_X_SFT) & 1);
-	if (res > 9) res -= 6;
+	if (res > 0xF) corf = 6;
 	res += (dst & 0xF0) - (src & 0xF0);
-	if (res > 0x99)
-	{
-		res += 0xA0;
-		flag_X = flag_C = M68K_SR_C;
-	}
-	else flag_X = flag_C = 0;
-	flag_NotZ |= res & 0xFF;
+	flag_V = res;
+	flag_X = flag_C = (s32)res < (s32)corf ? M68K_SR_C : 0;
+	if (res > 0xff) res += 0xA0;
+	res = (res - corf) & 0xFF;
+	flag_V &= ~res;
+	flag_NotZ |= res;
 	flag_N = res;
 	DREGu8((Opcode >> 9) & 7) = res;
 RET(6)
@@ -26957,6 +26980,7 @@ OPCODE(0x8108)
 {
 	u32 adr, res;
 	u32 src, dst;
+	u32 corf = 0;
 
 	adr = AREG((Opcode >> 0) & 7) - 1;
 	AREG((Opcode >> 0) & 7) = adr;
@@ -26966,15 +26990,14 @@ OPCODE(0x8108)
 	AREG((Opcode >> 9) & 7) = adr;
 	READ_BYTE_F(adr, dst)
 	res = (dst & 0xF) - (src & 0xF) - ((flag_X >> M68K_SR_X_SFT) & 1);
-	if (res > 9) res -= 6;
+	if (res > 0xF) corf = 6;
 	res += (dst & 0xF0) - (src & 0xF0);
-	if (res > 0x99)
-	{
-		res += 0xA0;
-		flag_X = flag_C = M68K_SR_C;
-	}
-	else flag_X = flag_C = 0;
-	flag_NotZ |= res & 0xFF;
+	flag_V = res;
+	flag_X = flag_C = (s32)res < (s32)corf ? M68K_SR_C : 0;
+	if (res > 0xff) res += 0xA0;
+	res = (res - corf) & 0xFF;
+	flag_V &= ~res;
+	flag_NotZ |= res;
 	flag_N = res;
 	WRITE_BYTE_F(adr, res)
 	POST_IO
@@ -26986,6 +27009,7 @@ OPCODE(0x810F)
 {
 	u32 adr, res;
 	u32 src, dst;
+	u32 corf = 0;
 
 	adr = AREG(7) - 2;
 	AREG(7) = adr;
@@ -26995,15 +27019,14 @@ OPCODE(0x810F)
 	AREG((Opcode >> 9) & 7) = adr;
 	READ_BYTE_F(adr, dst)
 	res = (dst & 0xF) - (src & 0xF) - ((flag_X >> M68K_SR_X_SFT) & 1);
-	if (res > 9) res -= 6;
+	if (res > 0xF) corf = 6;
 	res += (dst & 0xF0) - (src & 0xF0);
-	if (res > 0x99)
-	{
-		res += 0xA0;
-		flag_X = flag_C = M68K_SR_C;
-	}
-	else flag_X = flag_C = 0;
-	flag_NotZ |= res & 0xFF;
+	flag_V = res;
+	flag_X = flag_C = (s32)res < (s32)corf ? M68K_SR_C : 0;
+	if (res > 0xff) res += 0xA0;
+	res = (res - corf) & 0xFF;
+	flag_V &= ~res;
+	flag_NotZ |= res;
 	flag_N = res;
 	WRITE_BYTE_F(adr, res)
 	POST_IO
@@ -27015,6 +27038,7 @@ OPCODE(0x8F08)
 {
 	u32 adr, res;
 	u32 src, dst;
+	u32 corf = 0;
 
 	adr = AREG((Opcode >> 0) & 7) - 1;
 	AREG((Opcode >> 0) & 7) = adr;
@@ -27024,15 +27048,14 @@ OPCODE(0x8F08)
 	AREG(7) = adr;
 	READ_BYTE_F(adr, dst)
 	res = (dst & 0xF) - (src & 0xF) - ((flag_X >> M68K_SR_X_SFT) & 1);
-	if (res > 9) res -= 6;
+	if (res > 0xF) corf = 6;
 	res += (dst & 0xF0) - (src & 0xF0);
-	if (res > 0x99)
-	{
-		res += 0xA0;
-		flag_X = flag_C = M68K_SR_C;
-	}
-	else flag_X = flag_C = 0;
-	flag_NotZ |= res & 0xFF;
+	flag_V = res;
+	flag_X = flag_C = (s32)res < (s32)corf ? M68K_SR_C : 0;
+	if (res > 0xff) res += 0xA0;
+	res = (res - corf) & 0xFF;
+	flag_V &= ~res;
+	flag_NotZ |= res;
 	flag_N = res;
 	WRITE_BYTE_F(adr, res)
 	POST_IO
@@ -27044,6 +27067,7 @@ OPCODE(0x8F0F)
 {
 	u32 adr, res;
 	u32 src, dst;
+	u32 corf = 0;
 
 	adr = AREG(7) - 2;
 	AREG(7) = adr;
@@ -27053,15 +27077,14 @@ OPCODE(0x8F0F)
 	AREG(7) = adr;
 	READ_BYTE_F(adr, dst)
 	res = (dst & 0xF) - (src & 0xF) - ((flag_X >> M68K_SR_X_SFT) & 1);
-	if (res > 9) res -= 6;
+	if (res > 0xF) corf = 6;
 	res += (dst & 0xF0) - (src & 0xF0);
-	if (res > 0x99)
-	{
-		res += 0xA0;
-		flag_X = flag_C = M68K_SR_C;
-	}
-	else flag_X = flag_C = 0;
-	flag_NotZ |= res & 0xFF;
+	flag_V = res;
+	flag_X = flag_C = (s32)res < (s32)corf ? M68K_SR_C : 0;
+	if (res > 0xff) res += 0xA0;
+	res = (res - corf) & 0xFF;
+	flag_V &= ~res;
+	flag_NotZ |= res;
 	flag_N = res;
 	WRITE_BYTE_F(adr, res)
 	POST_IO
@@ -27419,7 +27442,7 @@ OPCODE(0x80F9)
 	{
 		SET_PC(execute_exception(M68K_ZERO_DIVIDE_EX, GET_PC, GET_SR));
 #ifdef USE_CYCLONE_TIMING_DIV
-RET(162)
+RET(152)
 #else
 RET(22)
 #endif
@@ -27435,7 +27458,7 @@ RET(22)
 		{
 			flag_V = M68K_SR_V;
 #ifdef USE_CYCLONE_TIMING_DIV
-RET(162)
+RET(152)
 #else
 	RET(82)
 #endif
@@ -27448,7 +27471,7 @@ RET(162)
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
 #ifdef USE_CYCLONE_TIMING_DIV
-RET(162)
+RET(152)
 #else
 RET(102)
 #endif
@@ -27517,7 +27540,7 @@ OPCODE(0x80FB)
 	{
 		SET_PC(execute_exception(M68K_ZERO_DIVIDE_EX, GET_PC, GET_SR));
 #ifdef USE_CYCLONE_TIMING_DIV
-RET(160)
+RET(150)
 #else
 RET(20)
 #endif
@@ -27533,7 +27556,7 @@ RET(20)
 		{
 			flag_V = M68K_SR_V;
 #ifdef USE_CYCLONE_TIMING_DIV
-RET(160)
+RET(150)
 #else
 	RET(80)
 #endif
@@ -27546,7 +27569,7 @@ RET(160)
 	DREGu32((Opcode >> 9) & 7) = res;
 	}
 #ifdef USE_CYCLONE_TIMING_DIV
-RET(160)
+RET(150)
 #else
 RET(100)
 #endif
@@ -34121,18 +34144,22 @@ OPCODE(0xC100)
 {
 	u32 adr, res;
 	u32 src, dst;
+	u32 corf = 0;
 
 	src = DREGu8((Opcode >> 0) & 7);
 	dst = DREGu8((Opcode >> 9) & 7);
 	res = (dst & 0xF) + (src & 0xF) + ((flag_X >> M68K_SR_X_SFT) & 1);
-	if (res > 9) res += 6;
+	if (res > 9) corf = 6;
 	res += (dst & 0xF0) + (src & 0xF0);
-	if (res > 0x99)
+	flag_V = ~res;
+	res += corf;
+	if (res > 0x9F)
 	{
 		res -= 0xA0;
 		flag_X = flag_C = M68K_SR_C;
 	}
 	else flag_X = flag_C = 0;
+	flag_V &= res;
 	flag_NotZ |= res & 0xFF;
 	flag_N = res;
 	DREGu8((Opcode >> 9) & 7) = res;
@@ -34144,6 +34171,7 @@ OPCODE(0xC108)
 {
 	u32 adr, res;
 	u32 src, dst;
+	u32 corf = 0;
 
 	adr = AREG((Opcode >> 0) & 7) - 1;
 	AREG((Opcode >> 0) & 7) = adr;
@@ -34153,14 +34181,17 @@ OPCODE(0xC108)
 	AREG((Opcode >> 9) & 7) = adr;
 	READ_BYTE_F(adr, dst)
 	res = (dst & 0xF) + (src & 0xF) + ((flag_X >> M68K_SR_X_SFT) & 1);
-	if (res > 9) res += 6;
+	if (res > 9) corf = 6;
 	res += (dst & 0xF0) + (src & 0xF0);
-	if (res > 0x99)
+	flag_V = ~res;
+	res += corf;
+	if (res > 0x9F)
 	{
 		res -= 0xA0;
 		flag_X = flag_C = M68K_SR_C;
 	}
 	else flag_X = flag_C = 0;
+	flag_V &= res;
 	flag_NotZ |= res & 0xFF;
 	flag_N = res;
 	WRITE_BYTE_F(adr, res)
@@ -34173,6 +34204,7 @@ OPCODE(0xC10F)
 {
 	u32 adr, res;
 	u32 src, dst;
+	u32 corf = 0;
 
 	adr = AREG(7) - 2;
 	AREG(7) = adr;
@@ -34182,14 +34214,17 @@ OPCODE(0xC10F)
 	AREG((Opcode >> 9) & 7) = adr;
 	READ_BYTE_F(adr, dst)
 	res = (dst & 0xF) + (src & 0xF) + ((flag_X >> M68K_SR_X_SFT) & 1);
-	if (res > 9) res += 6;
+	if (res > 9) corf = 6;
 	res += (dst & 0xF0) + (src & 0xF0);
-	if (res > 0x99)
+	flag_V = ~res;
+	res += corf;
+	if (res > 0x9F)
 	{
 		res -= 0xA0;
 		flag_X = flag_C = M68K_SR_C;
 	}
 	else flag_X = flag_C = 0;
+	flag_V &= res;
 	flag_NotZ |= res & 0xFF;
 	flag_N = res;
 	WRITE_BYTE_F(adr, res)
@@ -34202,6 +34237,7 @@ OPCODE(0xCF08)
 {
 	u32 adr, res;
 	u32 src, dst;
+	u32 corf = 0;
 
 	adr = AREG((Opcode >> 0) & 7) - 1;
 	AREG((Opcode >> 0) & 7) = adr;
@@ -34211,14 +34247,17 @@ OPCODE(0xCF08)
 	AREG(7) = adr;
 	READ_BYTE_F(adr, dst)
 	res = (dst & 0xF) + (src & 0xF) + ((flag_X >> M68K_SR_X_SFT) & 1);
-	if (res > 9) res += 6;
+	if (res > 9) corf = 6;
 	res += (dst & 0xF0) + (src & 0xF0);
-	if (res > 0x99)
+	flag_V = ~res;
+	res += corf;
+	if (res > 0x9F)
 	{
 		res -= 0xA0;
 		flag_X = flag_C = M68K_SR_C;
 	}
 	else flag_X = flag_C = 0;
+	flag_V &= res;
 	flag_NotZ |= res & 0xFF;
 	flag_N = res;
 	WRITE_BYTE_F(adr, res)
@@ -34231,6 +34270,7 @@ OPCODE(0xCF0F)
 {
 	u32 adr, res;
 	u32 src, dst;
+	u32 corf = 0;
 
 	adr = AREG(7) - 2;
 	AREG(7) = adr;
@@ -34240,14 +34280,17 @@ OPCODE(0xCF0F)
 	AREG(7) = adr;
 	READ_BYTE_F(adr, dst)
 	res = (dst & 0xF) + (src & 0xF) + ((flag_X >> M68K_SR_X_SFT) & 1);
-	if (res > 9) res += 6;
+	if (res > 9) corf = 6;
 	res += (dst & 0xF0) + (src & 0xF0);
-	if (res > 0x99)
+	flag_V = ~res;
+	res += corf;
+	if (res > 0x9F)
 	{
 		res -= 0xA0;
 		flag_X = flag_C = M68K_SR_C;
 	}
 	else flag_X = flag_C = 0;
+	flag_V &= res;
 	flag_NotZ |= res & 0xFF;
 	flag_N = res;
 	WRITE_BYTE_F(adr, res)
@@ -37966,7 +38009,7 @@ OPCODE(0xE0B0)
 		{
 			if (sft == 1) res = (src >> 1) | ((flag_X & M68K_SR_X) << (32 - (M68K_SR_X_SFT + 1)));
 			else res = (src >> sft) | (src << (33 - sft)) | (((flag_X & M68K_SR_X) << (32 - (M68K_SR_X_SFT + 1))) >> (sft - 1));
-			flag_X = (src >> (32 - sft)) << M68K_SR_X_SFT;
+			flag_X = (src >> (sft - 1)) << M68K_SR_X_SFT;
 		}
 		else res = src;
 		flag_C = flag_X;

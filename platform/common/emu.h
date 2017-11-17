@@ -36,8 +36,8 @@ extern int g_screen_height;
 #define EOPT_NO_FRMLIMIT  (1<<18)
 #define EOPT_WIZ_TEAR_FIX (1<<19)
 #define EOPT_EXT_FRMLIMIT (1<<20) // no internal frame limiter (limited by snd, etc)
-#define EOPT_EN_KEEP_SOUND (1<<21)
 #ifdef PSP
+#define EOPT_EN_KEEP_SOUND (1<<21)
 #define EOPT_EN_ANALOG    (1<<23)
 #endif
 

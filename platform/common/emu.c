@@ -511,8 +511,10 @@ int emu_reload_rom(const char *rom_fname_in)
 	if (currentConfig.EmuOpt & EOPT_EN_SRAM)
 		emu_save_load_game(1, 1);
 
+#ifdef PSP
 	PicoSetInputDevice(0, currentConfig.input_dev0);
 	PicoSetInputDevice(1, currentConfig.input_dev1);
+#endif
 
 	// state autoload?
 	if (autoload) {
@@ -594,7 +596,7 @@ static void make_config_cfg(char *cfg_buff_512)
 void emu_prep_defconfig(void)
 {
 	memset(&defaultConfig, 0, sizeof(defaultConfig));
-	defaultConfig.EmuOpt    = 0x9d | EOPT_EN_CD_LEDS | EOPT_SHOW_RTC;
+	defaultConfig.EmuOpt    = 0x9d | EOPT_EN_CD_LEDS;
 	defaultConfig.s_PicoOpt = POPT_EN_STEREO|POPT_EN_FM|POPT_EN_PSG|POPT_EN_Z80 |
 				  POPT_EN_MCD_PCM|POPT_EN_MCD_CDDA|POPT_EN_MCD_GFX|POPT_EN_ACCURATE_SYNC_CPUS|
 				  POPT_EN_DRC|POPT_ACC_SPRITES |
@@ -915,7 +917,7 @@ int emu_save_load_game(int load, int sram)
 		{
 			if (PicoOpt & POPT_EN_MCD_RAMCART) {
 				sram_size = 0x12000;
-				sram_data = SRam.data;
+				sram_data = Pico.sv.data;
 				if (sram_data)
 					memcpy32((int *)sram_data, (int *)Pico_mcd->bram, 0x2000/4);
 			} else {
@@ -924,11 +926,11 @@ int emu_save_load_game(int load, int sram)
 				truncate  = 0; // the .brm may contain RAM cart data after normal brm
 			}
 		} else {
-			sram_size = SRam.size;
-			sram_data = SRam.data;
+			sram_size = Pico.sv.size;
+			sram_data = Pico.sv.data;
 		}
 		if (sram_data == NULL)
-			return 0; // SRam forcefully disabled for this game
+			return 0; // cart saves forcefully disabled for this game
 
 		if (load)
 		{
@@ -999,6 +1001,9 @@ void emu_set_fastforward(int set_on)
 		currentConfig.EmuOpt = set_EmuOpt;
 		PsndRerate(1);
 		is_on = 0;
+		// mainly to unbreak pcm
+		if (PicoAHW & PAHW_MCD)
+			pcd_state_loaded();
 	}
 }
 
@@ -1164,6 +1169,8 @@ static void run_events_ui(unsigned int which)
 		emu_status_msg("SAVE SLOT %i [%s]", state_slot,
 			emu_check_save_file(state_slot, NULL) ? "USED" : "FREE");
 	}
+	if (which & PEV_RESET)
+		emu_reset_game();
 	if (which & PEV_MENU)
 		engineState = PGS_Menu;
 }
@@ -1283,9 +1290,9 @@ void emu_init(void)
 void emu_finish(void)
 {
 	// save SRAM
-	if ((currentConfig.EmuOpt & EOPT_EN_SRAM) && SRam.changed) {
+	if ((currentConfig.EmuOpt & EOPT_EN_SRAM) && Pico.sv.changed) {
 		emu_save_load_game(0, 1);
-		SRam.changed = 0;
+		Pico.sv.changed = 0;
 	}
 
 	if (!(currentConfig.EmuOpt & EOPT_NO_AUTOSVCFG)) {
@@ -1400,7 +1407,6 @@ void emu_loop(void)
 		int skip = 0;
 		int diff;
 
-
 		pprof_start(main);
 
 		if (reset_timing) {
@@ -1455,7 +1461,7 @@ void emu_loop(void)
 			printf("%s\n", fpsbuff);
 #else
 			if (currentConfig.EmuOpt & EOPT_SHOW_FPS)
-				sprintf(fpsbuff, "%02i/%02i  ", frames_shown, frames_done);
+				snprintf(fpsbuff, 8, "%02i/%02i  ", frames_shown, frames_done);
 #endif
 			frames_shown = frames_done = 0;
 			timestamp_fps_x3 += ms_to_ticks(1000) * 3;
@@ -1549,10 +1555,10 @@ void emu_loop(void)
 	emu_set_fastforward(0);
 
 	// save SRAM
-	if ((currentConfig.EmuOpt & EOPT_EN_SRAM) && SRam.changed) {
+	if ((currentConfig.EmuOpt & EOPT_EN_SRAM) && Pico.sv.changed) {
 		plat_status_msg_busy_first("Writing SRAM/BRAM...");
 		emu_save_load_game(0, 1);
-		SRam.changed = 0;
+		Pico.sv.changed = 0;
 	}
 
 	pemu_loop_end();

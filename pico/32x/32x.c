@@ -134,28 +134,31 @@ void p32x_reset_sh2s(void)
   // if we don't have BIOS set, perform it's work here.
   // MSH2
   if (p32x_bios_m == NULL) {
-    unsigned int idl_src, idl_dst, idl_size; // initial data load
-    unsigned int vbr;
-
-    // initial data
-    idl_src = HWSWAP(*(unsigned int *)(Pico.rom + 0x3d4)) & ~0xf0000000;
-    idl_dst = HWSWAP(*(unsigned int *)(Pico.rom + 0x3d8)) & ~0xf0000000;
-    idl_size= HWSWAP(*(unsigned int *)(Pico.rom + 0x3dc));
-    if (idl_size > Pico.romsize || idl_src + idl_size > Pico.romsize ||
-        idl_size > 0x40000 || idl_dst + idl_size > 0x40000 || (idl_src & 3) || (idl_dst & 3)) {
-      elprintf(EL_STATUS|EL_ANOMALY, "32x: invalid initial data ptrs: %06x -> %06x, %06x",
-        idl_src, idl_dst, idl_size);
-    }
-    else
-      memcpy(Pico32xMem->sdram + idl_dst, Pico.rom + idl_src, idl_size);
-
-    // GBR/VBR
-    vbr = HWSWAP(*(unsigned int *)(Pico.rom + 0x3e8));
     sh2_set_gbr(0, 0x20004000);
-    sh2_set_vbr(0, vbr);
 
-    // checksum and M_OK
-    Pico32x.regs[0x28 / 2] = *(unsigned short *)(Pico.rom + 0x18e);
+    if (!(PicoAHW & PAHW_MCD)) {
+      unsigned int idl_src, idl_dst, idl_size; // initial data load
+      unsigned int vbr;
+
+      // initial data
+      idl_src = HWSWAP(*(unsigned int *)(Pico.rom + 0x3d4)) & ~0xf0000000;
+      idl_dst = HWSWAP(*(unsigned int *)(Pico.rom + 0x3d8)) & ~0xf0000000;
+      idl_size= HWSWAP(*(unsigned int *)(Pico.rom + 0x3dc));
+      if (idl_size > Pico.romsize || idl_src + idl_size > Pico.romsize ||
+          idl_size > 0x40000 || idl_dst + idl_size > 0x40000 || (idl_src & 3) || (idl_dst & 3)) {
+        elprintf(EL_STATUS|EL_ANOMALY, "32x: invalid initial data ptrs: %06x -> %06x, %06x",
+          idl_src, idl_dst, idl_size);
+      }
+      else
+        memcpy(Pico32xMem->sdram + idl_dst, Pico.rom + idl_src, idl_size);
+
+      // VBR
+      vbr = HWSWAP(*(unsigned int *)(Pico.rom + 0x3e8));
+      sh2_set_vbr(0, vbr);
+
+      // checksum and M_OK
+      Pico32x.regs[0x28 / 2] = *(unsigned short *)(Pico.rom + 0x18e);
+    }
     // program will set M_OK
   }
 
@@ -231,7 +234,7 @@ static void p32x_start_blank(void)
     // XXX: no proper handling of 32col mode..
     if ((Pico32x.vdp_regs[0] & P32XV_Mx) != 0 && // 32x not blanking
         (Pico.video.reg[12] & 1) && // 40col mode
-        (PicoDrawMask & PDRAW_32X_ON))
+        (!(Pico.video.debug_p & PVD_KILL_32X)))
     {
       int md_bg = Pico.video.reg[7] & 0x3f;
 

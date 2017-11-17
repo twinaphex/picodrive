@@ -14,8 +14,8 @@ dynarecs = 1
 
 CFLAGS += -IC:/pspsdk/powermgr/src/include
 CFLAGS += -IC:/pspsdk/psp/sdk/include/libc
-#CFLAGS += -I../.. -I. -DNO_SYNC -D_ASM_YM2612_C 
-CFLAGS += -I../.. -I. -DNO_SYNC
+#CFLAGS += -I../.. -I. -DNO_SYNC -D_ASM_DRAW_C_AMIPS
+CFLAGS += -I../.. -I. -DNO_SYNC 
 CFLAGS += -Wall -Winline -G0
 
 #SVP dynarec
@@ -61,9 +61,10 @@ ifeq "$(amalgamate)" "1"
 OBJS += ../../picoAll.o
 else
 OBJS += ../../pico/cart.o ../../pico/memory.o ../../pico/misc.o ../../pico/pico.o ../../pico/sek.o ../../pico/videoport.o \
-	    ../../pico/draw2.o ../../pico/draw.o ../../pico/z80if.o ../../pico/patch.o ../../pico/draw_amips.o ../../pico/memory_amips.o \
+	    ../../pico/draw2.o ../../pico/draw.o ../../pico/z80if.o ../../pico/patch.o \
 	    ../../pico/misc_amips.o ../../pico/debug.o ../../pico/state.o ../../pico/media.o ../../pico/sms.o ../../pico/eeprom.o \
-	    ../../pico/mode4.o ../../pico/draw2_amips.o  
+	    ../../pico/mode4.o ../../pico/memory_amips.o ../../pico/draw2_amips.o
+#	    ../../pico/mode4.o   ../../pico/draw_amips.o
 # Pico - CD
 OBJS += ../../pico/cd/cd_memory.o ../../pico/cd/cd_sek.o \
 		../../pico/cd/cue.o ../../pico/cd/gfx.o \
@@ -77,8 +78,8 @@ OBJS += ../../pico/32x/32x.o ../../pico/32x/32x_draw.o \
 		../../pico/32x/32x_memory.o ../../pico/32x/pwm.o \
 		../../pico/32x/sh2soc.o		
 # Pico - carthw
-OBJS += ../../pico/carthw/carthw.o ../../pico/carthw/svp/svp.o ../../pico/carthw/svp/svp_memory.o \
-		../../pico/carthw/svp/ssp16.o
+OBJS += ../../pico/carthw/carthw.o ../../pico/carthw/eeprom_spi.o \
+		../../pico/carthw/svp/ssp16.o ../../pico/carthw/svp/svp.o ../../pico/carthw/svp/svp_memory.o
 		
 ifeq "$(dynarecs)" "1"		
 OBJS += ../../pico/carthw/svp/compiler_mips.o ../../pico/carthw/svp/stub_amips.o ../../cpu/drc/cmn.o cache.o 
@@ -145,7 +146,7 @@ LDFLAGS += -Wl,-Map=PicoDrive.map
 TARGET = PicoDrive
 #EXTRA_TARGETS = mkdirs EBOOT.PBP
 EXTRA_TARGETS = EBOOT.PBP
-PSP_EBOOT_TITLE = PicoDrive 1.91
+PSP_EBOOT_TITLE = PicoDrive 1.92
 PSP_EBOOT_ICON = data/icon.png
 #PSP_EBOOT_PIC1 = .png
 ifeq "$(for_15fw)" "0"
@@ -182,12 +183,8 @@ AS := psp-as
 ../../cpu/sh2/sh2.o : ../../cpu/sh2/sh2.c	
 	@echo ">>>" $<
 	$(CC) $(CFLAGS) -O3 -c $< -o $@
-	
-ifeq "$(release)" "1"	
-../../pico/carthw/svp/ssp16.o : ../../pico/carthw/svp/ssp16.c
-	@echo ">>>" $<
-	$(CC) $(CFLAGS) -O3 -c $< -o $@
 
+ifeq "$(release)" "1"
 ../../pico/carthw/svp/compiler_mips.o : ../../pico/carthw/svp/compiler_mips.c
 	@echo ">>>" $<
 	$(CC) $(CFLAGS) -O3 -c $< -o $@
@@ -201,7 +198,6 @@ ifeq "$(release)" "1"
 	$(CC) $(CFLAGS) -O3 -c $< -o $@
 endif
 
-
 ../../pico/misc.o : ../../pico/misc.c
 	@echo ">>>" $<
 	$(CC) $(CFLAGS) -c $< -o $@ -D_ASM_MISC_C_AMIPS
@@ -209,6 +205,10 @@ endif
 ../../pico/draw2.o : ../../pico/draw2.c
 	@echo ">>>" $<
 	$(CC) $(CFLAGS) -O2 -c $< -o $@ -D_ASM_DRAW_C	
+
+#../../pico/memory.o : ../../pico/memory.c
+#	@echo ">>>" $<
+#	$(CC) $(CFLAGS) -O2 -c $< -o $@
 
 ../../pico/memory.o : ../../pico/memory.c
 	@echo ">>>" $<

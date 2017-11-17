@@ -7,8 +7,8 @@
  * - 8bpp tile renderer
  * In 32x mode:
  * - 32x layer is overlayed on top of 16bpp one
- * - line internal one done on PicoDraw2FB, then mixed with 32x
- * - tile internal one done on PicoDraw2FB, then mixed with 32x
+ * - line internal one done on .Draw2FB, then mixed with 32x
+ * - tile internal one done on .Draw2FB, then mixed with 32x
  */
 
 #include <stdio.h>
@@ -30,7 +30,7 @@
 #include <pico/pico_int.h>
 #include <pico/patch.h>
 #include <pico/sound/mix.h>
-#include <zlib/zlib.h>
+#include <zlib.h>
 
 #ifdef BENCHMARK
 #define OSD_FPS_X 220
@@ -222,7 +222,7 @@ static unsigned char __attribute__((aligned(4))) rot_buff[320*4*2];
 
 static int EmuScanBegin16_rot(unsigned int num)
 {
-	DrawLineDest = rot_buff + (num & 3) * 320 * 2;
+	Pico.est.DrawLineDest = rot_buff + (num & 3) * 320 * 2;
 	return 0;
 }
 
@@ -237,7 +237,7 @@ static int EmuScanEnd16_rot(unsigned int num)
 
 static int EmuScanBegin8_rot(unsigned int num)
 {
-	DrawLineDest = rot_buff + (num & 3) * 320;
+	Pico.est.DrawLineDest = rot_buff + (num & 3) * 320;
 	return 0;
 }
 
@@ -262,14 +262,14 @@ static int EmuScanBegin16_ld(unsigned int num)
 	if (emu_scan_begin)
 		return emu_scan_begin(ld_counter);
 	else
-		DrawLineDest = (char *)g_screen_ptr + 320 * ld_counter * gp2x_current_bpp / 8;
+		Pico.est.DrawLineDest = (char *)g_screen_ptr + 320 * ld_counter * gp2x_current_bpp / 8;
 
 	return 0;
 }
 
 static int EmuScanEnd16_ld(unsigned int num)
 {
-	void *oldline = DrawLineDest;
+	void *oldline = Pico.est.DrawLineDest;
 
 	if (emu_scan_end)
 		emu_scan_end(ld_counter);
@@ -280,7 +280,7 @@ static int EmuScanEnd16_ld(unsigned int num)
 		ld_left = ld_lines;
 
 		EmuScanBegin16_ld(num);
-		memcpy32(DrawLineDest, oldline, 320 * gp2x_current_bpp / 8 / 4);
+		memcpy32(Pico.est.DrawLineDest, oldline, 320 * gp2x_current_bpp / 8 / 4);
 		if (emu_scan_end)
 			emu_scan_end(ld_counter);
 
@@ -310,9 +310,9 @@ static int make_local_pal_md(int fast_mode)
 		localPal[0xf0] = 0x00ffffff;
 		pallen = 0x100;
 	}
-	else if (rendstatus & PDRAW_SONIC_MODE) { // mid-frame palette changes
-		bgr444_to_rgb32(localPal+0x40, HighPal);
-		bgr444_to_rgb32(localPal+0x80, HighPal+0x40);
+	else if (Pico.est.rendstatus & PDRAW_SONIC_MODE) { // mid-frame palette changes
+		bgr444_to_rgb32(localPal+0x40, Pico.est.HighPal);
+		bgr444_to_rgb32(localPal+0x80, Pico.est.HighPal+0x40);
 	}
 	else
 		memcpy32(localPal+0x80, localPal, 0x40); // for spr prio mess
@@ -355,9 +355,9 @@ void pemu_finalize_frame(const char *fps, const char *notice)
 		}
 		// a hack for VR
 		if (PicoAHW & PAHW_SVP)
-			memset32((int *)(PicoDraw2FB+328*8+328*223), 0xe0e0e0e0, 328);
+			memset32((int *)(Pico.est.Draw2FB+328*8+328*223), 0xe0e0e0e0, 328);
 		// do actual copy
-		vidcpyM2(g_screen_ptr, PicoDraw2FB+328*8,
+		vidcpyM2(g_screen_ptr, Pico.est.Draw2FB+328*8,
 			!(Pico.video.reg[12] & 1), !(PicoOpt & POPT_DIS_32C_BORDER));
 	}
 	else if (get_renderer() == RT_8BIT_ACC)

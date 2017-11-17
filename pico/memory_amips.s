@@ -3,6 +3,21 @@
 #* Robson Santana, 2016. email: robson.poli@gmail.com
 #*
 
+.eqv OFS_Pico_video_reg,   0x0000
+.eqv OFS_Pico_m_rotate,    0x0040
+.eqv OFS_Pico_m_z80Run,    0x0041
+.eqv OFS_Pico_m_dirtyPal,  0x0046
+.eqv OFS_Pico_m_hardware,  0x0047
+.eqv OFS_Pico_m_z80_reset, 0x004f
+.eqv OFS_Pico_m_sram_reg,  0x0049
+.eqv OFS_Pico_sv,          0x007c
+.eqv OFS_Pico_sv_data,     0x007c
+.eqv OFS_Pico_sv_start,    0x0080
+.eqv OFS_Pico_sv_end,      0x0084
+.eqv OFS_Pico_sv_flags,    0x0088
+.eqv OFS_Pico_rom,         0x031c
+.eqv OFS_Pico_romsize,     0x0320
+
 .eqv SRR_MAPPED,     1       #(1 <<  0)
 .eqv SRR_READONLY,   2       #(1 <<  1)
 .eqv SRF_EEPROM,     2       #(1 <<  1)
@@ -21,46 +36,45 @@
 .global PicoWrite8_io
 .global PicoWrite16_io
 
-PicoRead8_sram: # u32 a, u32 d
-    lui     $a2, %hi(SRam)
-    li		$t0, %lo(SRam)
-    add     $a2, $a2, $t0
-    lui     $a3, %hi(Pico+0x22200)
-    li		$t0, %lo(Pico+0x22200)
+PicoRead8_sram: # u32 a
+    #lui     $a2, %hi(SRam)
+    #li		$t0, %lo(SRam)
+    #add     $a2, $a2, $t0
+    lui     $a3, %hi(Pico)
+    li		$t0, %lo(Pico)
     add     $a3, $a3, $t0
-    lw	    $a1, 8($a2)     # SRam.end
+    lw	    $a1, OFS_Pico_sv_end($a3)
     sub		$t0, $a0, $a1
     bgtz    $t0, m_read8_nosram
     nop
-    lw	    $a1, 4($a2)     # SRam.start
-    sub		$t0, $a0, $a1
+    lw	    $a2, OFS_Pico_sv_start($a3)
+    sub		$t0, $a0, $a2
     bltz    $t0, m_read8_nosram
     nop
-    lbu	    $a1, 0x11($a3)  # Pico.m.sram_reg
+    lbu	    $a1, OFS_Pico_m_sram_reg($a3)
     li		$t0, SRR_MAPPED
     and		$t0, $a1, $t0
     beqz    $t0, m_read8_nosram
     nop
-    lw	    $a1, 0x0c($a2)
+    lw	    $a1, OFS_Pico_sv_flags($a3)
     li		$t0, SRF_EEPROM
     and		$t0, $a1, $t0
     bnez    $t0, m_read8_eeprom
     nop
-    lw	    $a1, 4($a2)		# SRam.start
-    lw      $a2, ($a2)      # SRam.data
-    sub     $a0, $a0, $a1
-    add     $a0, $a0, $a2
-    lbu	    $v0, ($a0)
+    lw	    $a1, OFS_Pico_sv_data($a3)
+	sub 	$a0, $a0, $a2
+	add		$t0, $a0, $a1
+	lbu		$v0, ($t0)
     jr      $ra
     nop
 
 m_read8_nosram:
-    lw      $a1, 4($a3)     # romsize
+    lw      $a1, OFS_Pico_romsize($a3)
     sub		$t0, $a0, $a1
     bgtz    $t0, m_read8_nosram_gt
     nop
     # XXX: banking unfriendly
-    lw      $a1, ($a3)
+    lw      $a1, OFS_Pico_rom($a3)
     xor     $a0, $a0, 1
     add		$t0, $a1, $a0
     lbu     $v0, ($t0)
@@ -92,7 +106,7 @@ m_read8_eeprom_ne:
 
 # ######################################################################
 
-PicoRead8_io: # u32 a, u32 d
+PicoRead8_io: # u32 a
 	li		$t0, 0x001f
 	not		$t0, $t0
 	and		$a2, $a0, $t0     # most commonly we get i/o port read,
@@ -108,13 +122,13 @@ m_read8_not_io:
     bnez	$t0, m_read8_not_brq
     nop
 
-    lui     $a3, %hi(Pico+0x22200)
-    li		$t0, %lo(Pico+0x22200)
+    lui     $a3, %hi(Pico)
+    li		$t0, %lo(Pico)
     add     $a3, $a3, $t0
     move    $a1, $a0
-    lbu     $v0, 8($a3)       # Pico.m.rotate
+    lbu     $v0, OFS_Pico_m_rotate($a3)
     addi    $t0, $v0, 1
-    sb    	$t0, 8($a3)
+    sb    	$t0, OFS_Pico_m_rotate($a3)
 	sll     $t0, $v0, 6
 	xor     $v0, $v0, $t0
 
@@ -129,8 +143,8 @@ m_read8_not_io:
     beqz	$t0, m_read8_not_io_ra      # not busreq
     nop
 
-    lbu     $a1, 8+0x01($a3)  # Pico.m.z80Run
-    lbu     $a2, 8+0x0f($a3)  # Pico.m.z80_reset
+    lbu     $a1, OFS_Pico_m_z80Run($a3)
+    lbu     $a2, OFS_Pico_m_z80_reset($a3)
     or      $v0, $v0, $a1
     or      $v0, $v0, $a2
 	jr $ra                    # return
@@ -165,37 +179,37 @@ io_ports_read_:
 # ######################################################################
 
 PicoRead16_sram: # u32 a, u32 d
-    lui     $a2, %hi(SRam)
-    li		$t0, %lo(SRam)
-    add     $a2, $a2, $t0
-    lui     $a3, %hi(Pico+0x22200)
-    li		$t0, %lo(Pico+0x22200)
+    #lui     $a2, %hi(SRam)
+    #li		$t0, %lo(SRam)
+    #add     $a2, $a2, $t0
+    lui     $a3, %hi(Pico)
+    li		$t0, %lo(Pico)
     add     $a3, $a3, $t0
-    lw	    $a1, 8($a2)     # SRam.end
+    lw	    $a1, OFS_Pico_sv_end($a3)
     sub		$t0, $a0, $a1
     bgtz    $t0, m_read16_nosram
     nop
-    lw	    $a1, 4($a2)     # SRam.start
-    sub		$t0, $a0, $a1
+    lw	    $a2, OFS_Pico_sv_start($a3)
+    sub		$t0, $a0, $a2
     bltz    $t0, m_read16_nosram
     nop
-    lbu	    $a1, 0x11($a3)  # Pico.m.sram_reg
+    lbu	    $a1, OFS_Pico_m_sram_reg($a3)
     li		$t0, SRR_MAPPED
     and		$t0, $a1, $t0
     beqz    $t0, m_read16_nosram
     nop
-    lw	    $a1, 0x0c($a2)
+    lw	    $a1, OFS_Pico_sv_flags($a3)
     li		$t0, SRF_EEPROM
     and		$t0, $a1, $t0
     bnez    $t0, EEPROM_read_
     nop
-    lw	    $a1, 4($a2)		# SRam.start
-    lw      $a2, ($a2)      # SRam.data
-    sub     $a0, $a0, $a1
-    add     $a0, $a0, $a2
+    #lw	    $a1, 4($a2)		# SRam.start
+    lw	    $a1, OFS_Pico_sv_data($a3)
+    sub     $a0, $a0, $a2
+    add     $a0, $a0, $a1
     lbu     $a1, ($a0)
-    addi	$a0, $a0, 1
-    lbu	    $t0, ($a0)
+    #addi	$a0, $a0, 1
+    lbu	    $a0, 1($a0)
     sll		$t0, $a1, 8
     or      $v0, $a0, $t0
     jr      $ra
@@ -207,12 +221,12 @@ EEPROM_read_:
 
 
 m_read16_nosram:
-    lw      $a1, 4($a3)     # romsize
+    lw      $a1, OFS_Pico_romsize($a3)
     sub		$t0, $a0, $a1
     bgtz    $t0, m_read16_nosram_gt
     nop
     # XXX: banking unfriendly
-    lw      $a1, ($a3)
+    lw      $a1, OFS_Pico_rom($a3)
     add		$t0, $a1, $a0
     lhu     $v0, ($t0)
     #andi	$v0, $v0, 0xffff
@@ -252,13 +266,13 @@ m_read16_not_io:
     bnez    $t0, m_read16_not_brq
     nop
 
-    lui     $a3, %hi(Pico+0x22200)
-    li		$t0, %lo(Pico+0x22200)
+    lui     $a3, %hi(Pico)
+    li		$t0, %lo(Pico)
     add     $a3, $a3, $t0
     andi    $a2, $a0, 0xff00
-    lw      $v0, 8($a3)       # Pico.m.rotate
+    lw      $v0, OFS_Pico_m_rotate($a3)
     addi    $v0, $v0, 1
-    sb    	$v0, 8($a3)
+    sb    	$v0, OFS_Pico_m_rotate($a3)
 	sll     $t0, $v0, 5
 	xor     $v0, $v0, $t0
 	sll     $t0, $v0, 8
@@ -271,8 +285,8 @@ m_read16_not_io:
     bnez    $t0, m_read16_not_io_ra     # not busreq
     nop
 
-    lbu     $a1, 8+0x01($a3)  # Pico.m.z80Run
-    lbu     $a2, 8+0x0f($a3)  # Pico.m.z80_reset
+    lbu     $a1, OFS_Pico_m_z80Run($a3)
+    lbu     $a2, OFS_Pico_m_z80_reset($a3)
     sll		$t0, $a1, 8
     or      $v0, $v0, $t0
     sll		$t0, $a2, 8
@@ -343,16 +357,16 @@ m_write8_not_z80ctl:
     bnez    $a2, m_write8_not_sreg
     nop
 
-    lui     $a3, %hi(Pico+0x22200)
-    li		$t0, %lo(Pico+0x22200)
+    lui     $a3, %hi(Pico)
+    li		$t0, %lo(Pico)
     add     $a3, $a3, $t0
-    lbu     $a2, (8+9)($a3)       # Pico.m.sram_reg
+    lbu     $a2, OFS_Pico_m_sram_reg($a3)       # Pico.m.sram_reg
     and     $a1, $a1, (SRR_MAPPED|SRR_READONLY)
 	li		$t0, (SRR_MAPPED|SRR_READONLY)
 	not		$t0, $t0
 	and		$a2, $a2, $t0
     or      $a2, $a2, $a1
-    sb      $a2, (8+9)($a3)
+    sb      $a2, OFS_Pico_m_sram_reg($a3)
 	jr      $ra                    # return
     nop
 
@@ -416,16 +430,16 @@ m_write16_not_z80ctl:
     bnez    $a2, m_write8_not_sreg
     nop
 
-    lui     $a3, %hi(Pico+0x22200)
-    li		$t0, %lo(Pico+0x22200)
+    lui     $a3, %hi(Pico)
+    li		$t0, %lo(Pico)
     add     $a3, $a3, $t0
-    lbu     $a2, (8+9)($a3)       # Pico.m.sram_reg
+    lbu     $a2, OFS_Pico_m_sram_reg($a3)       # Pico.m.sram_reg
     and     $a1, $a1, (SRR_MAPPED|SRR_READONLY)
 	li		$t0, (SRR_MAPPED|SRR_READONLY)
 	not		$t0, $t0
 	and		$a2, $a2, $t0
     or      $a2, $a2, $a1
-    sb      $a2, (8+9)($a3)
+    sb      $a2, OFS_Pico_m_sram_reg($a3)
 	jr      $ra                    # return
     nop
 

@@ -570,7 +570,7 @@ skip_8_3:
 	sw 		$t6, 8($sp)
 	sw 		$t5, 4($sp)
 	sw 		$t4, ($sp)
-    jal     ssp_pm_read_asm
+    jal     ssp_pm_read
     nop
   	#lw 		$t4, ($sp)
   	#lw 		$t5, 4($sp)
@@ -598,7 +598,7 @@ skip_8_3:
 	#sw 		$t6, 8($sp)
 	#sw 		$t5, 4($sp)
 	sw 		$t4, ($sp)
-    jal     ssp_pm_read_asm
+    jal     ssp_pm_read
     nop
   	#lw 		$t4, ($sp)
   	#lw 		$t5, 4($sp)
@@ -626,7 +626,7 @@ skip_8_3:
 	#sw 		$t6, 8($sp)
 	sw 		$t5, 4($sp)
 	#sw 		$t4, ($sp)
-    jal     ssp_pm_read_asm
+    jal     ssp_pm_read
     nop
   	lw 		$t4, ($sp)
   	lw 		$t5, 4($sp)

@@ -1159,7 +1159,7 @@ static void bank_switch(int b)
     return;
 
   bank = b << 20;
-  if ((Pico.m.sram_reg & SRR_MAPPED) && bank == SRam.start) {
+  if ((Pico.m.sram_reg & SRR_MAPPED) && bank == Pico.sv.start) {
     bank_map_handler();
     return;
   }
@@ -1180,11 +1180,11 @@ static void bank_switch(int b)
 
   elprintf(EL_32X, "bank %06x-%06x -> %06x", 0x900000, 0x900000 + rs - 1, bank);
 
-#ifdef EMU_F68K
-  // setup FAME fetchmap
-  for (rs = 0x90; rs < 0xa0; rs++)
-    PicoCpuFM68k.Fetch[rs] = (unsigned long)Pico.rom + bank - 0x900000;
-#endif
+//#ifdef EMU_F68K
+//  // setup FAME fetchmap
+//  for (rs = 0x90; rs < 0xa0; rs++)
+//    PicoCpuFM68k.Fetch[rs] = (unsigned long)Pico.rom + bank - 0x900000;
+//#endif
 }
 
 // -----------------------------------------------------------------
@@ -1756,8 +1756,7 @@ void PicoMemSetup32x(void)
 #ifndef PSP
   Pico32xMem = plat_mmap(0x06000000, sizeof(*Pico32xMem), 0, 0);
 #else
-  Pico32xMem = malloc(sizeof(struct Pico32xMem));
-  //if(Pico32xMem) memset(Pico32xMem+sizeof(struct Pico32xMem)-0x80000,0,0x80000);
+  Pico32xMem = malloc(sizeof(struct Pico32xMem));  
 #endif
   if (Pico32xMem == NULL) {
     elprintf(EL_STATUS, "OOM");

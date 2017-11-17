@@ -14,9 +14,11 @@ uptr z80_read_map [0x10000 >> Z80_MEM_SHIFT];
 uptr z80_write_map[0x10000 >> Z80_MEM_SHIFT];
 
 #ifdef _USE_DRZ80
-struct DrZ80 drZ80;
+// this causes trouble in some cases, like doukutsu putting sp in bank area
+// no perf difference for most, upto 1-2% for some others
+//#define FAST_Z80SP
 
-static u32 drz80_sp_base;
+struct DrZ80 drZ80;
 
 static void drz80_load_pcsp(u32 pc, u32 sp)
 {
@@ -28,6 +30,8 @@ static void drz80_load_pcsp(u32 pc, u32 sp)
     drZ80.Z80PC_BASE <<= 1;
     drZ80.Z80PC = drZ80.Z80PC_BASE + pc;
   }
+  drZ80.Z80SP = sp;
+#ifdef FAST_Z80SP
   drZ80.Z80SP_BASE = z80_read_map[sp >> Z80_MEM_SHIFT];
   if (drZ80.Z80SP_BASE & (1<<31)) {
     elprintf(EL_STATUS|EL_ANOMALY, "load_pcsp: bad SP: %04x", sp);
@@ -37,6 +41,7 @@ static void drz80_load_pcsp(u32 pc, u32 sp)
     drZ80.Z80SP_BASE <<= 1;
     drZ80.Z80SP = drZ80.Z80SP_BASE + sp;
   }
+#endif
 }
 
 // called only if internal xmap rebase fails
@@ -47,13 +52,19 @@ static unsigned int dz80_rebase_pc(unsigned short pc)
   return drZ80.Z80PC_BASE;
 }
 
+#ifdef FAST_Z80SP
+static u32 drz80_sp_base;
+
 static unsigned int dz80_rebase_sp(unsigned short sp)
 {
   elprintf(EL_STATUS|EL_ANOMALY, "dz80_rebase_sp: fail on %04x", sp);
   drZ80.Z80SP_BASE = z80_read_map[drz80_sp_base >> Z80_MEM_SHIFT] << 1;
   return drZ80.Z80SP_BASE + (1 << Z80_MEM_SHIFT) - 0x100;
 }
+#else
+#define dz80_rebase_sp NULL
 #endif
+#endif // _USE_DRZ80
 
 
 void z80_init(void)
@@ -91,9 +102,11 @@ void z80_reset(void)
   drZ80.Z80IX = 0xFFFF << 16;
   drZ80.Z80IY = 0xFFFF << 16;
 */
+#ifdef FAST_Z80SP
   // drZ80 is locked in single bank
   drz80_sp_base = (PicoAHW & PAHW_SMS) ? 0xc000 : 0x0000;
   drZ80.Z80SP_BASE = z80_read_map[drz80_sp_base >> Z80_MEM_SHIFT] << 1;
+#endif
   if (PicoAHW & PAHW_SMS)
     drZ80.Z80SP = drZ80.Z80SP_BASE + 0xdff0; // simulate BIOS
   // XXX: since we use direct SP pointer, it might make sense to force it to RAM,
@@ -104,29 +117,6 @@ void z80_reset(void)
   if (PicoAHW & PAHW_SMS)
     Cz80_Set_Reg(&CZ80, CZ80_SP, 0xdff0);
 #endif
-}
-
-/* save state stuff */
-static int z80_unpack_legacy(const void *data)
-{
-#if defined(_USE_DRZ80)
-  if (*(int *)data == 0x015A7244) { // "DrZ" v1 save?
-    u32 pc, sp;
-    memcpy(&drZ80, data+4, 0x54);
-    pc = (drZ80.Z80PC - drZ80.Z80PC_BASE) & 0xffff;
-    sp = (drZ80.Z80SP - drZ80.Z80SP_BASE) & 0xffff;
-    // update bases
-    drz80_load_pcsp(pc, sp);
-    return 0;
-  }
-#elif defined(_USE_CZ80)
-  if (*(int *)data == 0x00007a43) { // "Cz" save?
-    memcpy(&CZ80, data+8, offsetof(cz80_struc, BasePC));
-    Cz80_Set_Reg(&CZ80, CZ80_PC, *(int *)(data+4));
-    return 0;
-  }
-#endif
-  return -1;
 }
 
 struct z80sr_main {
@@ -213,9 +203,7 @@ int z80_unpack(const void *data)
 {
   const struct z80_state *s = data;
   if (strcmp(s->magic, "Z80") != 0) {
-    if (z80_unpack_legacy(data) != 0)
-      goto fail;
-    elprintf(EL_STATUS, "legacy z80 state");
+    elprintf(EL_STATUS, "legacy z80 state - ignored");
     return 0;
   }
 
@@ -265,13 +253,9 @@ int z80_unpack(const void *data)
     Cz80_Set_Reg(&CZ80, CZ80_IRQ, s->irq_pending ? HOLD_LINE : CLEAR_LINE);
     return 0;
   }
+#else
+  return 0;
 #endif
-
-fail:
-  elprintf(EL_STATUS|EL_ANOMALY, "z80_unpack failed");
-  z80_reset();
-  z80_int();
-  return -1;
 }
 
 void z80_exit(void)
@@ -286,3 +270,5 @@ void z80_debug(char *dstr)
   sprintf(dstr, "Z80 state: PC: %04x SP: %04x\n", (unsigned int)(CZ80.PC - CZ80.BasePC), CZ80.SP.W);
 #endif
 }
+
+// vim:ts=2:sw=2:expandtab

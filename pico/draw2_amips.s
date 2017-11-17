@@ -5,8 +5,33 @@
  * this is highly specialized, be careful if changing related C code!
  */
 
-.extern Pico
-.extern PicoDraw2FB
+.eqv OFS_Pico_video_reg,   0x0000
+.eqv OFS_Pico_m_rotate,    0x0040
+.eqv OFS_Pico_m_z80Run,    0x0041
+.eqv OFS_Pico_m_dirtyPal,  0x0046
+.eqv OFS_Pico_m_hardware,  0x0047
+.eqv OFS_Pico_m_z80_reset, 0x004f
+.eqv OFS_Pico_m_sram_reg,  0x0049
+.eqv OFS_Pico_sv,          0x007c
+.eqv OFS_Pico_sv_data,     0x007c
+.eqv OFS_Pico_sv_start,    0x0080
+.eqv OFS_Pico_sv_end,      0x0084
+.eqv OFS_Pico_sv_flags,    0x0088
+.eqv OFS_Pico_rom,         0x031c
+.eqv OFS_Pico_romsize,     0x0320
+.eqv OFS_EST_DrawScanline, 0x00
+.eqv OFS_EST_rendstatus,   0x04
+.eqv OFS_EST_DrawLineDest, 0x08
+.eqv OFS_EST_HighCol,      0x0c
+.eqv OFS_EST_HighPreSpr,   0x10
+.eqv OFS_EST_Pico,         0x14
+.eqv OFS_EST_PicoMem_vram, 0x18
+.eqv OFS_EST_PicoMem_cram, 0x1c
+.eqv OFS_EST_PicoOpt,      0x20
+.eqv OFS_EST_Draw2FB,      0x24
+.eqv OFS_EST_HighPal,      0x28
+.eqv OFS_PMEM_vram,        0x10000
+.eqv OFS_PMEM_vsram,       0x22100
 
 # _define these constants in your include file:
  .equiv START_ROW, 		0
@@ -25,18 +50,18 @@
 .text
 .align 2
 
-.global BackFillFull # int reg7
+# void BackFillFull(void *dst, int reg7)
+
+.global BackFillFull
 
 BackFillFull:
 	#addiu  $sp, $sp, -4     # allocate 1 word on the stack
     #sw     $sp, ($ra)
 
-	move    $t0, $a0
-    lw      $a0, PicoDraw2FB      # lr=PicoDraw2FB
-    sll		$t0, $t0, 26
-    #lw     $a0, ($a0)
+	#move    $t0, $a1
+	add     $a0, $a0, (512*8)+8      # 512: line_width in psp, others -> 328
+    sll		$t0, $a1, 26
     srl     $t0, $t0, 26
-    add     $a0, $a0, (512*8)+8      # 512: line_width in psp, others -> 328
 
 	sll		$t7, $t0, 8
     or      $t0, $t0, $t7
@@ -169,7 +194,20 @@ BackFillFull:
 
 # -------- some macros --------
 
-# helper
+# helpers
+.macro add_c24 d s c
+	li		$s5, (\c & 0x00ff00)
+    add     \d, \s, $s5
+.if \c & 0x0000ff
+	li		$s5, (\c & 0x0000ff)
+    add     \d, \d, $s5
+.endif
+.if \c & 0xff0000
+	li		$s5, (\c & 0xff0000)
+    add     \d, \d, $s5
+.endif
+.endm
+
 # TileLineSinglecol ($a1=pdest, $a2=pixels8, $a3=pal) $t4: scratch, $a0: pixels8_old
 .macro TileLineSinglecol notsinglecol=0
     and     $a2, $a2, 0xf        # #0x0000000f
@@ -542,11 +580,13 @@ BackFillFull:
 
 # DrawLayerTiles(*hcache, *scrpos, (cells<<24)|(nametab<<9)|(vscroll&0x3ff)<<11|(shift(width)<<8)|planeend, (ymask<<24)|(planestart<<16)|(htab||hscroll)
 
-#static void DrawLayerFull(int plane, int *hcache, int planestart, int planeend)
+# void DrawLayerFull(int plane, int *hcache, int planestart, int planeend,
+#                    struct PicoEState *est)
 
 .global DrawLayerFull
 
 DrawLayerFull:
+	#lw		$t0, ($sp)
 	addiu   $sp, $sp, -24
 	sw      $s6, 20($sp)
 	sw      $s5, 16($sp)
@@ -554,6 +594,8 @@ DrawLayerFull:
 	sw      $s3, 8($sp)   #r12
 	sw      $s2, 4($sp)   #r11
 	sw      $s1, ($sp)    #r10
+	#lw		$s3, 24($sp)
+	move	$s3, $t0
 
 	li		$t0, -4
 	li		$t1, 4
@@ -562,14 +604,24 @@ DrawLayerFull:
 
     move    $t6, $a1        # hcache
 
-    lui     $s2, %hi(Pico+0x22228)
-    li		$s5, %lo(Pico+0x22228)
-    add     $s2, $s2, $s5         # $s2=Pico.video
-    lui     $s1, %hi(Pico+0x10000)
-    li		$s5, %lo(Pico+0x10000)
-    add     $s1, $s1, $s5         # $s1=Pico.vram
-    lbu      $t5, 13($s2)          # pvid->reg(13)
-    lbu      $t7, 11($s2)
+    #lui     $s2, %hi(Pico+0x22228)
+    #li		$s5, %lo(Pico+0x22228)
+    #add     $s2, $s2, $s5         # $s2=Pico.video
+
+	lw		$s2, OFS_EST_Pico($s3)
+	#li		$s5, OFS_EST_Pico
+	#add		$s2, $s3, $s5
+
+    #lui     $s1, %hi(Pico+0x10000)
+    #li		$s5, %lo(Pico+0x10000)
+    #add     $s1, $s1, $s5         # $s1=Pico.vram
+
+	lw		$s1, OFS_EST_PicoMem_vram($s3)
+	#li		$s5, OFS_EST_PicoMem_vram
+	#add		$s1, $s3, $s5
+
+    lbu      $t5, OFS_Pico_video_reg+13($s2)          # pvid->reg(13)
+    lbu      $t7, OFS_Pico_video_reg+11($s2)
 
     sub     $s4, $a3, $a2
     li		$s5, 0x00ff0000
@@ -583,7 +635,7 @@ DrawLayerFull:
     and     $t5, $t5, $s5         # just in case
 
     and		$s5, $t7, 3           # full screen scroll? (if 0)
-    lbu      $t7, 16($s2)          # ??hh??ww
+    lbu     $t7, OFS_Pico_video_reg+16($s2)          # ??hh??ww
     bnez	$s5, .rtrloop_skip_1
     nop
     add		$s5, $s1, $t5
@@ -653,30 +705,33 @@ DrawLayerFull:
     # Find name table:
     bnez	$a0, .rtrloop_skip_8
     nop
-    lbu  	$t4, 2($s2)
+    lbu  	$t4, OFS_Pico_video_reg+2($s2)
     srl     $t4, $t4, 3
     b		.rtrloop_skip_9
     nop
 
 .rtrloop_skip_8:
-    lbu  	$t4, 4($s2)
+    lbu  	$t4, OFS_Pico_video_reg+4($s2)
 
 .rtrloop_skip_9:
     and     $t4, $t4, 7
     sll		$s5, $t4, 13
     or      $s4, $s4, $s5        # $s4|=nametab_bits{3}<<13
 
-    lw      $s2, PicoDraw2FB     # $s2=PicoDraw2FB
+    lw      $s2, 9*4($s3)     # est
     sub     $t4, $t9, (START_ROW<<24)
+	#lw		$s2, OFS_EST_Draw2FB($s2)
+	#addi	$s2, $s2, OFS_EST_Draw2FB
     sra     $t4, $t4, 24
     li      $t7, 512*8
     mul		$s5, $t4, $t7
     add		$s2, $s5, $s2		   # scrpos+=8*512*(planestart-START_ROW);
 
     # Get vertical scroll value:
-    li		$s5, 0x012000
-    add     $t7, $s1, $s5
-    add     $t7, $t7,  0x000180    # $t7=Pico.vsram (Pico+0x22180)
+    #li		$s5, 0x012000
+    #add     $t7, $s1, $s5
+    #add     $t7, $t7,  0x000180    # $t7=Pico.vsram (Pico+0x22180)
+	add_c24 $t7, $s1, (OFS_PMEM_vsram-OFS_PMEM_vram)
     lw      $t7, ($t7)
     bnez	$a0, .rtrloop_skip_10
     nop
@@ -912,7 +967,9 @@ DrawLayerFull:
     jr      $ra
     nop
 
-.global DrawTilesFromCacheF # int *hc
+# void DrawTilesFromCacheF(int *hc, struct PicoEState *est)
+
+.global DrawTilesFromCacheF
 
 DrawTilesFromCacheF:
 	addiu   $sp, $sp, -24
@@ -930,17 +987,21 @@ DrawTilesFromCacheF:
     li      $t9, 0xff000000 # $t9=prevcode=-1
     li      $t6, -1          # $t6=prevy=-1
 
-    lw      $t4, PicoDraw2FB  # $t4=PicoDraw2FB
-    lw      $a1, ($a0)    # read y offset
+    lw      $t4, OFS_EST_Draw2FB($a1)
+    #addi    $t4, $a1, OFS_EST_Draw2FB
+    lw      $a2, ($a0)    # read y offset
     add		$a0, $a0, 4
     li      $t7, 512
-    mul     $s5, $t7, $a1
-    add		$a1, $t4, $s5
-    sub     $s3, $a1, (512*8*START_ROW) # $a3=scrpos
+    mul     $s5, $t7, $a2
+    add		$a2, $t4, $s5
+    sub     $s3, $a2, (512*8*START_ROW) # $a3=scrpos
 
-    lui     $s1, %hi(Pico+0x10000)
-    li		$s5, %lo(Pico+0x10000)
-    add     $s1, $s1, $s5         # $s1=Pico.vram
+    #lui     $s1, %hi(Pico+0x10000)
+    #li		$s5, %lo(Pico+0x10000)
+    #add     $s1, $s1, $s5         # $s1=Pico.vram
+
+	lw		$s1, OFS_EST_PicoMem_vram($a1)
+	#addi	$s1, $a1, OFS_EST_PicoMem_vram
     move    $t8, $a0               # hc
     li      $a0, 0xf
 
@@ -1043,7 +1104,10 @@ DrawTilesFromCacheF:
 # ###############
 
 # (tile_start<<16)|row_start
-.global DrawWindowFull # int tstart, int tend, int prio
+
+# void DrawWindowFull(int start, int end, int prio, struct PicoEState *est)
+
+.global DrawWindowFull
 
 DrawWindowFull:
 	addiu   $sp, $sp, -24
@@ -1059,13 +1123,14 @@ DrawWindowFull:
 	li		$t2, 512
 	li		$t3, 1
 
-    lui     $s2, %hi(Pico+0x22228)
-    li		$s5, %lo(Pico+0x22228)
-    add     $s2, $s2, $s5         # $s2=Pico.video
-    lbu 		$s3, 3($s2)        # pvid->reg(3)
+    #lui     $s2, %hi(Pico+0x22228)
+    #li		$s5, %lo(Pico+0x22228)
+    #add     $s2, $s2, $s5         # $s2=Pico.video
+	lw		$s2, OFS_EST_Pico($a3)
+    lbu 	$s3, OFS_Pico_video_reg+3($s2)        # pvid->reg(3)
     sll     $s3, $s3, 10
 
-    lw      $t4, 12($s2)
+    lw      $t4, OFS_Pico_video_reg+12($s2)
     li      $t5, 1                # nametab_step
     and     $s5, $t4, 1           # 40 cell mode?
     bnez	$s5, .dwfskip_1
@@ -1084,14 +1149,15 @@ DrawWindowFull:
     mul		$s5, $t5, $t4
     add     $s3, $s5, $s3      # nametab += nametab_step*start;
 
+	lw     	$s1, OFS_EST_PicoMem_vram($a3)
     srl     $t4, $a0, 16       # $t4=start_cell_h
     sll		$s5, $t4, 1
     add     $t7, $s3, $s5
 
     # fetch the first code now
-    lui     $s1, %hi(Pico+0x10000)
-    li		$s5, %lo(Pico+0x10000)
-    add     $s1, $s1, $s5         # $s1=Pico.vram
+    #lui     $s1, %hi(Pico+0x10000)
+    #li		$s5, %lo(Pico+0x10000)
+    #add     $s1, $s1, $s5         # $s1=Pico.vram
     add		$s5, $s1, $t7
     lhu      $t7, ($s5)
     srl		$s5, $t7, 15
@@ -1112,11 +1178,10 @@ DrawWindowFull:
 
     li      $t9, 0xff000000       # $t9=prevcode=-1
 
-    lw      $s2, PicoDraw2FB     # $s2=scrpos
+    lw      $s2, OFS_EST_Draw2FB($a3)
     and     $t4, $a0, 0xff
-    #ldr     $s2, ($s2)
-    sub     $t4, $t4, START_ROW
     add     $s2, $s2, 512*8
+    sub     $t4, $t4, START_ROW
     add     $s2, $s2, 8
 
     li      $t7, 512*8
@@ -1184,7 +1249,8 @@ DrawWindowFull:
     bnez    $s5, .dwf_hflip
     nop
 
-    # Tile ($a1=pdest, $a3=pal, $t9=prevcode, $s1=Pico.vram) $a2,$t4,$t7: scratch, $a0=0xf
+    # Tile ($a1=pdest, $a3=pal, $t9=prevcode, $s1=PicoMem.vram)
+	# $a2,$t4,$t7: scratch, $a0=0xf
     Tile 0, 0
     b       .dwfloop
     nop
@@ -1335,7 +1401,8 @@ DrawWindowFull:
     bgez     $s5, 52b
     nop
 
-    # Tile ($s1=pdest, $s3=pal, $t5=prevcode, $a3=Pico.vram) $s2,$a0,$a3: scratch, $a0=0xf
+    # Tile ($s1=pdest, $s3=pal, $t5=prevcode, $a3=PicoMem.vram)
+	# $s2,$a0,$a3: scratch, $a0=0xf
     Tile \hflip, \vflip
     nop
     b       52b
@@ -1354,9 +1421,9 @@ DrawWindowFull:
 
 .endm
 
+# void DrawSpriteFull(unsigned int *sprite, struct PicoEState *est)
 
-
-.global DrawSpriteFull # unsigned int *sprite
+.global DrawSpriteFull
 
 DrawSpriteFull:
 	addiu   $sp, $sp, -24
@@ -1394,10 +1461,11 @@ DrawSpriteFull:
     and     $a3, $s4, 0x6000
     srl     $a3, $a3, 9       # $a3=pal=((code>>9)&0x30);
 
-	lw		$s2, (PicoDraw2FB)     # $s2=scrpos
-    lui     $s1, %hi(Pico+0x10000)
-    li		$s5, %lo(Pico+0x10000)
-    add     $s1, $s1, $s5         # $s1=Pico.vram
+	lw		$s2, OFS_EST_Draw2FB($a1)
+    #lui     $s1, %hi(Pico+0x10000)
+    #li		$s5, %lo(Pico+0x10000)
+    #add     $s1, $s1, $s5         # $s1=Pico.vram
+	lw		$s1, OFS_EST_PicoMem_vram($a1)
     sub     $a1, $s3, (START_ROW*8)
     li      $a0, 512
     mul     $s5, $a1, $a0
