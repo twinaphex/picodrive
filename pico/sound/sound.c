@@ -152,11 +152,13 @@ PICO_INTERNAL void PsndStartFrame(void)
 {
   // compensate for float part of PsndLen
   PsndLen_use = PsndLen;
+#ifndef PSP
   PsndLen_exc_cnt += PsndLen_exc_add;
   if (PsndLen_exc_cnt >= 0x10000) {
     PsndLen_exc_cnt -= 0x10000;
     PsndLen_use++;
   }
+#endif
 
   PsndDacLine = PsndPsgLine = 0;
   emustatus &= ~1;
@@ -293,6 +295,17 @@ static int PsndRender(int offset, int length)
 
   pprof_start(sound);
 
+#ifdef PSP
+  if (offset == 0) { // should happen once per frame
+    // compensate for float part of PsndLen
+    PsndLen_exc_cnt += PsndLen_exc_add;
+    if (PsndLen_exc_cnt >= 0x10000) {
+      PsndLen_exc_cnt -= 0x10000;
+      length++;
+    }
+  }
+#endif
+
   if (PicoAHW & PAHW_PICO) {
     PicoPicoPCMUpdate(PsndOut+offset, length, stereo);
     return length;
@@ -371,7 +384,19 @@ PICO_INTERNAL void PsndGetSamples(int y)
 PICO_INTERNAL void PsndGetSamplesMS(void)
 {
   int stereo = (PicoOpt & 8) >> 3;
+
+#ifdef PSP
+  int length = PsndLen;
+
+  // compensate for float part of PsndLen
+  PsndLen_exc_cnt += PsndLen_exc_add;
+  if (PsndLen_exc_cnt >= 0x10000) {
+    PsndLen_exc_cnt -= 0x10000;
+    length++;
+  }
+#else
   int length = PsndLen_use;
+#endif
 
   // PSG
   if (PicoOpt & POPT_EN_PSG)

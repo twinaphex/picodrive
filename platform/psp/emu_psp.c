@@ -38,13 +38,11 @@ int sceAudio_E0727056(int volume, void *buffer);	// blocking output
 int sceAudioOutput2GetRestSample();
 #endif
 
+
 char romFileName[PATH_MAX];
 #if 0
-int engineStateSuspend;
-#endif
-
-#if 0
 unsigned char *PicoDraw2FB = (unsigned char *)VRAM_CACHED_STUFF + 8; // +8 to be able to skip border with 1 quadword..
+int engineStateSuspend;
 #endif
 
 static unsigned char reg_12 = 0;
@@ -1494,10 +1492,12 @@ int sndout_start(int rate, int stereo)
 
 void sndout_stop(void)
 {
+	pemu_sound_stop();
 }
 
 void sndout_wait(void)
 {
+	//pemu_sound_wait();
 }
 
 void plat_video_wait_vsync(void)
@@ -1527,8 +1527,10 @@ void plat_video_flip(int vsync)
 }
 
 void pemu_scan_prepare(void){
-	if( get_renderer() == RT_8BIT_ACC )
+	if( get_renderer() == RT_8BIT_ACC ) {
+		Pico.m.dirtyPal = 1;  // force update palette one each frame to avoid black banding - slow
 		EmuScanPrepare();
+	}
 }
 
 void pemu_finalize_frame(const char *fps, const char *notice_msg)
@@ -1551,7 +1553,7 @@ void plat_wait_till_us(unsigned int us_to)
 
 void pemu_loop_end(void)
 {
-	pemu_sound_stop();
+	//pemu_forced_frame(0, 1);
 }
 
 void emu_video_mode_change(int start_line, int line_count, int is_32cols)

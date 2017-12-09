@@ -2309,7 +2309,6 @@ int ssp1601_dyn_startup(void)
 	PicoLoadStateHook = ssp1601_state_load;
 
 	n_in_ops = 0;
-#ifdef PSP
 	// hle'd blocks
 	ssp_block_table[0x800/2] = (void *) ssp_hle_800;
 	ssp_block_table[0x902/2] = (void *) ssp_hle_902;
@@ -2319,7 +2318,6 @@ int ssp1601_dyn_startup(void)
 	ssp_block_table_iram[11 * SSP_BLOCKTAB_IRAM_ONE + 0x12c/2] = (void *) ssp_hle_11_12c;
 	ssp_block_table_iram[11 * SSP_BLOCKTAB_IRAM_ONE + 0x384/2] = (void *) ssp_hle_11_384;
 	ssp_block_table_iram[11 * SSP_BLOCKTAB_IRAM_ONE + 0x38a/2] = (void *) ssp_hle_11_38a;
-#endif
 
 	return 0;
 }
@@ -2349,8 +2347,6 @@ void ssp1601_dyn_run(int cycles)
 #ifdef DUMP_BLOCK
 	ssp_translate_block(DUMP_BLOCK >> 1);
 #endif
-#ifdef PSP
 	ssp_drc_entry(ssp, cycles);
-#endif
 }
 

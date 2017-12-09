@@ -1531,8 +1531,11 @@ void emu_loop(void)
 					if (diff > target_frametime_x3) {
 						// we are too fast
 						vsync = 1;
-						timestamp = get_ticks();
-						diff = timestamp * 3 - timestamp_aim_x3;
+
+						if (!Pico.m.pal) {
+							timestamp = get_ticks();
+							diff = timestamp * 3 - timestamp_aim_x3;
+						}
 					}
 				}
 

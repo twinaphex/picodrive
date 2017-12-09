@@ -1,3 +1,9 @@
+1.92.2 (2017-12-09) (PSP)
+  * Fix graphical issue: black/shadows bands when use accurate renderer in some games like: Fantastic Dizzy, Test Drive 2, Sonic 3d Blast, Subterrania etc (provisional fix)
+  * Fix fps issue when use sometimes vsync for PAL games (provisional fix)
+  * Fix sound issue when use frequencies below 44khz for NTSC games (provisional fix)
+  * Fixed upper limit for CPU clock
+
 1.92.1 (2017-11-17) (PSP)
   * Various compatibility and bug fixes
   
